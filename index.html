@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Redvyr - The Kingdom Awaits</title>
+  <title>Redvyr Kingdoms</title>
 
   <style>
     * {
@@ -13,491 +13,386 @@
     }
 
     :root {
-      --red: #9d241c;
-      --red-dark: #5e1511;
-      --gold: #e2b45b;
-      --cream: #f6e4bd;
-      --wood: #4a2a16;
-      --wood-light: #7a4721;
-      --ink: #22130a;
-      --green: #233b22;
+      --red: #9f1f17;
+      --red2: #d2412c;
+      --gold: #f2c35f;
+      --cream: #fff0c8;
+      --dark: #160b05;
+      --wood: #4a2612;
+      --panel: rgba(23, 12, 6, 0.86);
     }
 
     body {
       min-height: 100vh;
-      font-family: Georgia, "Times New Roman", serif;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #100804;
       color: var(--cream);
-      overflow-x: hidden;
-      background:
-        radial-gradient(circle at 50% 20%, rgba(255, 230, 150, 0.18), transparent 28%),
-        linear-gradient(to bottom, #52b9ef 0%, #90d8ff 26%, #37713d 62%, #183016 100%);
+      overflow: hidden;
     }
 
-    body::before {
+    .screen {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      background-image:
+        linear-gradient(to bottom, rgba(0,0,0,0.08), rgba(0,0,0,0.35)),
+        url("assets/background.png");
+      background-size: cover;
+      background-position: center;
+      overflow: hidden;
+    }
+
+    .screen::after {
       content: "";
-      position: fixed;
+      position: absolute;
       inset: 0;
-      pointer-events: none;
       background:
-        linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
-      background-size: 5px 5px;
-      opacity: 0.35;
+        radial-gradient(circle at 50% 45%, transparent 0 35%, rgba(0,0,0,0.25) 75%),
+        linear-gradient(to right, rgba(0,0,0,0.35), transparent 25%, transparent 75%, rgba(0,0,0,0.35));
+      pointer-events: none;
       z-index: 1;
     }
 
-    .page {
-      position: relative;
-      min-height: 100vh;
-      padding: 24px;
-      z-index: 2;
-    }
-
-    .sky-cloud {
+    .top-bar {
       position: absolute;
-      background: rgba(255, 255, 255, 0.85);
-      border-radius: 999px;
-      filter: blur(1px);
-      opacity: 0.9;
-      z-index: 0;
-    }
-
-    .cloud-1 {
-      width: 190px;
-      height: 45px;
-      top: 55px;
-      left: 18%;
-      box-shadow: 55px 8px 0 rgba(255,255,255,0.75), 100px -6px 0 rgba(255,255,255,0.8);
-    }
-
-    .cloud-2 {
-      width: 160px;
-      height: 38px;
-      top: 85px;
-      right: 12%;
-      box-shadow: 50px 7px 0 rgba(255,255,255,0.7), 92px -4px 0 rgba(255,255,255,0.75);
-    }
-
-    .castle {
-      position: absolute;
-      top: 95px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 430px;
-      height: 300px;
-      opacity: 0.88;
-      z-index: 0;
-    }
-
-    .tower {
-      position: absolute;
-      bottom: 0;
-      width: 72px;
-      background: #d7c49a;
-      border: 5px solid #866b48;
-      box-shadow: inset -8px 0 rgba(0,0,0,0.12);
-    }
-
-    .tower::before {
-      content: "";
-      position: absolute;
-      top: -62px;
-      left: -11px;
-      width: 0;
-      height: 0;
-      border-left: 42px solid transparent;
-      border-right: 42px solid transparent;
-      border-bottom: 64px solid #b84428;
-      filter: drop-shadow(0 5px #6b2819);
-    }
-
-    .tower.one { left: 42px; height: 185px; }
-    .tower.two { left: 176px; height: 245px; width: 82px; }
-    .tower.three { right: 42px; height: 185px; }
-
-    .castle-body {
-      position: absolute;
-      bottom: 0;
-      left: 88px;
-      width: 255px;
-      height: 160px;
-      background: #d1bd92;
-      border: 5px solid #866b48;
-      box-shadow: inset -10px 0 rgba(0,0,0,0.12);
-    }
-
-    .castle-body::after {
-      content: "";
-      position: absolute;
-      bottom: -5px;
-      left: 94px;
-      width: 70px;
-      height: 88px;
-      background: #4b2a19;
-      border: 4px solid #7e5a38;
-      border-radius: 40px 40px 0 0;
-    }
-
-    .ground {
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      height: 42%;
-      background:
-        radial-gradient(circle at 18% 92%, #6e4b2d 0 4px, transparent 5px),
-        radial-gradient(circle at 48% 84%, #88623e 0 5px, transparent 6px),
-        radial-gradient(circle at 75% 90%, #704b2e 0 4px, transparent 5px),
-        linear-gradient(to bottom, #376c38, #213f22 35%, #192e19);
-      z-index: 0;
-    }
-
-    .path {
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: min(760px, 90vw);
-      height: 48%;
-      clip-path: polygon(42% 0, 58% 0, 82% 100%, 18% 100%);
-      background:
-        linear-gradient(90deg, rgba(0,0,0,0.08) 1px, transparent 1px),
-        linear-gradient(#cda879, #8b633e);
-      background-size: 42px 42px;
-      opacity: 0.95;
-      z-index: 0;
-    }
-
-    .layout {
-      position: relative;
-      z-index: 3;
-      min-height: calc(100vh - 48px);
-      display: grid;
-      grid-template-columns: 360px minmax(280px, 1fr) 360px;
-      gap: 26px;
+      top: 18px;
+      left: 24px;
+      right: 24px;
+      height: 74px;
+      z-index: 5;
+      display: flex;
       align-items: center;
+      justify-content: space-between;
+      gap: 18px;
     }
 
-    .sign {
-      background:
-        linear-gradient(180deg, #6f421f, #3f220f);
-      border: 5px solid #1f1008;
-      outline: 3px solid #b07032;
-      border-radius: 10px;
-      box-shadow: 0 12px 0 rgba(0,0,0,0.25), inset 0 0 0 3px rgba(255,255,255,0.06);
-      padding: 28px;
+    .logo-box {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 20px;
+      background: rgba(24, 12, 5, 0.84);
+      border: 3px solid rgba(242, 195, 95, 0.55);
+      border-radius: 12px;
+      box-shadow: 0 8px 0 rgba(0,0,0,0.25);
     }
 
-    .brand {
-      text-align: center;
-      margin-bottom: 18px;
+    .crest {
+      width: 42px;
+      height: 48px;
+      background: linear-gradient(#c53124, #6d130d);
+      border: 3px solid var(--gold);
+      border-radius: 6px 6px 14px 14px;
+      display: grid;
+      place-items: center;
+      font-size: 25px;
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,0.08);
     }
 
-    .brand small {
+    .logo-text strong {
       display: block;
-      color: var(--gold);
-      font-weight: 900;
-      letter-spacing: 2px;
-      font-size: 14px;
-      text-transform: uppercase;
-    }
-
-    .brand h1 {
-      font-size: 58px;
-      line-height: 0.95;
-      color: #c82a21;
-      text-shadow:
-        3px 3px 0 #47100c,
-        -1px -1px 0 #ffd37a;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 28px;
+      line-height: 0.9;
       letter-spacing: 1px;
+      color: #ffe4a6;
+      text-shadow: 2px 2px 0 #50120b;
     }
 
-    .tagline {
-      margin: 18px auto 0;
-      width: fit-content;
-      padding: 10px 18px;
-      background: #2a160b;
-      border: 2px solid #b07032;
-      color: var(--gold);
+    .logo-text span {
+      font-size: 12px;
       font-weight: 900;
-      letter-spacing: 1px;
+      letter-spacing: 4px;
+      color: var(--gold);
     }
 
-    .parchment {
-      margin-top: 22px;
-      background: #f3dcae;
-      color: #3c2412;
-      border: 4px solid #7a4721;
-      border-radius: 6px;
-      padding: 20px;
-      box-shadow: inset 0 0 24px rgba(90, 45, 10, 0.18);
+    .top-buttons {
+      display: flex;
+      gap: 10px;
     }
 
-    .parchment h2 {
-      font-size: 24px;
-      margin-bottom: 10px;
+    .small-btn {
+      cursor: pointer;
+      border: 2px solid rgba(242,195,95,0.55);
+      border-radius: 10px;
+      padding: 12px 16px;
+      background: rgba(24, 12, 5, 0.84);
+      color: var(--cream);
+      font-weight: 900;
+      box-shadow: 0 5px 0 rgba(0,0,0,0.25);
+      transition: 0.15s;
     }
 
-    .parchment p {
-      font-family: Arial, sans-serif;
-      font-size: 15px;
+    .small-btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.16);
+    }
+
+    .main-layout {
+      position: relative;
+      z-index: 4;
+      width: 100%;
+      height: 100%;
+      display: grid;
+      grid-template-columns: 360px 1fr 360px;
+      gap: 24px;
+      padding: 110px 32px 34px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 3px solid rgba(242,195,95,0.52);
+      border-radius: 14px;
+      box-shadow: 0 10px 0 rgba(0,0,0,0.24), 0 16px 40px rgba(0,0,0,0.36);
+      backdrop-filter: blur(4px);
+    }
+
+    .left-stack, .right-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .welcome {
+      padding: 22px;
+    }
+
+    .welcome h2 {
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--gold);
+      font-size: 28px;
+      margin-bottom: 12px;
+    }
+
+    .welcome p {
+      color: rgba(255,240,200,0.82);
       line-height: 1.55;
+      font-size: 15px;
       font-weight: 700;
     }
 
-    .world-box {
-      margin-top: 18px;
-      background: rgba(0,0,0,0.35);
-      border: 3px solid #7a4721;
-      border-radius: 8px;
-      padding: 14px;
-      font-family: Arial, sans-serif;
+    .world-card {
+      padding: 18px;
     }
 
-    .world-box label {
-      display: block;
-      font-size: 12px;
+    .label {
       color: var(--gold);
+      font-size: 12px;
       font-weight: 900;
+      letter-spacing: 1px;
       margin-bottom: 8px;
+      text-transform: uppercase;
     }
 
-    select, input {
+    input, select {
       width: 100%;
       padding: 13px;
-      border: 2px solid #241208;
-      border-radius: 6px;
-      background: #2a160b;
+      border-radius: 9px;
+      border: 2px solid rgba(242,195,95,0.45);
+      background: rgba(0,0,0,0.35);
       color: var(--cream);
       font-weight: 800;
       outline: none;
+      margin-bottom: 10px;
     }
 
-    .status {
-      margin-top: 12px;
-      font-size: 13px;
-      color: #e8c37a;
+    .status-row {
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      justify-content: space-between;
+      color: rgba(255,240,200,0.75);
+      font-size: 13px;
+      font-weight: 800;
+      margin-top: 4px;
     }
 
     .dot {
       width: 11px;
       height: 11px;
+      background: #4ee34a;
       border-radius: 50%;
-      background: #58e052;
-      box-shadow: 0 0 10px #58e052;
+      box-shadow: 0 0 12px #4ee34a;
+    }
+
+    .news-card {
+      padding: 18px;
+      flex: 1;
+    }
+
+    .news-card h3,
+    .leaderboard h3 {
+      color: var(--gold);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 24px;
+      margin-bottom: 12px;
+    }
+
+    .news-card ul {
+      list-style: none;
+    }
+
+    .news-card li {
+      padding: 11px 0;
+      border-bottom: 1px solid rgba(242,195,95,0.16);
+      color: rgba(255,240,200,0.8);
+      font-size: 14px;
+      line-height: 1.35;
     }
 
     .center-stage {
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      min-height: 620px;
+      justify-content: end;
+      padding-bottom: 18px;
       text-align: center;
     }
 
-    .mascot-card {
-      position: relative;
-      width: 280px;
-      height: 330px;
+    .title {
+      margin-bottom: 18px;
+      text-shadow: 0 5px 0 rgba(0,0,0,0.35), 0 0 20px rgba(0,0,0,0.6);
+    }
+
+    .title h1 {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(56px, 6vw, 92px);
+      line-height: 0.9;
+      color: #ffe4a6;
+      letter-spacing: 2px;
+    }
+
+    .title span {
+      color: var(--red2);
+    }
+
+    .title p {
+      margin-top: 12px;
+      font-size: 18px;
+      color: #ffeec9;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .mascot {
+      width: min(270px, 32vw);
+      max-height: 38vh;
+      object-fit: contain;
+      filter: drop-shadow(0 18px 18px rgba(0,0,0,0.55));
+      animation: bob 3.2s ease-in-out infinite;
+      margin-bottom: 12px;
+    }
+
+    @keyframes bob {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-9px); }
+    }
+
+    .main-play {
+      cursor: pointer;
+      min-width: 320px;
+      border: 4px solid var(--gold);
+      border-radius: 13px;
+      padding: 18px 34px;
+      background: linear-gradient(#d4422c, #85170f);
+      color: white;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 38px;
+      font-weight: 900;
+      letter-spacing: 2px;
+      box-shadow: 0 8px 0 #3a0a06, 0 14px 24px rgba(0,0,0,0.42);
+      transition: 0.15s;
+    }
+
+    .main-play:hover {
+      transform: translateY(-4px) scale(1.02);
+      filter: brightness(1.15);
+    }
+
+    .main-play:active {
+      transform: translateY(4px);
+      box-shadow: 0 3px 0 #3a0a06;
+    }
+
+    .quick-buttons {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(150px, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+      width: min(520px, 100%);
+    }
+
+    .game-btn {
+      cursor: pointer;
+      border: 3px solid rgba(242,195,95,0.55);
+      border-radius: 12px;
+      padding: 14px 16px;
+      background: linear-gradient(#5d3519, #241006);
+      color: var(--cream);
+      font-weight: 900;
+      box-shadow: 0 6px 0 rgba(0,0,0,0.32);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: 0.15s;
+      text-align: left;
+    }
+
+    .game-btn:hover {
+      transform: translateY(-3px);
+      filter: brightness(1.18);
+    }
+
+    .game-btn .icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
       display: grid;
       place-items: center;
-      animation: floaty 3.5s ease-in-out infinite;
+      background: rgba(0,0,0,0.28);
+      border: 2px solid rgba(242,195,95,0.45);
+      font-size: 24px;
     }
 
-    @keyframes floaty {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-8px); }
+    .game-btn strong {
+      display: block;
+      font-size: 17px;
     }
 
-    .mascot-fallback {
-      width: 190px;
-      height: 240px;
-      position: relative;
-    }
-
-    .head {
-      position: absolute;
-      top: 0;
-      left: 36px;
-      width: 118px;
-      height: 105px;
-      background: #ffd2a0;
-      border: 6px solid #2b150b;
-      border-radius: 38px 38px 42px 42px;
-      z-index: 4;
-    }
-
-    .hair {
-      position: absolute;
-      top: -18px;
-      left: 26px;
-      width: 140px;
-      height: 70px;
-      background: #7a3519;
-      border: 5px solid #2b150b;
-      border-radius: 45px 45px 20px 20px;
-      z-index: 5;
-      clip-path: polygon(0 44%, 10% 15%, 28% 36%, 42% 0, 57% 38%, 75% 8%, 89% 46%, 100% 30%, 92% 100%, 6% 100%);
-    }
-
-    .eye {
-      position: absolute;
-      top: 45px;
-      width: 17px;
-      height: 24px;
-      background: #241208;
-      border-radius: 50%;
-      z-index: 6;
-    }
-
-    .eye.left { left: 68px; }
-    .eye.right { right: 68px; }
-
-    .mouth {
-      position: absolute;
-      top: 76px;
-      left: 82px;
-      width: 28px;
-      height: 16px;
-      background: #7d1511;
-      border-radius: 0 0 20px 20px;
-      z-index: 6;
-    }
-
-    .body {
-      position: absolute;
-      top: 104px;
-      left: 45px;
-      width: 100px;
-      height: 100px;
-      background: var(--red);
-      border: 6px solid #2b150b;
-      border-radius: 18px;
-      z-index: 3;
-    }
-
-    .body::before {
-      content: "♞";
-      position: absolute;
-      left: 50%;
-      top: 19px;
-      transform: translateX(-50%);
-      color: white;
-      font-size: 34px;
-    }
-
-    .cape {
-      position: absolute;
-      top: 104px;
-      left: 18px;
-      width: 154px;
-      height: 135px;
-      background: #8f1f18;
-      border: 6px solid #2b150b;
-      border-radius: 30px 30px 45px 45px;
-      z-index: 2;
-      transform: skewX(-8deg);
-    }
-
-    .leg {
-      position: absolute;
-      top: 195px;
-      width: 38px;
-      height: 72px;
-      background: #4b2a19;
-      border: 5px solid #2b150b;
-      border-radius: 12px;
-      z-index: 3;
-    }
-
-    .leg.left { left: 54px; }
-    .leg.right { right: 54px; }
-
-    .sword {
-      position: absolute;
-      right: 10px;
-      top: 126px;
-      width: 16px;
-      height: 150px;
-      background: #cfd6d9;
-      border: 4px solid #2b150b;
-      transform: rotate(28deg);
-      z-index: 1;
-    }
-
-    .spark {
-      position: absolute;
-      width: 8px;
-      height: 8px;
-      background: var(--gold);
-      box-shadow: 0 0 12px var(--gold);
-      transform: rotate(45deg);
-      animation: blink 1.8s infinite alternate;
-    }
-
-    .spark.one { top: 90px; left: 16px; }
-    .spark.two { top: 140px; right: 22px; animation-delay: 0.6s; }
-    .spark.three { bottom: 110px; left: 60px; animation-delay: 1s; }
-
-    @keyframes blink {
-      from { opacity: 0.25; transform: scale(0.7) rotate(45deg); }
-      to { opacity: 1; transform: scale(1.15) rotate(45deg); }
-    }
-
-    .hint {
-      margin-top: 10px;
-      padding: 10px 16px;
-      background: rgba(0,0,0,0.45);
-      border: 2px solid rgba(226,180,91,0.55);
-      border-radius: 999px;
-      font-family: Arial, sans-serif;
-      font-size: 13px;
+    .game-btn small {
+      color: rgba(255,240,200,0.7);
       font-weight: 800;
     }
 
-    .menu {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-
     .profile {
+      padding: 16px;
       display: grid;
-      grid-template-columns: 58px 1fr auto;
-      gap: 12px;
+      grid-template-columns: 56px 1fr 46px;
       align-items: center;
-      background: linear-gradient(180deg, #5a3218, #2f170b);
-      border: 4px solid #1b0d06;
-      outline: 2px solid #b07032;
-      border-radius: 10px;
-      padding: 12px;
-      box-shadow: 0 8px 0 rgba(0,0,0,0.22);
+      gap: 12px;
     }
 
     .avatar {
-      width: 58px;
-      height: 58px;
-      border-radius: 8px;
-      background: var(--red);
-      border: 3px solid #1b0d06;
+      width: 56px;
+      height: 56px;
+      border-radius: 10px;
+      background: linear-gradient(#ba2b20, #6c130e);
+      border: 3px solid var(--gold);
       display: grid;
       place-items: center;
-      font-size: 30px;
+      font-size: 27px;
     }
 
-    .profile h3 {
-      font-size: 18px;
+    .profile strong {
+      display: block;
+      color: #ffe3a3;
+      font-size: 16px;
     }
 
-    .profile p {
-      font-family: Arial, sans-serif;
+    .profile span {
+      color: rgba(255,240,200,0.68);
       font-size: 13px;
-      color: #d8b77d;
-      margin-top: 3px;
+      font-weight: 800;
     }
 
     .level {
@@ -505,94 +400,176 @@
       height: 44px;
       display: grid;
       place-items: center;
+      border-radius: 50%;
       background: var(--red);
       border: 3px solid var(--gold);
       font-weight: 900;
-      border-radius: 50%;
     }
 
-    .btn {
-      position: relative;
-      cursor: pointer;
-      border: 4px solid #1b0d06;
-      outline: 2px solid #b07032;
-      border-radius: 10px;
-      background: linear-gradient(180deg, #74411e, #32170a);
-      color: var(--cream);
-      padding: 16px 20px;
-      text-align: left;
-      box-shadow: 0 8px 0 rgba(0,0,0,0.22);
-      transition: 0.15s ease;
-      overflow: hidden;
-    }
-
-    .btn::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
-      transform: translateX(-100%);
-      transition: 0.35s;
-    }
-
-    .btn:hover {
-      transform: translateY(-3px);
-      filter: brightness(1.12);
-    }
-
-    .btn:hover::after {
-      transform: translateX(100%);
-    }
-
-    .btn:active {
-      transform: translateY(4px);
-      box-shadow: 0 3px 0 rgba(0,0,0,0.25);
-    }
-
-    .btn.play {
-      background: linear-gradient(180deg, #d8492d, #8e1f17);
+    .leaderboard {
       padding: 20px;
     }
 
-    .btn strong {
-      display: block;
-      font-size: 34px;
-      letter-spacing: 1px;
-      line-height: 1;
-      text-shadow: 2px 2px 0 #220b07;
-    }
-
-    .btn span {
-      display: block;
-      margin-top: 5px;
-      font-family: Arial, sans-serif;
-      color: #f3dcae;
+    .leader-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 11px 0;
+      border-bottom: 1px solid rgba(242,195,95,0.16);
       font-size: 14px;
       font-weight: 800;
     }
 
-    .bottom-actions {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 8px;
+    .leader-row:last-child {
+      border-bottom: none;
     }
 
-    .mini-btn {
+    .leader-row span:first-child {
+      color: rgba(255,240,200,0.82);
+    }
+
+    .leader-row span:last-child {
+      color: var(--gold);
+    }
+
+    .social {
+      padding: 18px;
+    }
+
+    .social h3 {
+      color: var(--gold);
+      font-size: 21px;
+      margin-bottom: 8px;
+      font-family: Georgia, "Times New Roman", serif;
+    }
+
+    .social p {
+      color: rgba(255,240,200,0.78);
+      font-size: 14px;
+      line-height: 1.4;
+      margin-bottom: 14px;
+    }
+
+    .social-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .social-row button {
       cursor: pointer;
-      padding: 13px;
-      border-radius: 8px;
-      background: #3a1e0f;
-      border: 3px solid #1b0d06;
-      color: var(--cream);
+      flex: 1;
+      padding: 12px;
+      border-radius: 10px;
+      border: 2px solid rgba(242,195,95,0.5);
+      background: rgba(0,0,0,0.28);
+      color: white;
       font-weight: 900;
-      box-shadow: 0 5px 0 rgba(0,0,0,0.22);
       transition: 0.15s;
     }
 
-    .mini-btn:hover {
+    .social-row button:hover {
       transform: translateY(-2px);
-      background: #553016;
+      filter: brightness(1.2);
+    }
+
+    .bottom-bar {
+      position: absolute;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      z-index: 6;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 18px;
+      background: rgba(23, 12, 6, 0.86);
+      border: 3px solid rgba(242,195,95,0.5);
+      border-radius: 12px;
+      box-shadow: 0 8px 0 rgba(0,0,0,0.24);
+    }
+
+    .bottom-bar button {
+      cursor: pointer;
+      border: none;
+      border-radius: 9px;
+      padding: 10px 14px;
+      color: var(--cream);
+      background: rgba(255,255,255,0.08);
+      font-weight: 900;
+      transition: 0.15s;
+    }
+
+    .bottom-bar button:hover {
+      background: rgba(255,255,255,0.16);
+      transform: translateY(-2px);
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      padding: 20px;
+    }
+
+    .modal-backdrop.show {
+      display: flex;
+    }
+
+    .modal {
+      width: min(520px, 100%);
+      background: #241106;
+      border: 4px solid var(--gold);
+      border-radius: 16px;
+      box-shadow: 0 20px 80px rgba(0,0,0,0.65);
+      padding: 24px;
+      color: var(--cream);
+      animation: pop 0.18s ease;
+    }
+
+    @keyframes pop {
+      from { transform: scale(0.92); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .modal h2 {
+      color: var(--gold);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+
+    .modal p {
+      color: rgba(255,240,200,0.78);
+      line-height: 1.55;
+      margin-bottom: 18px;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .modal-actions button {
+      cursor: pointer;
+      border-radius: 9px;
+      padding: 12px 16px;
+      border: 2px solid rgba(242,195,95,0.55);
+      font-weight: 900;
+    }
+
+    .close-btn {
+      background: rgba(255,255,255,0.08);
+      color: var(--cream);
+    }
+
+    .confirm-btn {
+      background: linear-gradient(#d4422c, #85170f);
+      color: white;
     }
 
     .toast {
@@ -600,193 +577,342 @@
       left: 50%;
       bottom: 24px;
       transform: translateX(-50%) translateY(120px);
-      background: #201008;
+      z-index: 80;
+      padding: 14px 22px;
+      background: #190c05;
       border: 3px solid var(--gold);
+      border-radius: 12px;
       color: var(--cream);
-      padding: 14px 20px;
-      border-radius: 10px;
-      font-family: Arial, sans-serif;
       font-weight: 900;
-      z-index: 20;
-      transition: 0.25s ease;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+      transition: 0.25s;
+      box-shadow: 0 14px 40px rgba(0,0,0,0.5);
     }
 
     .toast.show {
       transform: translateX(-50%) translateY(0);
     }
 
-    @media (max-width: 1050px) {
-      .layout {
+    @media (max-width: 1120px) {
+      body {
+        overflow: auto;
+      }
+
+      .screen {
+        min-height: 100vh;
+        height: auto;
+        overflow: visible;
+      }
+
+      .top-bar {
+        position: relative;
+        left: auto;
+        right: auto;
+        top: auto;
+        padding: 16px;
+        height: auto;
+      }
+
+      .main-layout {
         grid-template-columns: 1fr;
-        align-items: start;
+        padding: 20px;
       }
 
       .center-stage {
         order: -1;
-        min-height: 420px;
-        padding-top: 80px;
+        min-height: 560px;
+        justify-content: center;
       }
 
-      .castle {
-        opacity: 0.45;
+      .mascot {
+        width: 250px;
+        max-height: none;
       }
 
-      .brand h1 {
-        font-size: 48px;
+      .right-stack, .left-stack {
+        max-width: 700px;
+        width: 100%;
+        margin: 0 auto;
+      }
+
+      .bottom-bar {
+        position: relative;
+        left: auto;
+        bottom: auto;
+        transform: none;
+        width: fit-content;
+        margin: 20px auto;
       }
     }
 
-    @media (max-width: 520px) {
-      .page {
-        padding: 14px;
+    @media (max-width: 620px) {
+      .top-bar {
+        flex-direction: column;
+        align-items: stretch;
       }
 
-      .brand h1 {
-        font-size: 40px;
+      .top-buttons {
+        justify-content: center;
       }
 
-      .sign {
-        padding: 18px;
+      .title h1 {
+        font-size: 48px;
       }
 
-      .btn strong {
-        font-size: 27px;
+      .main-play {
+        min-width: 0;
+        width: 100%;
+        font-size: 30px;
       }
 
-      .mascot-card {
-        width: 230px;
-        transform: scale(0.9);
+      .quick-buttons {
+        grid-template-columns: 1fr;
+      }
+
+      .bottom-bar {
+        flex-wrap: wrap;
+        justify-content: center;
       }
     }
   </style>
 </head>
 
 <body>
-  <div class="page">
-    <div class="sky-cloud cloud-1"></div>
-    <div class="sky-cloud cloud-2"></div>
+  <main class="screen">
+    <header class="top-bar">
+      <div class="logo-box">
+        <div class="crest">♕</div>
+        <div class="logo-text">
+          <strong>REDVYR</strong>
+          <span>KINGDOMS</span>
+        </div>
+      </div>
 
-    <div class="castle" aria-hidden="true">
-      <div class="tower one"></div>
-      <div class="tower two"></div>
-      <div class="tower three"></div>
-      <div class="castle-body"></div>
-    </div>
+      <div class="top-buttons">
+        <button class="small-btn" onclick="openModal('Login')">Log In</button>
+        <button class="small-btn" onclick="openModal('Create Account')">Sign Up</button>
+      </div>
+    </header>
 
-    <div class="ground"></div>
-    <div class="path"></div>
+    <section class="main-layout">
+      <aside class="left-stack">
+        <div class="panel welcome">
+          <h2>Welcome, Adventurer!</h2>
+          <p>
+            Enter the Kingdom of Redvyr. Build your camp, complete quests,
+            collect gear, join kingdoms, and grow stronger every day.
+          </p>
+        </div>
 
-    <main class="layout">
-      <section class="left-panel">
-        <div class="sign">
-          <div class="brand">
-            <small>The Kingdom of</small>
-            <h1>REDVYR</h1>
-            <div class="tagline">BUILD • EXPLORE • BELONG</div>
-          </div>
+        <div class="panel world-card">
+          <div class="label">Player Name</div>
+          <input id="nameInput" placeholder="Guest" maxlength="16" />
 
-          <div class="parchment">
-            <h2>Welcome, Adventurer!</h2>
-            <p>
-              Enter a cozy online kingdom where players explore, complete quests,
-              join guilds, collect gear, and help build the world of Redvyr.
-            </p>
-          </div>
+          <div class="label">World</div>
+          <select id="worldSelect">
+            <option>Redvyr Preview Realm</option>
+            <option>Forest Test Realm</option>
+            <option>Kingdom Social Realm</option>
+          </select>
 
-          <div class="world-box">
-            <label for="world">WORLD</label>
-            <select id="world">
-              <option>Redvyr Preview Realm</option>
-              <option>Forest Test Realm</option>
-              <option>Kingdom Social Realm</option>
-            </select>
-
-            <div class="status">
-              <span>Preview Build v0.1</span>
-              <span class="dot"></span>
-            </div>
+          <div class="status-row">
+            <span>Preview Build v0.2</span>
+            <span class="dot"></span>
           </div>
         </div>
-      </section>
+
+        <div class="panel news-card">
+          <h3>News</h3>
+          <ul>
+            <li><b>Dev Update:</b> Homepage preview now has working menu buttons.</li>
+            <li><b>Coming Soon:</b> Accounts, inventory, daily rewards, and kingdoms.</li>
+            <li><b>Goal:</b> Make Redvyr feel like a cozy browser RPG world.</li>
+          </ul>
+        </div>
+      </aside>
 
       <section class="center-stage">
-        <div class="mascot-card">
-          <div class="spark one"></div>
-          <div class="spark two"></div>
-          <div class="spark three"></div>
-
-          <div class="mascot-fallback">
-            <div class="cape"></div>
-            <div class="sword"></div>
-            <div class="hair"></div>
-            <div class="head"></div>
-            <div class="eye left"></div>
-            <div class="eye right"></div>
-            <div class="mouth"></div>
-            <div class="body"></div>
-            <div class="leg left"></div>
-            <div class="leg right"></div>
-          </div>
+        <div class="title">
+          <h1>REDVYR <span>KINGDOMS</span></h1>
+          <p>Build • Explore • Fight • Belong</p>
         </div>
 
-        <div class="hint">Preview homepage only — gameplay coming soon</div>
+        <img class="mascot" src="assets/mascot.png" alt="Redvyr Mascot" />
+
+        <button class="main-play" onclick="playPreview()">⚔ PLAY</button>
+
+        <div class="quick-buttons">
+          <button class="game-btn" onclick="openModal('Quests')">
+            <span class="icon">📜</span>
+            <span>
+              <strong>Quests</strong>
+              <small>Accept adventures</small>
+            </span>
+          </button>
+
+          <button class="game-btn" onclick="openModal('Kingdoms')">
+            <span class="icon">🏰</span>
+            <span>
+              <strong>Kingdoms</strong>
+              <small>Join friends</small>
+            </span>
+          </button>
+
+          <button class="game-btn" onclick="openModal('Shop')">
+            <span class="icon">💰</span>
+            <span>
+              <strong>Shop</strong>
+              <small>Gear and cosmetics</small>
+            </span>
+          </button>
+
+          <button class="game-btn" onclick="openModal('Inventory')">
+            <span class="icon">🎒</span>
+            <span>
+              <strong>Inventory</strong>
+              <small>Your items</small>
+            </span>
+          </button>
+        </div>
       </section>
 
-      <section class="menu">
-        <div class="profile">
-          <div class="avatar">♞</div>
+      <aside class="right-stack">
+        <div class="panel profile">
+          <div class="avatar">🧑</div>
           <div>
-            <h3>Hero of Redvyr</h3>
-            <p>Novice Adventurer · 250 coins · 15 gems</p>
+            <strong id="profileName">Guest Hero</strong>
+            <span>Novice Adventurer · 250 coins · 15 gems</span>
           </div>
           <div class="level">1</div>
         </div>
 
-        <button class="btn play" onclick="previewAction('Play')">
-          <strong>⚔ PLAY</strong>
-          <span>Begin your journey</span>
-        </button>
+        <div class="panel leaderboard">
+          <h3>Top Kingdoms</h3>
 
-        <button class="btn" onclick="previewAction('Explore')">
-          <strong>🗺 EXPLORE</strong>
-          <span>Discover the kingdom</span>
-        </button>
+          <div class="leader-row">
+            <span>#1 Ravencrest</span>
+            <span>12,450</span>
+          </div>
 
-        <button class="btn" onclick="previewAction('Quests')">
-          <strong>📜 QUESTS</strong>
-          <span>Accept adventures</span>
-        </button>
+          <div class="leader-row">
+            <span>#2 Ironwatch</span>
+            <span>10,880</span>
+          </div>
 
-        <button class="btn" onclick="previewAction('Guild')">
-          <strong>🛡 GUILD</strong>
-          <span>Join friends and build together</span>
-        </button>
+          <div class="leader-row">
+            <span>#3 Ashen Order</span>
+            <span>9,320</span>
+          </div>
 
-        <button class="btn" onclick="previewAction('Shop')">
-          <strong>💰 SHOP</strong>
-          <span>Gear, cosmetics, and more</span>
-        </button>
+          <div class="leader-row">
+            <span>#4 Northguard</span>
+            <span>7,995</span>
+          </div>
 
-        <div class="bottom-actions">
-          <button class="mini-btn" onclick="previewAction('News')">📣 News</button>
-          <button class="mini-btn" onclick="previewAction('Settings')">⚙ Settings</button>
+          <div class="leader-row">
+            <span>#5 Redvyr Guard</span>
+            <span>7,200</span>
+          </div>
         </div>
-      </section>
-    </main>
 
-    <div id="toast" class="toast">Preview button clicked</div>
+        <div class="panel social">
+          <h3>Connect</h3>
+          <p>Join the community for updates, events, previews, and future testing.</p>
+
+          <div class="social-row">
+            <button onclick="openModal('Discord')">Discord</button>
+            <button onclick="openModal('YouTube')">YouTube</button>
+            <button onclick="openModal('X / Twitter')">X</button>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <nav class="bottom-bar">
+      <button onclick="openModal('Roadmap')">Roadmap</button>
+      <button onclick="openModal('Settings')">Settings</button>
+      <button onclick="openModal('Credits')">Credits</button>
+      <button onclick="openModal('Support')">Support</button>
+    </nav>
+  </main>
+
+  <div id="modalBackdrop" class="modal-backdrop" onclick="closeModal(event)">
+    <div class="modal">
+      <h2 id="modalTitle">Title</h2>
+      <p id="modalText">Text</p>
+
+      <div class="modal-actions">
+        <button class="close-btn" onclick="hideModal()">Close</button>
+        <button class="confirm-btn" onclick="toast('This feature is coming soon.')">Coming Soon</button>
+      </div>
+    </div>
   </div>
 
+  <div id="toast" class="toast">Message</div>
+
   <script>
-    function previewAction(name) {
-      const toast = document.getElementById("toast");
-      toast.textContent = name + " is a preview button for now.";
-      toast.classList.add("show");
+    const nameInput = document.getElementById("nameInput");
+    const profileName = document.getElementById("profileName");
+
+    nameInput.addEventListener("input", () => {
+      const cleanName = nameInput.value.trim();
+      profileName.textContent = cleanName ? cleanName : "Guest Hero";
+      localStorage.setItem("redvyrName", cleanName);
+    });
+
+    window.addEventListener("load", () => {
+      const savedName = localStorage.getItem("redvyrName");
+      if (savedName) {
+        nameInput.value = savedName;
+        profileName.textContent = savedName;
+      }
+    });
+
+    const modalData = {
+      "Login": "Login will let players save their inventory, coins, cosmetics, daily rewards, and kingdom progress. For now, this is only a preview.",
+      "Create Account": "Accounts are planned for the next stage. Players will be able to create a profile and keep their progress.",
+      "Quests": "Quests will give players simple goals like defeat enemies, collect resources, find treasure, and help NPCs.",
+      "Kingdoms": "Kingdoms will let players join groups, build together, donate resources, and climb seasonal leaderboards.",
+      "Shop": "The shop will include gear, cosmetics, pets, boosts, and supporter items. The goal is fair cosmetics first, not pay-to-win.",
+      "Inventory": "Inventory will store weapons, armor, resources, cosmetics, chests, and daily rewards.",
+      "Discord": "Add your Discord invite link here later.",
+      "YouTube": "Add your YouTube channel link here later.",
+      "X / Twitter": "Add your X or Twitter link here later.",
+      "Roadmap": "Roadmap: homepage preview → accounts → inventory → daily rewards → quests → kingdoms → playable world.",
+      "Settings": "Settings will include sound, graphics, account options, and accessibility options later.",
+      "Credits": "Redvyr Kingdoms is a browser game project by Redvyr.",
+      "Support": "Support options can include Discord, donations, premium cosmetics, or a founder pack later."
+    };
+
+    function openModal(title) {
+      document.getElementById("modalTitle").textContent = title;
+      document.getElementById("modalText").textContent = modalData[title] || "This feature is coming soon.";
+      document.getElementById("modalBackdrop").classList.add("show");
+    }
+
+    function hideModal() {
+      document.getElementById("modalBackdrop").classList.remove("show");
+    }
+
+    function closeModal(event) {
+      if (event.target.id === "modalBackdrop") {
+        hideModal();
+      }
+    }
+
+    function playPreview() {
+      const name = nameInput.value.trim() || "Guest Hero";
+      const world = document.getElementById("worldSelect").value;
+      toast("Joining " + world + " as " + name + "... gameplay coming soon.");
+    }
+
+    function toast(message) {
+      const toastBox = document.getElementById("toast");
+      toastBox.textContent = message;
+      toastBox.classList.add("show");
 
       setTimeout(() => {
-        toast.classList.remove("show");
-      }, 1800);
+        toastBox.classList.remove("show");
+      }, 2200);
     }
   </script>
 </body>
