@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Redvyr Kingdoms</title>
+  <title>Redvyr</title>
 
   <style>
     * {
@@ -12,564 +12,151 @@
       padding: 0;
     }
 
-    :root {
-      --red: #9f1f17;
-      --red2: #d2412c;
-      --gold: #f2c35f;
-      --cream: #fff0c8;
-      --dark: #160b05;
-      --wood: #4a2612;
-      --panel: rgba(23, 12, 6, 0.86);
-    }
-
     body {
       min-height: 100vh;
       font-family: Arial, Helvetica, sans-serif;
-      background: #100804;
-      color: var(--cream);
+      background: #120804;
+      color: #fff0c8;
       overflow: hidden;
     }
 
-    .screen {
+    .home {
       position: relative;
       width: 100vw;
       height: 100vh;
       background-image:
-        linear-gradient(to bottom, rgba(0,0,0,0.08), rgba(0,0,0,0.35)),
-        url("assets/background.png");
+        linear-gradient(to bottom, rgba(0,0,0,0.05), rgba(0,0,0,0.35)),
+        url("backround.png");
       background-size: cover;
       background-position: center;
-      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 32px;
     }
 
-    .screen::after {
-      content: "";
+    .overlay {
       position: absolute;
       inset: 0;
-      background:
-        radial-gradient(circle at 50% 45%, transparent 0 35%, rgba(0,0,0,0.25) 75%),
-        linear-gradient(to right, rgba(0,0,0,0.35), transparent 25%, transparent 75%, rgba(0,0,0,0.35));
+      background: radial-gradient(circle at center, transparent 35%, rgba(0,0,0,0.28));
       pointer-events: none;
-      z-index: 1;
     }
 
-    .top-bar {
-      position: absolute;
-      top: 18px;
-      left: 24px;
-      right: 24px;
-      height: 74px;
-      z-index: 5;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 18px;
-    }
-
-    .logo-box {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      padding: 12px 20px;
-      background: rgba(24, 12, 5, 0.84);
-      border: 3px solid rgba(242, 195, 95, 0.55);
-      border-radius: 12px;
-      box-shadow: 0 8px 0 rgba(0,0,0,0.25);
-    }
-
-    .crest {
-      width: 42px;
-      height: 48px;
-      background: linear-gradient(#c53124, #6d130d);
-      border: 3px solid var(--gold);
-      border-radius: 6px 6px 14px 14px;
-      display: grid;
-      place-items: center;
-      font-size: 25px;
-      box-shadow: inset 0 0 0 2px rgba(255,255,255,0.08);
-    }
-
-    .logo-text strong {
-      display: block;
-      font-family: Georgia, "Times New Roman", serif;
-      font-size: 28px;
-      line-height: 0.9;
-      letter-spacing: 1px;
-      color: #ffe4a6;
-      text-shadow: 2px 2px 0 #50120b;
-    }
-
-    .logo-text span {
-      font-size: 12px;
-      font-weight: 900;
-      letter-spacing: 4px;
-      color: var(--gold);
-    }
-
-    .top-buttons {
-      display: flex;
-      gap: 10px;
-    }
-
-    .small-btn {
-      cursor: pointer;
-      border: 2px solid rgba(242,195,95,0.55);
-      border-radius: 10px;
-      padding: 12px 16px;
-      background: rgba(24, 12, 5, 0.84);
-      color: var(--cream);
-      font-weight: 900;
-      box-shadow: 0 5px 0 rgba(0,0,0,0.25);
-      transition: 0.15s;
-    }
-
-    .small-btn:hover {
-      transform: translateY(-2px);
-      filter: brightness(1.16);
-    }
-
-    .main-layout {
+    .content {
       position: relative;
-      z-index: 4;
-      width: 100%;
-      height: 100%;
+      z-index: 2;
       display: grid;
-      grid-template-columns: 360px 1fr 360px;
-      gap: 24px;
-      padding: 110px 32px 34px;
+      grid-template-columns: 1fr 320px;
+      gap: 40px;
+      align-items: center;
+      width: min(1050px, 100%);
     }
 
-    .panel {
-      background: var(--panel);
-      border: 3px solid rgba(242,195,95,0.52);
-      border-radius: 14px;
-      box-shadow: 0 10px 0 rgba(0,0,0,0.24), 0 16px 40px rgba(0,0,0,0.36);
+    .left {
+      max-width: 520px;
+      background: rgba(25, 12, 5, 0.72);
+      border: 2px solid rgba(242, 195, 95, 0.5);
+      border-radius: 16px;
+      padding: 26px;
       backdrop-filter: blur(4px);
+      box-shadow: 0 12px 35px rgba(0,0,0,0.35);
     }
 
-    .left-stack, .right-stack {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .welcome {
-      padding: 22px;
-    }
-
-    .welcome h2 {
+    .logo {
       font-family: Georgia, "Times New Roman", serif;
-      color: var(--gold);
-      font-size: 28px;
-      margin-bottom: 12px;
+      font-size: clamp(50px, 7vw, 82px);
+      line-height: 0.9;
+      color: #ffe4a6;
+      text-shadow: 4px 4px 0 #55130c;
+      letter-spacing: 2px;
     }
 
-    .welcome p {
-      color: rgba(255,240,200,0.82);
-      line-height: 1.55;
-      font-size: 15px;
+    .logo span {
+      display: block;
+      color: #d33a2a;
+    }
+
+    .tagline {
+      margin-top: 14px;
+      color: #f2c35f;
+      font-weight: 900;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      font-size: 14px;
+    }
+
+    .desc {
+      margin-top: 18px;
+      color: rgba(255, 240, 200, 0.86);
+      line-height: 1.6;
+      font-size: 16px;
       font-weight: 700;
     }
 
-    .world-card {
-      padding: 18px;
-    }
-
-    .label {
-      color: var(--gold);
-      font-size: 12px;
-      font-weight: 900;
-      letter-spacing: 1px;
-      margin-bottom: 8px;
-      text-transform: uppercase;
-    }
-
-    input, select {
-      width: 100%;
-      padding: 13px;
-      border-radius: 9px;
-      border: 2px solid rgba(242,195,95,0.45);
-      background: rgba(0,0,0,0.35);
-      color: var(--cream);
-      font-weight: 800;
-      outline: none;
-      margin-bottom: 10px;
-    }
-
-    .status-row {
+    .buttons {
       display: flex;
-      align-items: center;
-      justify-content: space-between;
-      color: rgba(255,240,200,0.75);
-      font-size: 13px;
-      font-weight: 800;
-      margin-top: 4px;
-    }
-
-    .dot {
-      width: 11px;
-      height: 11px;
-      background: #4ee34a;
-      border-radius: 50%;
-      box-shadow: 0 0 12px #4ee34a;
-    }
-
-    .news-card {
-      padding: 18px;
-      flex: 1;
-    }
-
-    .news-card h3,
-    .leaderboard h3 {
-      color: var(--gold);
-      font-family: Georgia, "Times New Roman", serif;
-      font-size: 24px;
-      margin-bottom: 12px;
-    }
-
-    .news-card ul {
-      list-style: none;
-    }
-
-    .news-card li {
-      padding: 11px 0;
-      border-bottom: 1px solid rgba(242,195,95,0.16);
-      color: rgba(255,240,200,0.8);
-      font-size: 14px;
-      line-height: 1.35;
-    }
-
-    .center-stage {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: end;
-      padding-bottom: 18px;
-      text-align: center;
-    }
-
-    .title {
-      margin-bottom: 18px;
-      text-shadow: 0 5px 0 rgba(0,0,0,0.35), 0 0 20px rgba(0,0,0,0.6);
-    }
-
-    .title h1 {
-      font-family: Georgia, "Times New Roman", serif;
-      font-size: clamp(56px, 6vw, 92px);
-      line-height: 0.9;
-      color: #ffe4a6;
-      letter-spacing: 2px;
-    }
-
-    .title span {
-      color: var(--red2);
-    }
-
-    .title p {
-      margin-top: 12px;
-      font-size: 18px;
-      color: #ffeec9;
-      font-weight: 900;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-    }
-
-    .mascot {
-      width: min(270px, 32vw);
-      max-height: 38vh;
-      object-fit: contain;
-      filter: drop-shadow(0 18px 18px rgba(0,0,0,0.55));
-      animation: bob 3.2s ease-in-out infinite;
-      margin-bottom: 12px;
-    }
-
-    @keyframes bob {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-9px); }
-    }
-
-    .main-play {
-      cursor: pointer;
-      min-width: 320px;
-      border: 4px solid var(--gold);
-      border-radius: 13px;
-      padding: 18px 34px;
-      background: linear-gradient(#d4422c, #85170f);
-      color: white;
-      font-family: Georgia, "Times New Roman", serif;
-      font-size: 38px;
-      font-weight: 900;
-      letter-spacing: 2px;
-      box-shadow: 0 8px 0 #3a0a06, 0 14px 24px rgba(0,0,0,0.42);
-      transition: 0.15s;
-    }
-
-    .main-play:hover {
-      transform: translateY(-4px) scale(1.02);
-      filter: brightness(1.15);
-    }
-
-    .main-play:active {
-      transform: translateY(4px);
-      box-shadow: 0 3px 0 #3a0a06;
-    }
-
-    .quick-buttons {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(150px, 1fr));
       gap: 12px;
-      margin-top: 14px;
-      width: min(520px, 100%);
-    }
-
-    .game-btn {
-      cursor: pointer;
-      border: 3px solid rgba(242,195,95,0.55);
-      border-radius: 12px;
-      padding: 14px 16px;
-      background: linear-gradient(#5d3519, #241006);
-      color: var(--cream);
-      font-weight: 900;
-      box-shadow: 0 6px 0 rgba(0,0,0,0.32);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      transition: 0.15s;
-      text-align: left;
-    }
-
-    .game-btn:hover {
-      transform: translateY(-3px);
-      filter: brightness(1.18);
-    }
-
-    .game-btn .icon {
-      width: 42px;
-      height: 42px;
-      border-radius: 10px;
-      display: grid;
-      place-items: center;
-      background: rgba(0,0,0,0.28);
-      border: 2px solid rgba(242,195,95,0.45);
-      font-size: 24px;
-    }
-
-    .game-btn strong {
-      display: block;
-      font-size: 17px;
-    }
-
-    .game-btn small {
-      color: rgba(255,240,200,0.7);
-      font-weight: 800;
-    }
-
-    .profile {
-      padding: 16px;
-      display: grid;
-      grid-template-columns: 56px 1fr 46px;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .avatar {
-      width: 56px;
-      height: 56px;
-      border-radius: 10px;
-      background: linear-gradient(#ba2b20, #6c130e);
-      border: 3px solid var(--gold);
-      display: grid;
-      place-items: center;
-      font-size: 27px;
-    }
-
-    .profile strong {
-      display: block;
-      color: #ffe3a3;
-      font-size: 16px;
-    }
-
-    .profile span {
-      color: rgba(255,240,200,0.68);
-      font-size: 13px;
-      font-weight: 800;
-    }
-
-    .level {
-      width: 44px;
-      height: 44px;
-      display: grid;
-      place-items: center;
-      border-radius: 50%;
-      background: var(--red);
-      border: 3px solid var(--gold);
-      font-weight: 900;
-    }
-
-    .leaderboard {
-      padding: 20px;
-    }
-
-    .leader-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 11px 0;
-      border-bottom: 1px solid rgba(242,195,95,0.16);
-      font-size: 14px;
-      font-weight: 800;
-    }
-
-    .leader-row:last-child {
-      border-bottom: none;
-    }
-
-    .leader-row span:first-child {
-      color: rgba(255,240,200,0.82);
-    }
-
-    .leader-row span:last-child {
-      color: var(--gold);
-    }
-
-    .social {
-      padding: 18px;
-    }
-
-    .social h3 {
-      color: var(--gold);
-      font-size: 21px;
-      margin-bottom: 8px;
-      font-family: Georgia, "Times New Roman", serif;
-    }
-
-    .social p {
-      color: rgba(255,240,200,0.78);
-      font-size: 14px;
-      line-height: 1.4;
-      margin-bottom: 14px;
-    }
-
-    .social-row {
-      display: flex;
-      gap: 10px;
-    }
-
-    .social-row button {
-      cursor: pointer;
-      flex: 1;
-      padding: 12px;
-      border-radius: 10px;
-      border: 2px solid rgba(242,195,95,0.5);
-      background: rgba(0,0,0,0.28);
-      color: white;
-      font-weight: 900;
-      transition: 0.15s;
-    }
-
-    .social-row button:hover {
-      transform: translateY(-2px);
-      filter: brightness(1.2);
-    }
-
-    .bottom-bar {
-      position: absolute;
-      left: 50%;
-      bottom: 18px;
-      transform: translateX(-50%);
-      z-index: 6;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 18px;
-      background: rgba(23, 12, 6, 0.86);
-      border: 3px solid rgba(242,195,95,0.5);
-      border-radius: 12px;
-      box-shadow: 0 8px 0 rgba(0,0,0,0.24);
-    }
-
-    .bottom-bar button {
-      cursor: pointer;
-      border: none;
-      border-radius: 9px;
-      padding: 10px 14px;
-      color: var(--cream);
-      background: rgba(255,255,255,0.08);
-      font-weight: 900;
-      transition: 0.15s;
-    }
-
-    .bottom-bar button:hover {
-      background: rgba(255,255,255,0.16);
-      transform: translateY(-2px);
-    }
-
-    .modal-backdrop {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.65);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 50;
-      padding: 20px;
-    }
-
-    .modal-backdrop.show {
-      display: flex;
-    }
-
-    .modal {
-      width: min(520px, 100%);
-      background: #241106;
-      border: 4px solid var(--gold);
-      border-radius: 16px;
-      box-shadow: 0 20px 80px rgba(0,0,0,0.65);
-      padding: 24px;
-      color: var(--cream);
-      animation: pop 0.18s ease;
-    }
-
-    @keyframes pop {
-      from { transform: scale(0.92); opacity: 0; }
-      to { transform: scale(1); opacity: 1; }
-    }
-
-    .modal h2 {
-      color: var(--gold);
-      font-family: Georgia, "Times New Roman", serif;
-      font-size: 32px;
-      margin-bottom: 10px;
-    }
-
-    .modal p {
-      color: rgba(255,240,200,0.78);
-      line-height: 1.55;
-      margin-bottom: 18px;
-    }
-
-    .modal-actions {
-      display: flex;
-      gap: 10px;
-      justify-content: flex-end;
+      margin-top: 24px;
       flex-wrap: wrap;
     }
 
-    .modal-actions button {
+    button {
       cursor: pointer;
-      border-radius: 9px;
-      padding: 12px 16px;
-      border: 2px solid rgba(242,195,95,0.55);
+      border: none;
+      border-radius: 10px;
+      padding: 13px 20px;
       font-weight: 900;
+      transition: 0.15s;
     }
 
-    .close-btn {
-      background: rgba(255,255,255,0.08);
-      color: var(--cream);
-    }
-
-    .confirm-btn {
-      background: linear-gradient(#d4422c, #85170f);
+    .play {
+      background: linear-gradient(#d9442e, #8e1c13);
       color: white;
+      border: 2px solid #f2c35f;
+      box-shadow: 0 5px 0 #3b0a05;
+    }
+
+    .info {
+      background: rgba(0,0,0,0.45);
+      color: #fff0c8;
+      border: 2px solid rgba(242, 195, 95, 0.45);
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.12);
+    }
+
+    .mascot-wrap {
+      text-align: center;
+    }
+
+    .mascot {
+      width: 300px;
+      max-width: 100%;
+      filter: drop-shadow(0 18px 18px rgba(0,0,0,0.55));
+      animation: floaty 3.5s ease-in-out infinite;
+    }
+
+    @keyframes floaty {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-8px);
+      }
+    }
+
+    .small-note {
+      margin-top: 12px;
+      display: inline-block;
+      background: rgba(0,0,0,0.55);
+      border: 1px solid rgba(242, 195, 95, 0.45);
+      border-radius: 999px;
+      padding: 9px 14px;
+      color: #ffe7b0;
+      font-size: 13px;
+      font-weight: 800;
     }
 
     .toast {
@@ -577,342 +164,88 @@
       left: 50%;
       bottom: 24px;
       transform: translateX(-50%) translateY(120px);
-      z-index: 80;
-      padding: 14px 22px;
-      background: #190c05;
-      border: 3px solid var(--gold);
-      border-radius: 12px;
-      color: var(--cream);
+      background: #160b05;
+      color: #fff0c8;
+      border: 2px solid #f2c35f;
+      border-radius: 10px;
+      padding: 12px 18px;
       font-weight: 900;
       transition: 0.25s;
-      box-shadow: 0 14px 40px rgba(0,0,0,0.5);
+      z-index: 10;
     }
 
     .toast.show {
       transform: translateX(-50%) translateY(0);
     }
 
-    @media (max-width: 1120px) {
+    @media (max-width: 800px) {
       body {
         overflow: auto;
       }
 
-      .screen {
+      .home {
         min-height: 100vh;
         height: auto;
-        overflow: visible;
       }
 
-      .top-bar {
-        position: relative;
-        left: auto;
-        right: auto;
-        top: auto;
-        padding: 16px;
-        height: auto;
-      }
-
-      .main-layout {
+      .content {
         grid-template-columns: 1fr;
-        padding: 20px;
+        text-align: center;
       }
 
-      .center-stage {
-        order: -1;
-        min-height: 560px;
+      .left {
+        margin: 0 auto;
+      }
+
+      .buttons {
         justify-content: center;
       }
 
       .mascot {
-        width: 250px;
-        max-height: none;
-      }
-
-      .right-stack, .left-stack {
-        max-width: 700px;
-        width: 100%;
-        margin: 0 auto;
-      }
-
-      .bottom-bar {
-        position: relative;
-        left: auto;
-        bottom: auto;
-        transform: none;
-        width: fit-content;
-        margin: 20px auto;
-      }
-    }
-
-    @media (max-width: 620px) {
-      .top-bar {
-        flex-direction: column;
-        align-items: stretch;
-      }
-
-      .top-buttons {
-        justify-content: center;
-      }
-
-      .title h1 {
-        font-size: 48px;
-      }
-
-      .main-play {
-        min-width: 0;
-        width: 100%;
-        font-size: 30px;
-      }
-
-      .quick-buttons {
-        grid-template-columns: 1fr;
-      }
-
-      .bottom-bar {
-        flex-wrap: wrap;
-        justify-content: center;
+        width: 230px;
       }
     }
   </style>
 </head>
 
 <body>
-  <main class="screen">
-    <header class="top-bar">
-      <div class="logo-box">
-        <div class="crest">♕</div>
-        <div class="logo-text">
-          <strong>REDVYR</strong>
-          <span>KINGDOMS</span>
+  <main class="home">
+    <div class="overlay"></div>
+
+    <section class="content">
+      <div class="left">
+        <h1 class="logo">REDVYR <span>KINGDOMS</span></h1>
+        <div class="tagline">Build • Explore • Belong</div>
+
+        <p class="desc">
+          A cozy browser kingdom adventure. Build your camp, complete quests,
+          collect gear, and grow your legend in the world of Redvyr.
+        </p>
+
+        <div class="buttons">
+          <button class="play" onclick="showMessage('Gameplay coming soon.')">Play Preview</button>
+          <button class="info" onclick="showMessage('Quests, kingdoms, accounts, and inventory are planned.')">What is this?</button>
         </div>
       </div>
 
-      <div class="top-buttons">
-        <button class="small-btn" onclick="openModal('Login')">Log In</button>
-        <button class="small-btn" onclick="openModal('Create Account')">Sign Up</button>
+      <div class="mascot-wrap">
+        <img class="mascot" src="mascot.png" alt="Redvyr mascot">
+        <div class="small-note">Preview site only</div>
       </div>
-    </header>
-
-    <section class="main-layout">
-      <aside class="left-stack">
-        <div class="panel welcome">
-          <h2>Welcome, Adventurer!</h2>
-          <p>
-            Enter the Kingdom of Redvyr. Build your camp, complete quests,
-            collect gear, join kingdoms, and grow stronger every day.
-          </p>
-        </div>
-
-        <div class="panel world-card">
-          <div class="label">Player Name</div>
-          <input id="nameInput" placeholder="Guest" maxlength="16" />
-
-          <div class="label">World</div>
-          <select id="worldSelect">
-            <option>Redvyr Preview Realm</option>
-            <option>Forest Test Realm</option>
-            <option>Kingdom Social Realm</option>
-          </select>
-
-          <div class="status-row">
-            <span>Preview Build v0.2</span>
-            <span class="dot"></span>
-          </div>
-        </div>
-
-        <div class="panel news-card">
-          <h3>News</h3>
-          <ul>
-            <li><b>Dev Update:</b> Homepage preview now has working menu buttons.</li>
-            <li><b>Coming Soon:</b> Accounts, inventory, daily rewards, and kingdoms.</li>
-            <li><b>Goal:</b> Make Redvyr feel like a cozy browser RPG world.</li>
-          </ul>
-        </div>
-      </aside>
-
-      <section class="center-stage">
-        <div class="title">
-          <h1>REDVYR <span>KINGDOMS</span></h1>
-          <p>Build • Explore • Fight • Belong</p>
-        </div>
-
-        <img class="mascot" src="assets/mascot.png" alt="Redvyr Mascot" />
-
-        <button class="main-play" onclick="playPreview()">⚔ PLAY</button>
-
-        <div class="quick-buttons">
-          <button class="game-btn" onclick="openModal('Quests')">
-            <span class="icon">📜</span>
-            <span>
-              <strong>Quests</strong>
-              <small>Accept adventures</small>
-            </span>
-          </button>
-
-          <button class="game-btn" onclick="openModal('Kingdoms')">
-            <span class="icon">🏰</span>
-            <span>
-              <strong>Kingdoms</strong>
-              <small>Join friends</small>
-            </span>
-          </button>
-
-          <button class="game-btn" onclick="openModal('Shop')">
-            <span class="icon">💰</span>
-            <span>
-              <strong>Shop</strong>
-              <small>Gear and cosmetics</small>
-            </span>
-          </button>
-
-          <button class="game-btn" onclick="openModal('Inventory')">
-            <span class="icon">🎒</span>
-            <span>
-              <strong>Inventory</strong>
-              <small>Your items</small>
-            </span>
-          </button>
-        </div>
-      </section>
-
-      <aside class="right-stack">
-        <div class="panel profile">
-          <div class="avatar">🧑</div>
-          <div>
-            <strong id="profileName">Guest Hero</strong>
-            <span>Novice Adventurer · 250 coins · 15 gems</span>
-          </div>
-          <div class="level">1</div>
-        </div>
-
-        <div class="panel leaderboard">
-          <h3>Top Kingdoms</h3>
-
-          <div class="leader-row">
-            <span>#1 Ravencrest</span>
-            <span>12,450</span>
-          </div>
-
-          <div class="leader-row">
-            <span>#2 Ironwatch</span>
-            <span>10,880</span>
-          </div>
-
-          <div class="leader-row">
-            <span>#3 Ashen Order</span>
-            <span>9,320</span>
-          </div>
-
-          <div class="leader-row">
-            <span>#4 Northguard</span>
-            <span>7,995</span>
-          </div>
-
-          <div class="leader-row">
-            <span>#5 Redvyr Guard</span>
-            <span>7,200</span>
-          </div>
-        </div>
-
-        <div class="panel social">
-          <h3>Connect</h3>
-          <p>Join the community for updates, events, previews, and future testing.</p>
-
-          <div class="social-row">
-            <button onclick="openModal('Discord')">Discord</button>
-            <button onclick="openModal('YouTube')">YouTube</button>
-            <button onclick="openModal('X / Twitter')">X</button>
-          </div>
-        </div>
-      </aside>
     </section>
-
-    <nav class="bottom-bar">
-      <button onclick="openModal('Roadmap')">Roadmap</button>
-      <button onclick="openModal('Settings')">Settings</button>
-      <button onclick="openModal('Credits')">Credits</button>
-      <button onclick="openModal('Support')">Support</button>
-    </nav>
   </main>
-
-  <div id="modalBackdrop" class="modal-backdrop" onclick="closeModal(event)">
-    <div class="modal">
-      <h2 id="modalTitle">Title</h2>
-      <p id="modalText">Text</p>
-
-      <div class="modal-actions">
-        <button class="close-btn" onclick="hideModal()">Close</button>
-        <button class="confirm-btn" onclick="toast('This feature is coming soon.')">Coming Soon</button>
-      </div>
-    </div>
-  </div>
 
   <div id="toast" class="toast">Message</div>
 
   <script>
-    const nameInput = document.getElementById("nameInput");
-    const profileName = document.getElementById("profileName");
-
-    nameInput.addEventListener("input", () => {
-      const cleanName = nameInput.value.trim();
-      profileName.textContent = cleanName ? cleanName : "Guest Hero";
-      localStorage.setItem("redvyrName", cleanName);
-    });
-
-    window.addEventListener("load", () => {
-      const savedName = localStorage.getItem("redvyrName");
-      if (savedName) {
-        nameInput.value = savedName;
-        profileName.textContent = savedName;
-      }
-    });
-
-    const modalData = {
-      "Login": "Login will let players save their inventory, coins, cosmetics, daily rewards, and kingdom progress. For now, this is only a preview.",
-      "Create Account": "Accounts are planned for the next stage. Players will be able to create a profile and keep their progress.",
-      "Quests": "Quests will give players simple goals like defeat enemies, collect resources, find treasure, and help NPCs.",
-      "Kingdoms": "Kingdoms will let players join groups, build together, donate resources, and climb seasonal leaderboards.",
-      "Shop": "The shop will include gear, cosmetics, pets, boosts, and supporter items. The goal is fair cosmetics first, not pay-to-win.",
-      "Inventory": "Inventory will store weapons, armor, resources, cosmetics, chests, and daily rewards.",
-      "Discord": "Add your Discord invite link here later.",
-      "YouTube": "Add your YouTube channel link here later.",
-      "X / Twitter": "Add your X or Twitter link here later.",
-      "Roadmap": "Roadmap: homepage preview → accounts → inventory → daily rewards → quests → kingdoms → playable world.",
-      "Settings": "Settings will include sound, graphics, account options, and accessibility options later.",
-      "Credits": "Redvyr Kingdoms is a browser game project by Redvyr.",
-      "Support": "Support options can include Discord, donations, premium cosmetics, or a founder pack later."
-    };
-
-    function openModal(title) {
-      document.getElementById("modalTitle").textContent = title;
-      document.getElementById("modalText").textContent = modalData[title] || "This feature is coming soon.";
-      document.getElementById("modalBackdrop").classList.add("show");
-    }
-
-    function hideModal() {
-      document.getElementById("modalBackdrop").classList.remove("show");
-    }
-
-    function closeModal(event) {
-      if (event.target.id === "modalBackdrop") {
-        hideModal();
-      }
-    }
-
-    function playPreview() {
-      const name = nameInput.value.trim() || "Guest Hero";
-      const world = document.getElementById("worldSelect").value;
-      toast("Joining " + world + " as " + name + "... gameplay coming soon.");
-    }
-
-    function toast(message) {
-      const toastBox = document.getElementById("toast");
-      toastBox.textContent = message;
-      toastBox.classList.add("show");
+    function showMessage(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("show");
 
       setTimeout(() => {
-        toastBox.classList.remove("show");
-      }, 2200);
+        toast.classList.remove("show");
+      }, 2000);
     }
   </script>
 </body>
