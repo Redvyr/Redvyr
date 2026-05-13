@@ -3,444 +3,790 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Redvyr Kingdoms</title>
+  <title>Redvyr - The Kingdom Awaits</title>
 
   <style>
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
-      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    :root {
+      --red: #9d241c;
+      --red-dark: #5e1511;
+      --gold: #e2b45b;
+      --cream: #f6e4bd;
+      --wood: #4a2a16;
+      --wood-light: #7a4721;
+      --ink: #22130a;
+      --green: #233b22;
     }
 
     body {
       min-height: 100vh;
-      color: white;
-      overflow: hidden;
-      background-color: #17240f;
-      background-image:
-        linear-gradient(#243a18 2px, transparent 2px),
-        linear-gradient(90deg, #243a18 2px, transparent 2px);
-      background-size: 48px 48px;
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--cream);
+      overflow-x: hidden;
+      background:
+        radial-gradient(circle at 50% 20%, rgba(255, 230, 150, 0.18), transparent 28%),
+        linear-gradient(to bottom, #52b9ef 0%, #90d8ff 26%, #37713d 62%, #183016 100%);
     }
 
-    .bg-shape {
-      position: absolute;
-      border: 9px solid rgba(0, 0, 0, 0.55);
-      background: #29431b;
-      opacity: 0.9;
-      z-index: 0;
-    }
-
-    .rock {
-      width: 135px;
-      height: 135px;
-      right: 25%;
-      top: 20px;
-      border-radius: 50%;
-      background: #5b5b5b;
-    }
-
-    .bush-one {
-      width: 130px;
-      height: 130px;
-      left: 70px;
-      top: 180px;
-      border-radius: 35%;
-      transform: rotate(15deg);
-    }
-
-    .bush-two {
-      width: 150px;
-      height: 150px;
-      right: 90px;
-      top: 210px;
-      border-radius: 35%;
-      transform: rotate(-8deg);
-    }
-
-    .bush-three {
-      width: 180px;
-      height: 180px;
-      right: 70px;
-      bottom: -30px;
-      border-radius: 35%;
-      transform: rotate(10deg);
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+      background-size: 5px 5px;
+      opacity: 0.35;
+      z-index: 1;
     }
 
     .page {
       position: relative;
-      z-index: 2;
       min-height: 100vh;
+      padding: 24px;
+      z-index: 2;
+    }
+
+    .sky-cloud {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.85);
+      border-radius: 999px;
+      filter: blur(1px);
+      opacity: 0.9;
+      z-index: 0;
+    }
+
+    .cloud-1 {
+      width: 190px;
+      height: 45px;
+      top: 55px;
+      left: 18%;
+      box-shadow: 55px 8px 0 rgba(255,255,255,0.75), 100px -6px 0 rgba(255,255,255,0.8);
+    }
+
+    .cloud-2 {
+      width: 160px;
+      height: 38px;
+      top: 85px;
+      right: 12%;
+      box-shadow: 50px 7px 0 rgba(255,255,255,0.7), 92px -4px 0 rgba(255,255,255,0.75);
+    }
+
+    .castle {
+      position: absolute;
+      top: 95px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 430px;
+      height: 300px;
+      opacity: 0.88;
+      z-index: 0;
+    }
+
+    .tower {
+      position: absolute;
+      bottom: 0;
+      width: 72px;
+      background: #d7c49a;
+      border: 5px solid #866b48;
+      box-shadow: inset -8px 0 rgba(0,0,0,0.12);
+    }
+
+    .tower::before {
+      content: "";
+      position: absolute;
+      top: -62px;
+      left: -11px;
+      width: 0;
+      height: 0;
+      border-left: 42px solid transparent;
+      border-right: 42px solid transparent;
+      border-bottom: 64px solid #b84428;
+      filter: drop-shadow(0 5px #6b2819);
+    }
+
+    .tower.one { left: 42px; height: 185px; }
+    .tower.two { left: 176px; height: 245px; width: 82px; }
+    .tower.three { right: 42px; height: 185px; }
+
+    .castle-body {
+      position: absolute;
+      bottom: 0;
+      left: 88px;
+      width: 255px;
+      height: 160px;
+      background: #d1bd92;
+      border: 5px solid #866b48;
+      box-shadow: inset -10px 0 rgba(0,0,0,0.12);
+    }
+
+    .castle-body::after {
+      content: "";
+      position: absolute;
+      bottom: -5px;
+      left: 94px;
+      width: 70px;
+      height: 88px;
+      background: #4b2a19;
+      border: 4px solid #7e5a38;
+      border-radius: 40px 40px 0 0;
+    }
+
+    .ground {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 42%;
+      background:
+        radial-gradient(circle at 18% 92%, #6e4b2d 0 4px, transparent 5px),
+        radial-gradient(circle at 48% 84%, #88623e 0 5px, transparent 6px),
+        radial-gradient(circle at 75% 90%, #704b2e 0 4px, transparent 5px),
+        linear-gradient(to bottom, #376c38, #213f22 35%, #192e19);
+      z-index: 0;
+    }
+
+    .path {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(760px, 90vw);
+      height: 48%;
+      clip-path: polygon(42% 0, 58% 0, 82% 100%, 18% 100%);
+      background:
+        linear-gradient(90deg, rgba(0,0,0,0.08) 1px, transparent 1px),
+        linear-gradient(#cda879, #8b633e);
+      background-size: 42px 42px;
+      opacity: 0.95;
+      z-index: 0;
+    }
+
+    .layout {
+      position: relative;
+      z-index: 3;
+      min-height: calc(100vh - 48px);
       display: grid;
-      grid-template-columns: 280px 1fr 320px;
-      gap: 24px;
+      grid-template-columns: 360px minmax(280px, 1fr) 360px;
+      gap: 26px;
+      align-items: center;
+    }
+
+    .sign {
+      background:
+        linear-gradient(180deg, #6f421f, #3f220f);
+      border: 5px solid #1f1008;
+      outline: 3px solid #b07032;
+      border-radius: 10px;
+      box-shadow: 0 12px 0 rgba(0,0,0,0.25), inset 0 0 0 3px rgba(255,255,255,0.06);
       padding: 28px;
     }
 
-    .logo {
-      position: absolute;
-      top: 55px;
-      left: 50%;
-      transform: translateX(-50%);
+    .brand {
       text-align: center;
+      margin-bottom: 18px;
     }
 
-    .logo h1 {
-      font-size: 44px;
+    .brand small {
+      display: block;
+      color: var(--gold);
+      font-weight: 900;
+      letter-spacing: 2px;
+      font-size: 14px;
+      text-transform: uppercase;
+    }
+
+    .brand h1 {
+      font-size: 58px;
+      line-height: 0.95;
+      color: #c82a21;
+      text-shadow:
+        3px 3px 0 #47100c,
+        -1px -1px 0 #ffd37a;
+      letter-spacing: 1px;
+    }
+
+    .tagline {
+      margin: 18px auto 0;
+      width: fit-content;
+      padding: 10px 18px;
+      background: #2a160b;
+      border: 2px solid #b07032;
+      color: var(--gold);
       font-weight: 900;
       letter-spacing: 1px;
-      text-shadow: 0 4px 0 rgba(0, 0, 0, 0.35);
     }
 
-    .logo p {
-      margin-top: 4px;
-      color: rgba(220, 255, 190, 0.75);
+    .parchment {
+      margin-top: 22px;
+      background: #f3dcae;
+      color: #3c2412;
+      border: 4px solid #7a4721;
+      border-radius: 6px;
+      padding: 20px;
+      box-shadow: inset 0 0 24px rgba(90, 45, 10, 0.18);
+    }
+
+    .parchment h2 {
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+
+    .parchment p {
+      font-family: Arial, sans-serif;
+      font-size: 15px;
+      line-height: 1.55;
       font-weight: 700;
     }
 
-    .panel {
-      background: rgba(0, 0, 0, 0.38);
+    .world-box {
+      margin-top: 18px;
+      background: rgba(0,0,0,0.35);
+      border: 3px solid #7a4721;
       border-radius: 8px;
-      padding: 20px;
-      backdrop-filter: blur(3px);
-      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+      padding: 14px;
+      font-family: Arial, sans-serif;
     }
 
-    .left {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      padding-top: 120px;
-      padding-bottom: 10px;
-    }
-
-    .event h2 {
-      color: #d7ffb8;
-      font-size: 18px;
-      margin-bottom: 10px;
-    }
-
-    .event h3 {
-      font-size: 28px;
-      line-height: 1;
-      margin-bottom: 10px;
-    }
-
-    .event p {
-      color: rgba(255, 255, 255, 0.65);
-      font-size: 14px;
-      line-height: 1.5;
-      margin-bottom: 16px;
-    }
-
-    .event button,
-    .play-btn {
-      border: none;
-      cursor: pointer;
-      border-radius: 6px;
-      background: #42a300;
-      color: white;
-      font-weight: 800;
-      transition: 0.15s;
-    }
-
-    .event button {
-      padding: 12px 18px;
-      width: 100%;
-    }
-
-    .event button:hover,
-    .play-btn:hover {
-      background: #50c000;
-      transform: translateY(-1px);
-    }
-
-    .social p {
-      color: rgba(255, 255, 255, 0.55);
-      font-size: 14px;
-      line-height: 1.5;
-    }
-
-    .social-icons {
-      display: flex;
-      gap: 10px;
-      margin-top: 12px;
-    }
-
-    .social-icons div {
-      width: 38px;
-      height: 38px;
-      display: grid;
-      place-items: center;
-      border-radius: 6px;
-      font-weight: 900;
-    }
-
-    .discord { background: #5865f2; }
-    .x { background: #1da1f2; }
-    .yt { background: #ff2525; }
-
-    .center {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding-top: 80px;
-    }
-
-    .login-box {
-      width: 380px;
-      background: rgba(0, 0, 0, 0.5);
-      padding: 20px;
-      border-radius: 8px;
-    }
-
-    input,
-    select {
-      width: 100%;
-      padding: 16px;
-      margin-bottom: 12px;
-      border: none;
-      border-radius: 6px;
-      outline: none;
-      font-size: 15px;
-      background: #eeeeee;
-      color: #222;
-    }
-
-    .play-btn {
-      width: 100%;
-      padding: 16px;
-      font-size: 16px;
-      margin-bottom: 14px;
-    }
-
-    .small-options {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      margin-top: 10px;
-    }
-
-    .small-options div {
-      background: rgba(255, 255, 255, 0.09);
-      padding: 12px 8px;
-      border-radius: 6px;
-      text-align: center;
+    .world-box label {
+      display: block;
       font-size: 12px;
-      font-weight: 800;
-      color: rgba(255, 255, 255, 0.75);
-    }
-
-    .right {
-      padding-top: 120px;
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-    }
-
-    .leaderboard h2,
-    .controls h2 {
-      color: #d7ffb8;
-      font-size: 18px;
-      margin-bottom: 14px;
-    }
-
-    .leader-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 11px 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      font-size: 14px;
-    }
-
-    .leader-row:last-child {
-      border-bottom: none;
-    }
-
-    .rank {
-      color: rgba(255, 255, 255, 0.45);
+      color: var(--gold);
       font-weight: 900;
-      margin-right: 6px;
-    }
-
-    .score {
-      color: #d7ffb8;
-      font-weight: 900;
-    }
-
-    .controls p {
-      font-size: 14px;
-      color: rgba(255, 255, 255, 0.68);
       margin-bottom: 8px;
     }
 
-    .controls b {
-      color: white;
+    select, input {
+      width: 100%;
+      padding: 13px;
+      border: 2px solid #241208;
+      border-radius: 6px;
+      background: #2a160b;
+      color: var(--cream);
+      font-weight: 800;
+      outline: none;
     }
 
-    .footer {
-      position: absolute;
-      bottom: 18px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 3;
-      color: rgba(255, 255, 255, 0.4);
+    .status {
+      margin-top: 12px;
       font-size: 13px;
+      color: #e8c37a;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
-    @media (max-width: 950px) {
-      body {
-        overflow: auto;
-      }
+    .dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 50%;
+      background: #58e052;
+      box-shadow: 0 0 10px #58e052;
+    }
 
-      .page {
+    .center-stage {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 620px;
+      text-align: center;
+    }
+
+    .mascot-card {
+      position: relative;
+      width: 280px;
+      height: 330px;
+      display: grid;
+      place-items: center;
+      animation: floaty 3.5s ease-in-out infinite;
+    }
+
+    @keyframes floaty {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .mascot-fallback {
+      width: 190px;
+      height: 240px;
+      position: relative;
+    }
+
+    .head {
+      position: absolute;
+      top: 0;
+      left: 36px;
+      width: 118px;
+      height: 105px;
+      background: #ffd2a0;
+      border: 6px solid #2b150b;
+      border-radius: 38px 38px 42px 42px;
+      z-index: 4;
+    }
+
+    .hair {
+      position: absolute;
+      top: -18px;
+      left: 26px;
+      width: 140px;
+      height: 70px;
+      background: #7a3519;
+      border: 5px solid #2b150b;
+      border-radius: 45px 45px 20px 20px;
+      z-index: 5;
+      clip-path: polygon(0 44%, 10% 15%, 28% 36%, 42% 0, 57% 38%, 75% 8%, 89% 46%, 100% 30%, 92% 100%, 6% 100%);
+    }
+
+    .eye {
+      position: absolute;
+      top: 45px;
+      width: 17px;
+      height: 24px;
+      background: #241208;
+      border-radius: 50%;
+      z-index: 6;
+    }
+
+    .eye.left { left: 68px; }
+    .eye.right { right: 68px; }
+
+    .mouth {
+      position: absolute;
+      top: 76px;
+      left: 82px;
+      width: 28px;
+      height: 16px;
+      background: #7d1511;
+      border-radius: 0 0 20px 20px;
+      z-index: 6;
+    }
+
+    .body {
+      position: absolute;
+      top: 104px;
+      left: 45px;
+      width: 100px;
+      height: 100px;
+      background: var(--red);
+      border: 6px solid #2b150b;
+      border-radius: 18px;
+      z-index: 3;
+    }
+
+    .body::before {
+      content: "♞";
+      position: absolute;
+      left: 50%;
+      top: 19px;
+      transform: translateX(-50%);
+      color: white;
+      font-size: 34px;
+    }
+
+    .cape {
+      position: absolute;
+      top: 104px;
+      left: 18px;
+      width: 154px;
+      height: 135px;
+      background: #8f1f18;
+      border: 6px solid #2b150b;
+      border-radius: 30px 30px 45px 45px;
+      z-index: 2;
+      transform: skewX(-8deg);
+    }
+
+    .leg {
+      position: absolute;
+      top: 195px;
+      width: 38px;
+      height: 72px;
+      background: #4b2a19;
+      border: 5px solid #2b150b;
+      border-radius: 12px;
+      z-index: 3;
+    }
+
+    .leg.left { left: 54px; }
+    .leg.right { right: 54px; }
+
+    .sword {
+      position: absolute;
+      right: 10px;
+      top: 126px;
+      width: 16px;
+      height: 150px;
+      background: #cfd6d9;
+      border: 4px solid #2b150b;
+      transform: rotate(28deg);
+      z-index: 1;
+    }
+
+    .spark {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background: var(--gold);
+      box-shadow: 0 0 12px var(--gold);
+      transform: rotate(45deg);
+      animation: blink 1.8s infinite alternate;
+    }
+
+    .spark.one { top: 90px; left: 16px; }
+    .spark.two { top: 140px; right: 22px; animation-delay: 0.6s; }
+    .spark.three { bottom: 110px; left: 60px; animation-delay: 1s; }
+
+    @keyframes blink {
+      from { opacity: 0.25; transform: scale(0.7) rotate(45deg); }
+      to { opacity: 1; transform: scale(1.15) rotate(45deg); }
+    }
+
+    .hint {
+      margin-top: 10px;
+      padding: 10px 16px;
+      background: rgba(0,0,0,0.45);
+      border: 2px solid rgba(226,180,91,0.55);
+      border-radius: 999px;
+      font-family: Arial, sans-serif;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .menu {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .profile {
+      display: grid;
+      grid-template-columns: 58px 1fr auto;
+      gap: 12px;
+      align-items: center;
+      background: linear-gradient(180deg, #5a3218, #2f170b);
+      border: 4px solid #1b0d06;
+      outline: 2px solid #b07032;
+      border-radius: 10px;
+      padding: 12px;
+      box-shadow: 0 8px 0 rgba(0,0,0,0.22);
+    }
+
+    .avatar {
+      width: 58px;
+      height: 58px;
+      border-radius: 8px;
+      background: var(--red);
+      border: 3px solid #1b0d06;
+      display: grid;
+      place-items: center;
+      font-size: 30px;
+    }
+
+    .profile h3 {
+      font-size: 18px;
+    }
+
+    .profile p {
+      font-family: Arial, sans-serif;
+      font-size: 13px;
+      color: #d8b77d;
+      margin-top: 3px;
+    }
+
+    .level {
+      width: 44px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      background: var(--red);
+      border: 3px solid var(--gold);
+      font-weight: 900;
+      border-radius: 50%;
+    }
+
+    .btn {
+      position: relative;
+      cursor: pointer;
+      border: 4px solid #1b0d06;
+      outline: 2px solid #b07032;
+      border-radius: 10px;
+      background: linear-gradient(180deg, #74411e, #32170a);
+      color: var(--cream);
+      padding: 16px 20px;
+      text-align: left;
+      box-shadow: 0 8px 0 rgba(0,0,0,0.22);
+      transition: 0.15s ease;
+      overflow: hidden;
+    }
+
+    .btn::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+      transform: translateX(-100%);
+      transition: 0.35s;
+    }
+
+    .btn:hover {
+      transform: translateY(-3px);
+      filter: brightness(1.12);
+    }
+
+    .btn:hover::after {
+      transform: translateX(100%);
+    }
+
+    .btn:active {
+      transform: translateY(4px);
+      box-shadow: 0 3px 0 rgba(0,0,0,0.25);
+    }
+
+    .btn.play {
+      background: linear-gradient(180deg, #d8492d, #8e1f17);
+      padding: 20px;
+    }
+
+    .btn strong {
+      display: block;
+      font-size: 34px;
+      letter-spacing: 1px;
+      line-height: 1;
+      text-shadow: 2px 2px 0 #220b07;
+    }
+
+    .btn span {
+      display: block;
+      margin-top: 5px;
+      font-family: Arial, sans-serif;
+      color: #f3dcae;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .bottom-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .mini-btn {
+      cursor: pointer;
+      padding: 13px;
+      border-radius: 8px;
+      background: #3a1e0f;
+      border: 3px solid #1b0d06;
+      color: var(--cream);
+      font-weight: 900;
+      box-shadow: 0 5px 0 rgba(0,0,0,0.22);
+      transition: 0.15s;
+    }
+
+    .mini-btn:hover {
+      transform: translateY(-2px);
+      background: #553016;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      transform: translateX(-50%) translateY(120px);
+      background: #201008;
+      border: 3px solid var(--gold);
+      color: var(--cream);
+      padding: 14px 20px;
+      border-radius: 10px;
+      font-family: Arial, sans-serif;
+      font-weight: 900;
+      z-index: 20;
+      transition: 0.25s ease;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media (max-width: 1050px) {
+      .layout {
         grid-template-columns: 1fr;
-        padding: 20px;
+        align-items: start;
       }
 
-      .logo {
-        position: relative;
-        top: auto;
-        left: auto;
-        transform: none;
-        margin-top: 20px;
+      .center-stage {
+        order: -1;
+        min-height: 420px;
+        padding-top: 80px;
       }
 
-      .left,
-      .right {
-        padding-top: 20px;
+      .castle {
+        opacity: 0.45;
       }
 
-      .center {
-        padding-top: 20px;
+      .brand h1 {
+        font-size: 48px;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .page {
+        padding: 14px;
       }
 
-      .login-box {
-        width: 100%;
-        max-width: 420px;
+      .brand h1 {
+        font-size: 40px;
       }
 
-      .footer {
-        position: relative;
-        margin-top: 30px;
-        bottom: auto;
+      .sign {
+        padding: 18px;
+      }
+
+      .btn strong {
+        font-size: 27px;
+      }
+
+      .mascot-card {
+        width: 230px;
+        transform: scale(0.9);
       }
     }
   </style>
 </head>
 
 <body>
-  <div class="bg-shape rock"></div>
-  <div class="bg-shape bush-one"></div>
-  <div class="bg-shape bush-two"></div>
-  <div class="bg-shape bush-three"></div>
+  <div class="page">
+    <div class="sky-cloud cloud-1"></div>
+    <div class="sky-cloud cloud-2"></div>
 
-  <div class="logo">
-    <h1>REDVYR KINGDOMS</h1>
-    <p>Build. Fight. Defend. Rise.</p>
-  </div>
+    <div class="castle" aria-hidden="true">
+      <div class="tower one"></div>
+      <div class="tower two"></div>
+      <div class="tower three"></div>
+      <div class="castle-body"></div>
+    </div>
 
-  <main class="page">
-    <section class="left">
-      <div class="panel event">
-        <h2>Season Event</h2>
-        <h3>The First Kingdom War</h3>
-        <p>
-          Build your camp, survive the night, collect resources,
-          and help your kingdom climb the leaderboard.
-        </p>
-        <button>View Rewards</button>
-      </div>
+    <div class="ground"></div>
+    <div class="path"></div>
 
-      <div class="social">
-        <p>Join the Redvyr community for updates, events, and early supporter rewards.</p>
-        <div class="social-icons">
-          <div class="discord">D</div>
-          <div class="x">X</div>
-          <div class="yt">YT</div>
+    <main class="layout">
+      <section class="left-panel">
+        <div class="sign">
+          <div class="brand">
+            <small>The Kingdom of</small>
+            <h1>REDVYR</h1>
+            <div class="tagline">BUILD • EXPLORE • BELONG</div>
+          </div>
+
+          <div class="parchment">
+            <h2>Welcome, Adventurer!</h2>
+            <p>
+              Enter a cozy online kingdom where players explore, complete quests,
+              join guilds, collect gear, and help build the world of Redvyr.
+            </p>
+          </div>
+
+          <div class="world-box">
+            <label for="world">WORLD</label>
+            <select id="world">
+              <option>Redvyr Preview Realm</option>
+              <option>Forest Test Realm</option>
+              <option>Kingdom Social Realm</option>
+            </select>
+
+            <div class="status">
+              <span>Preview Build v0.1</span>
+              <span class="dot"></span>
+            </div>
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <section class="center">
-      <div class="login-box">
-        <input id="nickname" type="text" placeholder="Your nickname..." />
+      <section class="center-stage">
+        <div class="mascot-card">
+          <div class="spark one"></div>
+          <div class="spark two"></div>
+          <div class="spark three"></div>
 
-        <select id="world">
-          <option>World A - Main Realm</option>
-          <option>World B - New Players</option>
-          <option>World C - Competitive</option>
-        </select>
-
-        <button class="play-btn" onclick="playGame()">Play</button>
-
-        <div class="small-options">
-          <div>Defend</div>
-          <div>Kingdoms</div>
-          <div>Ranks</div>
-        </div>
-      </div>
-    </section>
-
-    <section class="right">
-      <div class="panel leaderboard">
-        <h2>Top Kingdoms</h2>
-
-        <div class="leader-row">
-          <span><span class="rank">#1</span> RavenKeep</span>
-          <span class="score">12,450</span>
-        </div>
-
-        <div class="leader-row">
-          <span><span class="rank">#2</span> Ash Crown</span>
-          <span class="score">10,880</span>
-        </div>
-
-        <div class="leader-row">
-          <span><span class="rank">#3</span> Iron Valley</span>
-          <span class="score">9,320</span>
+          <div class="mascot-fallback">
+            <div class="cape"></div>
+            <div class="sword"></div>
+            <div class="hair"></div>
+            <div class="head"></div>
+            <div class="eye left"></div>
+            <div class="eye right"></div>
+            <div class="mouth"></div>
+            <div class="body"></div>
+            <div class="leg left"></div>
+            <div class="leg right"></div>
+          </div>
         </div>
 
-        <div class="leader-row">
-          <span><span class="rank">#4</span> North Camp</span>
-          <span class="score">7,995</span>
+        <div class="hint">Preview homepage only — gameplay coming soon</div>
+      </section>
+
+      <section class="menu">
+        <div class="profile">
+          <div class="avatar">♞</div>
+          <div>
+            <h3>Hero of Redvyr</h3>
+            <p>Novice Adventurer · 250 coins · 15 gems</p>
+          </div>
+          <div class="level">1</div>
         </div>
 
-        <div class="leader-row">
-          <span><span class="rank">#5</span> Redvyr Guard</span>
-          <span class="score">7,200</span>
+        <button class="btn play" onclick="previewAction('Play')">
+          <strong>⚔ PLAY</strong>
+          <span>Begin your journey</span>
+        </button>
+
+        <button class="btn" onclick="previewAction('Explore')">
+          <strong>🗺 EXPLORE</strong>
+          <span>Discover the kingdom</span>
+        </button>
+
+        <button class="btn" onclick="previewAction('Quests')">
+          <strong>📜 QUESTS</strong>
+          <span>Accept adventures</span>
+        </button>
+
+        <button class="btn" onclick="previewAction('Guild')">
+          <strong>🛡 GUILD</strong>
+          <span>Join friends and build together</span>
+        </button>
+
+        <button class="btn" onclick="previewAction('Shop')">
+          <strong>💰 SHOP</strong>
+          <span>Gear, cosmetics, and more</span>
+        </button>
+
+        <div class="bottom-actions">
+          <button class="mini-btn" onclick="previewAction('News')">📣 News</button>
+          <button class="mini-btn" onclick="previewAction('Settings')">⚙ Settings</button>
         </div>
-      </div>
+      </section>
+    </main>
 
-      <div class="panel controls">
-        <h2>Controls</h2>
-        <p><b>Move:</b> W A S D</p>
-        <p><b>Attack:</b> Left Click</p>
-        <p><b>Build:</b> Right Click</p>
-        <p><b>Interact:</b> E</p>
-        <p><b>Shop:</b> B</p>
-        <p><b>Kingdom:</b> K</p>
-      </div>
-    </section>
-  </main>
-
-  <div class="footer">
-    © 2026 REDVYR · Changelog · Privacy Policy
+    <div id="toast" class="toast">Preview button clicked</div>
   </div>
 
   <script>
-    function playGame() {
-      const nickname = document.getElementById("nickname").value.trim();
-      const world = document.getElementById("world").value;
+    function previewAction(name) {
+      const toast = document.getElementById("toast");
+      toast.textContent = name + " is a preview button for now.";
+      toast.classList.add("show");
 
-      if (!nickname) {
-        alert("Enter a nickname first.");
-        return;
-      }
-
-      alert("Joining " + world + " as " + nickname + "...");
+      setTimeout(() => {
+        toast.classList.remove("show");
+      }, 1800);
     }
   </script>
 </body>
