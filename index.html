@@ -8,703 +8,758 @@
   <style>
     * {
       box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --red: #9f1f17;
+      --red-light: #d9442e;
+      --gold: #f2c35f;
+      --cream: #fff0c8;
+      --dark: #160b05;
+      --panel: rgba(25, 12, 5, 0.74);
+      --panel-dark: rgba(12, 6, 3, 0.74);
     }
 
     body {
-      margin: 0;
       min-height: 100vh;
-      font-family: Arial, sans-serif;
-      color: #fff2c7;
-      background:
-        linear-gradient(rgba(0,0,0,0.18), rgba(0,0,0,0.5)),
-        url("background.png") center / cover no-repeat;
-      overflow-x: hidden;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #120804;
+      color: var(--cream);
+      overflow: hidden;
     }
 
-    .top-left-logo {
-      position: fixed;
-      top: 18px;
-      left: 18px;
-      background: rgba(28, 16, 8, 0.82);
-      border: 2px solid #b9802c;
-      border-radius: 10px;
-      padding: 8px 18px;
-      box-shadow: 0 5px 20px rgba(0,0,0,0.35);
-      z-index: 5;
-    }
-
-    .top-left-logo h3 {
-      margin: 0;
-      font-size: 23px;
-      letter-spacing: 2px;
-      color: #fff2c7;
-    }
-
-    .top-left-logo p {
-      margin: 0;
-      font-size: 11px;
-      color: #ffd469;
-      letter-spacing: 4px;
-      font-weight: bold;
-    }
-
-    .top-buttons {
-      position: fixed;
-      top: 20px;
-      right: 28px;
+    .home {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      background-image:
+        linear-gradient(to bottom, rgba(0,0,0,0.04), rgba(0,0,0,0.38)),
+        url("backround.png");
+      background-size: cover;
+      background-position: center;
       display: flex;
-      gap: 12px;
-      z-index: 5;
+      flex-direction: column;
+      padding: 22px;
     }
 
-    button {
-      border: none;
-      cursor: pointer;
+    .overlay {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at center, transparent 32%, rgba(0,0,0,0.26)),
+        linear-gradient(to right, rgba(0,0,0,0.25), transparent 28%, transparent 72%, rgba(0,0,0,0.25));
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .topbar {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .mini-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(18, 8, 3, 0.72);
+      border: 2px solid rgba(242, 195, 95, 0.45);
+      border-radius: 14px;
+      padding: 10px 14px;
+      backdrop-filter: blur(4px);
+    }
+
+    .crest {
+      width: 36px;
+      height: 42px;
+      background: linear-gradient(#d9442e, #76150e);
+      border: 2px solid var(--gold);
+      border-radius: 6px 6px 12px 12px;
+      display: grid;
+      place-items: center;
+      font-size: 20px;
+    }
+
+    .mini-logo strong {
+      display: block;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 22px;
+      line-height: 0.9;
+      color: #ffe4a6;
+      text-shadow: 2px 2px 0 #55130c;
+    }
+
+    .mini-logo span {
+      font-size: 10px;
       font-weight: 900;
+      color: var(--gold);
+      letter-spacing: 3px;
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
     }
 
     .small-btn {
-      background: rgba(36, 21, 9, 0.9);
-      color: #fff2c7;
-      border: 2px solid #9e6b27;
+      cursor: pointer;
       border-radius: 10px;
-      padding: 12px 18px;
-      box-shadow: 0 5px 18px rgba(0,0,0,0.3);
+      padding: 10px 14px;
+      color: var(--cream);
+      background: rgba(18, 8, 3, 0.72);
+      border: 2px solid rgba(242, 195, 95, 0.45);
+      font-weight: 900;
+      transition: 0.15s;
+      backdrop-filter: blur(4px);
     }
 
-    .small-btn:hover,
-    .side-card:hover,
-    .bottom-btn:hover {
+    .small-btn:hover {
       transform: translateY(-2px);
-      filter: brightness(1.12);
+      filter: brightness(1.15);
     }
 
-    .page {
-      min-height: 100vh;
-      padding: 105px 6vw 70px;
+    .content {
+      position: relative;
+      z-index: 2;
+      flex: 1;
       display: grid;
-      grid-template-columns: minmax(360px, 520px) 1fr minmax(310px, 360px);
-      gap: 34px;
+      grid-template-columns: minmax(320px, 520px) minmax(240px, 1fr) minmax(260px, 360px);
+      gap: 28px;
       align-items: center;
+      width: min(1320px, 100%);
+      margin: 0 auto;
     }
 
     .panel {
-      background: rgba(23, 15, 9, 0.78);
-      border: 2px solid #9e6b27;
-      border-radius: 18px;
-      padding: 28px;
-      backdrop-filter: blur(5px);
-      box-shadow: 0 15px 40px rgba(0,0,0,0.45);
+      background: var(--panel);
+      border: 2px solid rgba(242, 195, 95, 0.5);
+      border-radius: 16px;
+      padding: 24px;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 12px 35px rgba(0,0,0,0.35);
     }
 
-    .hero-title {
-      margin: 0;
+    .left-panel {
+      align-self: center;
+    }
+
+    .logo {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(52px, 6vw, 86px);
       line-height: 0.88;
-      text-shadow: 4px 4px 0 #2a1008;
+      color: #ffe4a6;
+      text-shadow: 4px 4px 0 #55130c;
+      letter-spacing: 2px;
     }
 
-    .hero-title span:first-child {
-      font-family: Georgia, serif;
+    .logo span {
       display: block;
-      font-size: clamp(54px, 7vw, 86px);
-      color: #fff0bd;
-    }
-
-    .hero-title span:last-child {
-      font-family: Georgia, serif;
-      display: block;
-      font-size: clamp(48px, 6vw, 76px);
-      color: #ec402f;
+      color: var(--red-light);
     }
 
     .tagline {
-      margin-top: 18px;
-      color: #ffd469;
+      margin-top: 14px;
+      color: var(--gold);
       font-weight: 900;
-      letter-spacing: 3px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
       font-size: 14px;
     }
 
     .desc {
-      margin-top: 22px;
-      max-width: 470px;
-      line-height: 1.55;
-      color: #f8e8c8;
+      margin-top: 18px;
+      color: rgba(255, 240, 200, 0.88);
+      line-height: 1.6;
+      font-size: 16px;
       font-weight: 700;
     }
 
-    label {
-      display: block;
-      margin-top: 22px;
-      margin-bottom: 8px;
-      color: #ffd469;
+    .name-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin-top: 20px;
+    }
+
+    .name-row label {
+      color: var(--gold);
+      font-size: 12px;
       font-weight: 900;
-      font-size: 13px;
       letter-spacing: 1px;
+      text-transform: uppercase;
     }
 
     input {
       width: 100%;
-      background: rgba(0,0,0,0.4);
-      border: 2px solid #9e6b27;
+      padding: 13px 14px;
       border-radius: 10px;
-      padding: 15px;
-      color: #fff2c7;
-      font-weight: bold;
+      border: 2px solid rgba(242, 195, 95, 0.45);
+      background: rgba(0,0,0,0.42);
+      color: var(--cream);
+      font-weight: 900;
       outline: none;
-      font-size: 15px;
     }
 
-    input:focus {
-      border-color: #ffd469;
-    }
-
-    .main-actions {
-      margin-top: 22px;
+    .buttons {
       display: flex;
       gap: 12px;
+      margin-top: 22px;
       flex-wrap: wrap;
     }
 
-    .play-btn {
-      background: linear-gradient(#e94635, #bd241b);
+    button {
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .play {
+      cursor: pointer;
+      border-radius: 11px;
+      padding: 14px 24px;
+      background: linear-gradient(#d9442e, #8e1c13);
       color: white;
-      border: 2px solid #ffd469;
-      border-radius: 10px;
-      padding: 15px 26px;
-      font-size: 15px;
-      box-shadow: 0 8px 0 rgba(68, 18, 12, 0.9);
+      border: 2px solid var(--gold);
+      box-shadow: 0 5px 0 #3b0a05;
+      font-weight: 900;
+      transition: 0.15s;
     }
 
-    .ghost-btn {
-      background: rgba(31, 18, 9, 0.8);
-      color: #fff2c7;
-      border: 2px solid #9e6b27;
-      border-radius: 10px;
-      padding: 15px 26px;
-      font-size: 15px;
+    .info {
+      cursor: pointer;
+      border-radius: 11px;
+      padding: 14px 20px;
+      background: rgba(0,0,0,0.45);
+      color: var(--cream);
+      border: 2px solid rgba(242, 195, 95, 0.45);
+      font-weight: 900;
+      transition: 0.15s;
     }
 
-    .center-stage {
-      text-align: center;
-      align-self: end;
-      padding-bottom: 55px;
+    .play:hover,
+    .info:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.12);
     }
 
-    .hero-img {
-      width: min(300px, 80%);
-      image-rendering: auto;
-      filter: drop-shadow(0 18px 18px rgba(0,0,0,0.5));
-      animation: floaty 3s ease-in-out infinite;
+    .middle {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: end;
+      height: 100%;
+      padding-top: 80px;
+      padding-bottom: 50px;
+    }
+
+    .mascot {
+      width: min(310px, 90%);
+      max-height: 46vh;
+      object-fit: contain;
+      filter: drop-shadow(0 18px 18px rgba(0,0,0,0.55));
+      animation: floaty 3.5s ease-in-out infinite;
     }
 
     @keyframes floaty {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-9px); }
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-8px);
+      }
     }
 
-    .status-pill {
+    .small-note {
+      margin-top: 12px;
       display: inline-block;
-      margin-top: 16px;
-      padding: 10px 20px;
-      background: rgba(45, 28, 9, 0.9);
-      color: #fff2c7;
+      background: rgba(0,0,0,0.55);
+      border: 1px solid rgba(242, 195, 95, 0.45);
       border-radius: 999px;
-      font-weight: 900;
-      box-shadow: 0 5px 20px rgba(0,0,0,0.35);
+      padding: 9px 14px;
+      color: #ffe7b0;
+      font-size: 13px;
+      font-weight: 800;
     }
 
-    .side {
+    .right-panel {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 14px;
     }
 
     .profile-card {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      background: rgba(36, 19, 8, 0.82);
-      border: 2px solid #9e6b27;
+      background: var(--panel);
+      border: 2px solid rgba(242, 195, 95, 0.5);
       border-radius: 16px;
-      padding: 15px;
-      box-shadow: 0 8px 25px rgba(0,0,0,0.35);
+      padding: 16px;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 12px 35px rgba(0,0,0,0.28);
+      display: grid;
+      grid-template-columns: 46px 1fr 38px;
+      gap: 12px;
+      align-items: center;
     }
 
     .avatar {
-      width: 48px;
-      height: 48px;
-      background: #c8231d;
-      border-radius: 12px;
+      width: 46px;
+      height: 46px;
       display: grid;
       place-items: center;
-      font-size: 25px;
-      border: 2px solid #ffd469;
+      border-radius: 10px;
+      background: linear-gradient(#d9442e, #7a160f);
+      border: 2px solid var(--gold);
+      font-size: 23px;
     }
 
-    .profile-card h3 {
-      margin: 0;
-      font-size: 17px;
+    .profile-card strong {
+      display: block;
+      color: #ffe4a6;
+      font-size: 15px;
     }
 
-    .profile-card p {
-      margin: 3px 0 0;
-      color: #d6c19d;
+    .profile-card span {
+      display: block;
+      margin-top: 3px;
+      color: rgba(255,240,200,0.68);
+      font-size: 12px;
       font-weight: 800;
-      font-size: 13px;
     }
 
-    .level-badge {
-      margin-left: auto;
-      width: 38px;
-      height: 38px;
-      background: #c6261e;
-      border: 2px solid #ffd469;
-      border-radius: 50%;
+    .level {
+      width: 36px;
+      height: 36px;
       display: grid;
       place-items: center;
+      border-radius: 50%;
+      background: var(--red);
+      border: 2px solid var(--gold);
       font-weight: 900;
-      font-size: 20px;
     }
 
-    .side-card {
-      position: relative;
+    .menu-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .menu-btn {
+      cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 14px;
-      background: rgba(34, 17, 6, 0.82);
-      border: 2px solid #8a5c20;
-      border-radius: 14px;
-      padding: 14px 16px;
+      gap: 12px;
+      width: 100%;
+      text-align: left;
+      padding: 13px 15px;
+      border-radius: 13px;
+      color: var(--cream);
+      background: rgba(25, 12, 5, 0.78);
+      border: 2px solid rgba(242, 195, 95, 0.46);
+      backdrop-filter: blur(4px);
+      box-shadow: 0 7px 0 rgba(0,0,0,0.22);
       transition: 0.15s;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.28);
     }
 
-    .side-icon {
-      width: 40px;
-      height: 40px;
-      background: rgba(0,0,0,0.45);
-      border: 1px solid #805818;
-      border-radius: 10px;
+    .menu-btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.14);
+    }
+
+    .menu-btn .icon {
+      width: 38px;
+      height: 38px;
       display: grid;
       place-items: center;
-      font-size: 22px;
+      border-radius: 10px;
+      background: rgba(0,0,0,0.35);
+      border: 1px solid rgba(242, 195, 95, 0.35);
+      font-size: 21px;
     }
 
-    .side-card h3 {
-      margin: 0;
-      font-size: 17px;
-      color: #fff2c7;
+    .menu-btn strong {
+      display: block;
+      font-size: 16px;
     }
 
-    .side-card p {
-      margin: 3px 0 0;
-      font-size: 13px;
-      color: #d4bea0;
+    .menu-btn small {
+      display: block;
+      margin-top: 2px;
+      color: rgba(255,240,200,0.68);
       font-weight: 800;
-    }
-
-    .mail-red-dot {
-      position: absolute;
-      top: 10px;
-      right: 12px;
-      width: 18px;
-      height: 18px;
-      background: #ff1111;
-      border: 3px solid #3a140a;
-      border-radius: 50%;
-      display: none;
-      box-shadow: 0 0 0 2px #ffd469;
+      font-size: 12px;
     }
 
     .news {
-      margin-top: 2px;
-      background: rgba(34, 17, 6, 0.84);
-      border: 2px solid #8a5c20;
+      background: var(--panel-dark);
+      border: 2px solid rgba(242, 195, 95, 0.4);
       border-radius: 16px;
-      padding: 18px;
+      padding: 16px;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 12px 35px rgba(0,0,0,0.24);
     }
 
-    .news h2 {
-      margin: 0 0 8px;
-      font-family: Georgia, serif;
-      color: #ffd469;
+    .news h3 {
+      color: var(--gold);
+      margin-bottom: 10px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 22px;
     }
 
     .news p {
-      margin: 0;
-      color: #d6c19d;
-      line-height: 1.45;
-      font-weight: 800;
+      color: rgba(255,240,200,0.76);
       font-size: 13px;
-    }
-
-    .bottom-nav {
-      position: fixed;
-      bottom: 28px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 10px;
-      z-index: 5;
-    }
-
-    .bottom-btn {
-      background: rgba(38, 23, 10, 0.88);
-      color: #fff2c7;
-      border: 2px solid #8a5c20;
-      border-radius: 10px;
-      padding: 13px 20px;
-      transition: 0.15s;
-      box-shadow: 0 5px 18px rgba(0,0,0,0.35);
-    }
-
-    .modal-bg {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.55);
-      z-index: 20;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-
-    .modal {
-      width: min(440px, 95vw);
-      background: #f1d9a7;
-      color: #341b0b;
-      border: 5px solid #3a1d0c;
-      border-radius: 18px;
-      padding: 24px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.55);
-    }
-
-    .modal h2 {
-      margin: 0 0 10px;
-      color: #9f2118;
-      font-family: Georgia, serif;
-      font-size: 30px;
-    }
-
-    .modal p {
-      font-weight: 800;
       line-height: 1.45;
+      font-weight: 700;
     }
 
-    .modal-actions {
+    .bottom-bar {
+      position: relative;
+      z-index: 2;
+      width: min(920px, 100%);
+      margin: 0 auto;
       display: flex;
+      justify-content: center;
       gap: 10px;
-      margin-top: 18px;
+      padding-bottom: 6px;
       flex-wrap: wrap;
     }
 
-    .claim-btn {
-      background: #c52d21;
-      color: white;
-      border: 3px solid #3a1d0c;
+    .bottom-btn {
+      cursor: pointer;
+      padding: 10px 15px;
       border-radius: 10px;
-      padding: 12px 18px;
+      background: rgba(18, 8, 3, 0.74);
+      color: var(--cream);
+      border: 2px solid rgba(242, 195, 95, 0.42);
+      font-weight: 900;
+      transition: 0.15s;
+      backdrop-filter: blur(4px);
     }
 
-    .close-btn {
-      background: #3a1d0c;
-      color: #fff2c7;
-      border: 3px solid #3a1d0c;
-      border-radius: 10px;
-      padding: 12px 18px;
+    .bottom-btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.14);
     }
 
     .toast {
-      display: none;
       position: fixed;
       left: 50%;
-      bottom: 92px;
-      transform: translateX(-50%);
-      background: rgba(33, 18, 7, 0.95);
-      color: #fff2c7;
-      border: 2px solid #ffd469;
-      border-radius: 999px;
-      padding: 13px 22px;
+      bottom: 24px;
+      transform: translateX(-50%) translateY(120px);
+      background: #160b05;
+      color: var(--cream);
+      border: 2px solid var(--gold);
+      border-radius: 10px;
+      padding: 12px 18px;
       font-weight: 900;
-      z-index: 30;
-      box-shadow: 0 8px 25px rgba(0,0,0,0.45);
+      transition: 0.25s;
+      z-index: 10;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.45);
     }
 
-    .entered-game .panel {
-      border-color: #ffd469;
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
     }
 
-    .entered-game .status-pill {
-      background: rgba(128, 35, 18, 0.95);
-      border: 2px solid #ffd469;
+    .modal-bg {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      z-index: 20;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+    }
+
+    .modal-bg.show {
+      display: flex;
+    }
+
+    .modal {
+      width: min(460px, 100%);
+      background: #1d0d05;
+      color: var(--cream);
+      border: 3px solid var(--gold);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 20px 70px rgba(0,0,0,0.6);
+    }
+
+    .modal h2 {
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--gold);
+      font-size: 30px;
+      margin-bottom: 10px;
+    }
+
+    .modal p {
+      color: rgba(255,240,200,0.82);
+      line-height: 1.55;
+      font-weight: 700;
+      margin-bottom: 18px;
+    }
+
+    .modal-close {
+      cursor: pointer;
+      padding: 11px 16px;
+      border-radius: 10px;
+      background: linear-gradient(#d9442e, #8e1c13);
+      color: white;
+      border: 2px solid var(--gold);
+      font-weight: 900;
     }
 
     @media (max-width: 1050px) {
-      .page {
+      body {
+        overflow: auto;
+      }
+
+      .home {
+        height: auto;
+        min-height: 100vh;
+      }
+
+      .content {
         grid-template-columns: 1fr;
-        padding-top: 100px;
+        text-align: center;
+        padding-top: 28px;
       }
 
-      .center-stage {
-        order: 2;
-        padding-bottom: 20px;
+      .left-panel,
+      .right-panel {
+        max-width: 620px;
+        width: 100%;
+        margin: 0 auto;
       }
 
-      .side {
-        order: 3;
-      }
-
-      .bottom-nav {
-        position: static;
-        transform: none;
+      .buttons {
         justify-content: center;
-        margin-bottom: 25px;
-        flex-wrap: wrap;
+      }
+
+      .middle {
+        order: -1;
+        padding-top: 30px;
+        padding-bottom: 10px;
+      }
+
+      .mascot {
+        width: 220px;
+      }
+
+      .menu-btn {
+        text-align: left;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .topbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .top-actions {
+        justify-content: center;
+      }
+
+      .logo {
+        font-size: 48px;
+      }
+
+      .panel {
+        padding: 20px;
+      }
+
+      .bottom-bar {
+        margin-top: 16px;
       }
     }
   </style>
 </head>
 
 <body>
+  <main class="home">
+    <div class="overlay"></div>
 
-  <div class="top-left-logo">
-    <h3>REDVYR</h3>
-    <p>KINGDOMS</p>
-  </div>
-
-  <div class="top-buttons">
-    <button class="small-btn">Log In</button>
-    <button class="small-btn">Create Account</button>
-  </div>
-
-  <main id="page" class="page">
-
-    <section class="panel">
-      <h1 class="hero-title">
-        <span>REDVYR</span>
-        <span>KINGDOMS</span>
-      </h1>
-
-      <div class="tagline">BUILD • EXPLORE • BELONG</div>
-
-      <p class="desc">
-        A cozy browser kingdom adventure. Build your camp, complete quests,
-        collect gear, and grow your legend in the world of Redvyr.
-      </p>
-
-      <label for="playerName">PLAYER NAME</label>
-      <input id="playerName" maxlength="18" placeholder="Guest Hero">
-
-      <div class="main-actions">
-        <button class="play-btn" onclick="playPreview()">Play Preview</button>
-        <button class="ghost-btn" onclick="showToast('Redvyr is a cozy kingdom browser game where you build, explore, and collect rewards.')">What is this?</button>
-      </div>
-    </section>
-
-    <section class="center-stage">
-      <img src="hero.png" alt="Redvyr Hero" class="hero-img">
-      <br>
-      <div id="statusPill" class="status-pill">Preview site only • gameplay soon</div>
-    </section>
-
-    <aside class="side">
-
-      <div class="profile-card">
-        <div class="avatar">🧑</div>
+    <header class="topbar">
+      <div class="mini-logo">
+        <div class="crest">♕</div>
         <div>
-          <h3 id="profileName">Guest Hero</h3>
-          <p>Level <span id="level">1</span> • <span id="coins">250</span> coins • <span id="gems">15</span> gems</p>
-        </div>
-        <div class="level-badge">1</div>
-      </div>
-
-      <div class="side-card" onclick="openMail()">
-        <div class="side-icon">✉️</div>
-        <div>
-          <h3>Mail</h3>
-          <p>Daily login reward</p>
-        </div>
-        <div id="mailDot" class="mail-red-dot"></div>
-      </div>
-
-      <div class="side-card" onclick="showToast('Quests are coming soon. Daily tasks will give coins, gems, and items.')">
-        <div class="side-icon">📜</div>
-        <div>
-          <h3>Quests</h3>
-          <p>Daily tasks and rewards</p>
+          <strong>REDVYR</strong>
+          <span>KINGDOMS</span>
         </div>
       </div>
 
-      <div class="side-card" onclick="showToast('Kingdoms will let you build with friends soon.')">
-        <div class="side-icon">🏰</div>
-        <div>
-          <h3>Kingdoms</h3>
-          <p>Join friends and build</p>
-        </div>
+      <div class="top-actions">
+        <button class="small-btn" onclick="openModal('Login')">Log In</button>
+        <button class="small-btn" onclick="openModal('Account')">Create Account</button>
       </div>
+    </header>
 
-      <div class="side-card" onclick="showToast('Inventory preview coming soon.')">
-        <div class="side-icon">🎒</div>
-        <div>
-          <h3>Inventory</h3>
-          <p>Gear, items, cosmetics</p>
-        </div>
-      </div>
+    <section class="content">
+      <div class="left-panel panel">
+        <h1 class="logo">REDVYR <span>KINGDOMS</span></h1>
+        <div class="tagline">Build • Explore • Belong</div>
 
-      <div class="side-card" onclick="showToast('Shop is not open yet, but cosmetics and boosts will go here.')">
-        <div class="side-icon">💰</div>
-        <div>
-          <h3>Shop</h3>
-          <p>Cosmetics and boosts</p>
-        </div>
-      </div>
-
-      <div class="news">
-        <h2>Latest News</h2>
-        <p id="newsText">
-          Homepage preview is live. Next steps: accounts, inventory, daily rewards,
-          and the first playable test world.
+        <p class="desc">
+          A cozy browser kingdom adventure. Build your camp, complete quests,
+          collect gear, and grow your legend in the world of Redvyr.
         </p>
+
+        <div class="name-row">
+          <label for="playerName">Player Name</label>
+          <input id="playerName" placeholder="Guest Hero" maxlength="18" />
+        </div>
+
+        <div class="buttons">
+          <button class="play" onclick="playPreview()">Play Preview</button>
+          <button class="info" onclick="openModal('About')">What is this?</button>
+        </div>
       </div>
 
-    </aside>
+      <div class="middle">
+        <img class="mascot" src="mascot.png" alt="Redvyr mascot">
+        <div class="small-note">Preview site only · gameplay soon</div>
+      </div>
 
+      <aside class="right-panel">
+        <div class="profile-card">
+          <div class="avatar">🧑</div>
+          <div>
+            <strong id="profileName">Guest Hero</strong>
+            <span>Level 1 · 250 coins · 15 gems</span>
+          </div>
+          <div class="level">1</div>
+        </div>
+
+        <div class="menu-grid">
+          <button class="menu-btn" onclick="openModal('Quests')">
+            <span class="icon">📜</span>
+            <span>
+              <strong>Quests</strong>
+              <small>Daily tasks and rewards</small>
+            </span>
+          </button>
+
+          <button class="menu-btn" onclick="openModal('Kingdoms')">
+            <span class="icon">🏰</span>
+            <span>
+              <strong>Kingdoms</strong>
+              <small>Join friends and build</small>
+            </span>
+          </button>
+
+          <button class="menu-btn" onclick="openModal('Inventory')">
+            <span class="icon">🎒</span>
+            <span>
+              <strong>Inventory</strong>
+              <small>Gear, items, cosmetics</small>
+            </span>
+          </button>
+
+          <button class="menu-btn" onclick="openModal('Shop')">
+            <span class="icon">💰</span>
+            <span>
+              <strong>Shop</strong>
+              <small>Cosmetics and boosts</small>
+            </span>
+          </button>
+        </div>
+
+        <div class="news">
+          <h3>Latest News</h3>
+          <p>
+            Homepage preview is live. Next steps: accounts, inventory,
+            daily rewards, and the first playable test world.
+          </p>
+        </div>
+      </aside>
+    </section>
+
+    <nav class="bottom-bar">
+      <button class="bottom-btn" onclick="openModal('Roadmap')">Roadmap</button>
+      <button class="bottom-btn" onclick="openModal('Leaderboard')">Leaderboard</button>
+      <button class="bottom-btn" onclick="openModal('Discord')">Discord</button>
+      <button class="bottom-btn" onclick="openModal('Settings')">Settings</button>
+    </nav>
   </main>
 
-  <div class="bottom-nav">
-    <button class="bottom-btn" onclick="showToast('Roadmap: daily rewards, inventory, camp building, then first playable world.')">Roadmap</button>
-    <button class="bottom-btn" onclick="showToast('Leaderboard will track coins, gems, level, and kingdom progress later.')">Leaderboard</button>
-    <button class="bottom-btn" onclick="showToast('Discord button can link to your server later.')">Discord</button>
-    <button class="bottom-btn" onclick="showToast('Settings menu coming later.')">Settings</button>
-  </div>
-
-  <div id="mailModal" class="modal-bg">
+  <div id="modalBg" class="modal-bg" onclick="closeModal(event)">
     <div class="modal">
-      <h2 id="mailTitle">Welcome back!</h2>
-      <p id="mailMessage">You have new mail from the Redvyr Kingdom.</p>
-
-      <div class="modal-actions">
-        <button id="claimButton" class="claim-btn" onclick="claimMail()">Claim 5 Gems</button>
-        <button class="close-btn" onclick="closeMail()">Close</button>
-      </div>
+      <h2 id="modalTitle">Title</h2>
+      <p id="modalText">Text</p>
+      <button class="modal-close" onclick="hideModal()">Close</button>
     </div>
   </div>
 
-  <div id="toast" class="toast"></div>
+  <div id="toast" class="toast">Message</div>
 
   <script>
-    let playerName = localStorage.getItem("redvyrPlayerName") || "Guest Hero";
-    let gems = Number(localStorage.getItem("redvyrGems")) || 15;
-    let coins = Number(localStorage.getItem("redvyrCoins")) || 250;
-
-    let lastOpenedMail = localStorage.getItem("redvyrLastOpenedMail");
-    let lastClaimedReward = localStorage.getItem("redvyrLastClaimedReward");
-
-    const playerNameInput = document.getElementById("playerName");
+    const playerName = document.getElementById("playerName");
     const profileName = document.getElementById("profileName");
-    const gemsText = document.getElementById("gems");
-    const coinsText = document.getElementById("coins");
-    const mailDot = document.getElementById("mailDot");
-    const mailModal = document.getElementById("mailModal");
-    const mailTitle = document.getElementById("mailTitle");
-    const mailMessage = document.getElementById("mailMessage");
-    const claimButton = document.getElementById("claimButton");
-    const statusPill = document.getElementById("statusPill");
-    const newsText = document.getElementById("newsText");
-    const page = document.getElementById("page");
-    const toast = document.getElementById("toast");
 
-    function today() {
-      return new Date().toDateString();
+    window.addEventListener("load", () => {
+      const savedName = localStorage.getItem("redvyrPlayerName");
+      if (savedName) {
+        playerName.value = savedName;
+        profileName.textContent = savedName;
+      }
+    });
+
+    playerName.addEventListener("input", () => {
+      const name = playerName.value.trim() || "Guest Hero";
+      profileName.textContent = name;
+      localStorage.setItem("redvyrPlayerName", playerName.value.trim());
+    });
+
+    const modalInfo = {
+      "Login": "Login is not connected yet. Later this will save your account, coins, inventory, daily rewards, and kingdom progress.",
+      "Account": "Account creation is planned. For now, your name is saved only in this browser as a preview.",
+      "About": "Redvyr Kingdoms is planned as a simple browser RPG where players build camps, join kingdoms, complete quests, collect gear, and return daily.",
+      "Quests": "Quests will give players simple goals like collect resources, defeat enemies, find treasure, and help the kingdom.",
+      "Kingdoms": "Kingdoms will let players team up, build together, donate resources, and climb seasonal leaderboards.",
+      "Inventory": "Inventory will hold weapons, armor, resources, cosmetics, chests, and rewards.",
+      "Shop": "The shop will focus on cosmetics, supporter items, pets, boosts, and fair upgrades. No heavy pay-to-win.",
+      "Roadmap": "Roadmap: homepage preview → accounts → inventory → daily rewards → quests → kingdom system → playable test world.",
+      "Leaderboard": "Leaderboards will track top kingdoms, richest players, quest progress, and seasonal winners.",
+      "Discord": "Add your Discord invite link here later.",
+      "Settings": "Settings will include sound, graphics, account options, and accessibility options."
+    };
+
+    function openModal(title) {
+      document.getElementById("modalTitle").textContent = title;
+      document.getElementById("modalText").textContent = modalInfo[title] || "This feature is coming soon.";
+      document.getElementById("modalBg").classList.add("show");
     }
 
-    function updateUI() {
-      playerNameInput.value = playerName;
-      profileName.textContent = playerName;
-      gemsText.textContent = gems;
-      coinsText.textContent = coins;
+    function hideModal() {
+      document.getElementById("modalBg").classList.remove("show");
+    }
 
-      if (lastOpenedMail !== today()) {
-        mailDot.style.display = "block";
-      } else {
-        mailDot.style.display = "none";
+    function closeModal(event) {
+      if (event.target.id === "modalBg") {
+        hideModal();
       }
     }
 
     function playPreview() {
-      const typedName = playerNameInput.value.trim();
-
-      if (typedName.length < 2) {
-        showToast("Type a nickname first.");
-        playerNameInput.focus();
-        return;
-      }
-
-      playerName = typedName;
-      localStorage.setItem("redvyrPlayerName", playerName);
-
-      profileName.textContent = playerName;
-      page.classList.add("entered-game");
-
-      statusPill.textContent = "Welcome, " + playerName + " • You joined the kingdom preview";
-      newsText.textContent = playerName + " has entered Redvyr. Check your mail, collect your daily reward, and prepare for the first playable world.";
-
-      showToast("Welcome to Redvyr, " + playerName + "!");
-      updateUI();
+      const name = playerName.value.trim() || "Guest Hero";
+      showToast("Welcome, " + name + ". Gameplay is coming soon.");
     }
 
-    function openMail() {
-      mailModal.style.display = "flex";
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("show");
 
-      lastOpenedMail = today();
-      localStorage.setItem("redvyrLastOpenedMail", lastOpenedMail);
-      mailDot.style.display = "none";
-
-      if (lastClaimedReward !== today()) {
-        mailTitle.textContent = "Welcome back, " + playerName + "!";
-        mailMessage.textContent = "The kingdom sent you a daily gift. Claim 5 gems before the day ends.";
-        claimButton.style.display = "inline-block";
-      } else {
-        mailTitle.textContent = "Mail already claimed";
-        mailMessage.textContent = "You already collected today's reward. Come back tomorrow for more gems.";
-        claimButton.style.display = "none";
-      }
+      setTimeout(() => {
+        toast.classList.remove("show");
+      }, 2200);
     }
-
-    function closeMail() {
-      mailModal.style.display = "none";
-    }
-
-    function claimMail() {
-      if (lastClaimedReward === today()) return;
-
-      gems += 5;
-      lastClaimedReward = today();
-
-      localStorage.setItem("redvyrGems", gems);
-      localStorage.setItem("redvyrLastClaimedReward", lastClaimedReward);
-
-      mailTitle.textContent = "Reward claimed!";
-      mailMessage.textContent = "+5 gems were added to your account.";
-      claimButton.style.display = "none";
-
-      showToast("+5 gems claimed!");
-      updateUI();
-    }
-
-    function showToast(text) {
-      toast.textContent = text;
-      toast.style.display = "block";
-
-      clearTimeout(window.toastTimer);
-      window.toastTimer = setTimeout(() => {
-        toast.style.display = "none";
-      }, 2600);
-    }
-
-    updateUI();
   </script>
-
 </body>
 </html>
