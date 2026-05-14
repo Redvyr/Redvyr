@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Redvyr</title>
+  <title>Redvyr Kingdoms</title>
 
   <style>
     * {
@@ -12,11 +12,21 @@
       padding: 0;
     }
 
+    :root {
+      --red: #9f1f17;
+      --red-light: #d9442e;
+      --gold: #f2c35f;
+      --cream: #fff0c8;
+      --dark: #160b05;
+      --panel: rgba(25, 12, 5, 0.74);
+      --panel-dark: rgba(12, 6, 3, 0.74);
+    }
+
     body {
       min-height: 100vh;
       font-family: Arial, Helvetica, sans-serif;
       background: #120804;
-      color: #fff0c8;
+      color: var(--cream);
       overflow: hidden;
     }
 
@@ -25,47 +35,125 @@
       width: 100vw;
       height: 100vh;
       background-image:
-        linear-gradient(to bottom, rgba(0,0,0,0.05), rgba(0,0,0,0.35)),
+        linear-gradient(to bottom, rgba(0,0,0,0.04), rgba(0,0,0,0.38)),
         url("backround.png");
       background-size: cover;
       background-position: center;
       display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 32px;
+      flex-direction: column;
+      padding: 22px;
     }
 
     .overlay {
       position: absolute;
       inset: 0;
-      background: radial-gradient(circle at center, transparent 35%, rgba(0,0,0,0.28));
+      background:
+        radial-gradient(circle at center, transparent 32%, rgba(0,0,0,0.26)),
+        linear-gradient(to right, rgba(0,0,0,0.25), transparent 28%, transparent 72%, rgba(0,0,0,0.25));
       pointer-events: none;
+      z-index: 1;
+    }
+
+    .topbar {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .mini-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(18, 8, 3, 0.72);
+      border: 2px solid rgba(242, 195, 95, 0.45);
+      border-radius: 14px;
+      padding: 10px 14px;
+      backdrop-filter: blur(4px);
+    }
+
+    .crest {
+      width: 36px;
+      height: 42px;
+      background: linear-gradient(#d9442e, #76150e);
+      border: 2px solid var(--gold);
+      border-radius: 6px 6px 12px 12px;
+      display: grid;
+      place-items: center;
+      font-size: 20px;
+    }
+
+    .mini-logo strong {
+      display: block;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 22px;
+      line-height: 0.9;
+      color: #ffe4a6;
+      text-shadow: 2px 2px 0 #55130c;
+    }
+
+    .mini-logo span {
+      font-size: 10px;
+      font-weight: 900;
+      color: var(--gold);
+      letter-spacing: 3px;
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .small-btn {
+      cursor: pointer;
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: var(--cream);
+      background: rgba(18, 8, 3, 0.72);
+      border: 2px solid rgba(242, 195, 95, 0.45);
+      font-weight: 900;
+      transition: 0.15s;
+      backdrop-filter: blur(4px);
+    }
+
+    .small-btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.15);
     }
 
     .content {
       position: relative;
       z-index: 2;
+      flex: 1;
       display: grid;
-      grid-template-columns: 1fr 320px;
-      gap: 40px;
+      grid-template-columns: minmax(320px, 520px) minmax(240px, 1fr) minmax(260px, 360px);
+      gap: 28px;
       align-items: center;
-      width: min(1050px, 100%);
+      width: min(1320px, 100%);
+      margin: 0 auto;
     }
 
-    .left {
-      max-width: 520px;
-      background: rgba(25, 12, 5, 0.72);
+    .panel {
+      background: var(--panel);
       border: 2px solid rgba(242, 195, 95, 0.5);
       border-radius: 16px;
-      padding: 26px;
+      padding: 24px;
       backdrop-filter: blur(4px);
       box-shadow: 0 12px 35px rgba(0,0,0,0.35);
     }
 
+    .left-panel {
+      align-self: center;
+    }
+
     .logo {
       font-family: Georgia, "Times New Roman", serif;
-      font-size: clamp(50px, 7vw, 82px);
-      line-height: 0.9;
+      font-size: clamp(52px, 6vw, 86px);
+      line-height: 0.88;
       color: #ffe4a6;
       text-shadow: 4px 4px 0 #55130c;
       letter-spacing: 2px;
@@ -73,12 +161,12 @@
 
     .logo span {
       display: block;
-      color: #d33a2a;
+      color: var(--red-light);
     }
 
     .tagline {
       margin-top: 14px;
-      color: #f2c35f;
+      color: var(--gold);
       font-weight: 900;
       letter-spacing: 2px;
       text-transform: uppercase;
@@ -87,53 +175,92 @@
 
     .desc {
       margin-top: 18px;
-      color: rgba(255, 240, 200, 0.86);
+      color: rgba(255, 240, 200, 0.88);
       line-height: 1.6;
       font-size: 16px;
       font-weight: 700;
     }
 
+    .name-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin-top: 20px;
+    }
+
+    .name-row label {
+      color: var(--gold);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    input {
+      width: 100%;
+      padding: 13px 14px;
+      border-radius: 10px;
+      border: 2px solid rgba(242, 195, 95, 0.45);
+      background: rgba(0,0,0,0.42);
+      color: var(--cream);
+      font-weight: 900;
+      outline: none;
+    }
+
     .buttons {
       display: flex;
       gap: 12px;
-      margin-top: 24px;
+      margin-top: 22px;
       flex-wrap: wrap;
     }
 
     button {
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    .play {
       cursor: pointer;
-      border: none;
-      border-radius: 10px;
-      padding: 13px 20px;
+      border-radius: 11px;
+      padding: 14px 24px;
+      background: linear-gradient(#d9442e, #8e1c13);
+      color: white;
+      border: 2px solid var(--gold);
+      box-shadow: 0 5px 0 #3b0a05;
       font-weight: 900;
       transition: 0.15s;
     }
 
-    .play {
-      background: linear-gradient(#d9442e, #8e1c13);
-      color: white;
-      border: 2px solid #f2c35f;
-      box-shadow: 0 5px 0 #3b0a05;
-    }
-
     .info {
+      cursor: pointer;
+      border-radius: 11px;
+      padding: 14px 20px;
       background: rgba(0,0,0,0.45);
-      color: #fff0c8;
+      color: var(--cream);
       border: 2px solid rgba(242, 195, 95, 0.45);
+      font-weight: 900;
+      transition: 0.15s;
     }
 
-    button:hover {
+    .play:hover,
+    .info:hover {
       transform: translateY(-2px);
       filter: brightness(1.12);
     }
 
-    .mascot-wrap {
-      text-align: center;
+    .middle {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: end;
+      height: 100%;
+      padding-top: 80px;
+      padding-bottom: 50px;
     }
 
     .mascot {
-      width: 300px;
-      max-width: 100%;
+      width: min(310px, 90%);
+      max-height: 46vh;
+      object-fit: contain;
       filter: drop-shadow(0 18px 18px rgba(0,0,0,0.55));
       animation: floaty 3.5s ease-in-out infinite;
     }
@@ -159,41 +286,254 @@
       font-weight: 800;
     }
 
+    .right-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .profile-card {
+      background: var(--panel);
+      border: 2px solid rgba(242, 195, 95, 0.5);
+      border-radius: 16px;
+      padding: 16px;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 12px 35px rgba(0,0,0,0.28);
+      display: grid;
+      grid-template-columns: 46px 1fr 38px;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .avatar {
+      width: 46px;
+      height: 46px;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      background: linear-gradient(#d9442e, #7a160f);
+      border: 2px solid var(--gold);
+      font-size: 23px;
+    }
+
+    .profile-card strong {
+      display: block;
+      color: #ffe4a6;
+      font-size: 15px;
+    }
+
+    .profile-card span {
+      display: block;
+      margin-top: 3px;
+      color: rgba(255,240,200,0.68);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .level {
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--red);
+      border: 2px solid var(--gold);
+      font-weight: 900;
+    }
+
+    .menu-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .menu-btn {
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      text-align: left;
+      padding: 13px 15px;
+      border-radius: 13px;
+      color: var(--cream);
+      background: rgba(25, 12, 5, 0.78);
+      border: 2px solid rgba(242, 195, 95, 0.46);
+      backdrop-filter: blur(4px);
+      box-shadow: 0 7px 0 rgba(0,0,0,0.22);
+      transition: 0.15s;
+    }
+
+    .menu-btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.14);
+    }
+
+    .menu-btn .icon {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+      background: rgba(0,0,0,0.35);
+      border: 1px solid rgba(242, 195, 95, 0.35);
+      font-size: 21px;
+    }
+
+    .menu-btn strong {
+      display: block;
+      font-size: 16px;
+    }
+
+    .menu-btn small {
+      display: block;
+      margin-top: 2px;
+      color: rgba(255,240,200,0.68);
+      font-weight: 800;
+      font-size: 12px;
+    }
+
+    .news {
+      background: var(--panel-dark);
+      border: 2px solid rgba(242, 195, 95, 0.4);
+      border-radius: 16px;
+      padding: 16px;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 12px 35px rgba(0,0,0,0.24);
+    }
+
+    .news h3 {
+      color: var(--gold);
+      margin-bottom: 10px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 22px;
+    }
+
+    .news p {
+      color: rgba(255,240,200,0.76);
+      font-size: 13px;
+      line-height: 1.45;
+      font-weight: 700;
+    }
+
+    .bottom-bar {
+      position: relative;
+      z-index: 2;
+      width: min(920px, 100%);
+      margin: 0 auto;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      padding-bottom: 6px;
+      flex-wrap: wrap;
+    }
+
+    .bottom-btn {
+      cursor: pointer;
+      padding: 10px 15px;
+      border-radius: 10px;
+      background: rgba(18, 8, 3, 0.74);
+      color: var(--cream);
+      border: 2px solid rgba(242, 195, 95, 0.42);
+      font-weight: 900;
+      transition: 0.15s;
+      backdrop-filter: blur(4px);
+    }
+
+    .bottom-btn:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.14);
+    }
+
     .toast {
       position: fixed;
       left: 50%;
       bottom: 24px;
       transform: translateX(-50%) translateY(120px);
       background: #160b05;
-      color: #fff0c8;
-      border: 2px solid #f2c35f;
+      color: var(--cream);
+      border: 2px solid var(--gold);
       border-radius: 10px;
       padding: 12px 18px;
       font-weight: 900;
       transition: 0.25s;
       z-index: 10;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.45);
     }
 
     .toast.show {
       transform: translateX(-50%) translateY(0);
     }
 
-    @media (max-width: 800px) {
+    .modal-bg {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      z-index: 20;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+    }
+
+    .modal-bg.show {
+      display: flex;
+    }
+
+    .modal {
+      width: min(460px, 100%);
+      background: #1d0d05;
+      color: var(--cream);
+      border: 3px solid var(--gold);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 20px 70px rgba(0,0,0,0.6);
+    }
+
+    .modal h2 {
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--gold);
+      font-size: 30px;
+      margin-bottom: 10px;
+    }
+
+    .modal p {
+      color: rgba(255,240,200,0.82);
+      line-height: 1.55;
+      font-weight: 700;
+      margin-bottom: 18px;
+    }
+
+    .modal-close {
+      cursor: pointer;
+      padding: 11px 16px;
+      border-radius: 10px;
+      background: linear-gradient(#d9442e, #8e1c13);
+      color: white;
+      border: 2px solid var(--gold);
+      font-weight: 900;
+    }
+
+    @media (max-width: 1050px) {
       body {
         overflow: auto;
       }
 
       .home {
-        min-height: 100vh;
         height: auto;
+        min-height: 100vh;
       }
 
       .content {
         grid-template-columns: 1fr;
         text-align: center;
+        padding-top: 28px;
       }
 
-      .left {
+      .left-panel,
+      .right-panel {
+        max-width: 620px;
+        width: 100%;
         margin: 0 auto;
       }
 
@@ -201,8 +541,41 @@
         justify-content: center;
       }
 
+      .middle {
+        order: -1;
+        padding-top: 30px;
+        padding-bottom: 10px;
+      }
+
       .mascot {
-        width: 230px;
+        width: 220px;
+      }
+
+      .menu-btn {
+        text-align: left;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .topbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .top-actions {
+        justify-content: center;
+      }
+
+      .logo {
+        font-size: 48px;
+      }
+
+      .panel {
+        padding: 20px;
+      }
+
+      .bottom-bar {
+        margin-top: 16px;
       }
     }
   </style>
@@ -212,8 +585,23 @@
   <main class="home">
     <div class="overlay"></div>
 
+    <header class="topbar">
+      <div class="mini-logo">
+        <div class="crest">♕</div>
+        <div>
+          <strong>REDVYR</strong>
+          <span>KINGDOMS</span>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <button class="small-btn" onclick="openModal('Login')">Log In</button>
+        <button class="small-btn" onclick="openModal('Account')">Create Account</button>
+      </div>
+    </header>
+
     <section class="content">
-      <div class="left">
+      <div class="left-panel panel">
         <h1 class="logo">REDVYR <span>KINGDOMS</span></h1>
         <div class="tagline">Build • Explore • Belong</div>
 
@@ -222,30 +610,155 @@
           collect gear, and grow your legend in the world of Redvyr.
         </p>
 
+        <div class="name-row">
+          <label for="playerName">Player Name</label>
+          <input id="playerName" placeholder="Guest Hero" maxlength="18" />
+        </div>
+
         <div class="buttons">
-          <button class="play" onclick="showMessage('Gameplay coming soon.')">Play Preview</button>
-          <button class="info" onclick="showMessage('Quests, kingdoms, accounts, and inventory are planned.')">What is this?</button>
+          <button class="play" onclick="playPreview()">Play Preview</button>
+          <button class="info" onclick="openModal('About')">What is this?</button>
         </div>
       </div>
 
-      <div class="mascot-wrap">
+      <div class="middle">
         <img class="mascot" src="mascot.png" alt="Redvyr mascot">
-        <div class="small-note">Preview site only</div>
+        <div class="small-note">Preview site only · gameplay soon</div>
       </div>
+
+      <aside class="right-panel">
+        <div class="profile-card">
+          <div class="avatar">🧑</div>
+          <div>
+            <strong id="profileName">Guest Hero</strong>
+            <span>Level 1 · 250 coins · 15 gems</span>
+          </div>
+          <div class="level">1</div>
+        </div>
+
+        <div class="menu-grid">
+          <button class="menu-btn" onclick="openModal('Quests')">
+            <span class="icon">📜</span>
+            <span>
+              <strong>Quests</strong>
+              <small>Daily tasks and rewards</small>
+            </span>
+          </button>
+
+          <button class="menu-btn" onclick="openModal('Kingdoms')">
+            <span class="icon">🏰</span>
+            <span>
+              <strong>Kingdoms</strong>
+              <small>Join friends and build</small>
+            </span>
+          </button>
+
+          <button class="menu-btn" onclick="openModal('Inventory')">
+            <span class="icon">🎒</span>
+            <span>
+              <strong>Inventory</strong>
+              <small>Gear, items, cosmetics</small>
+            </span>
+          </button>
+
+          <button class="menu-btn" onclick="openModal('Shop')">
+            <span class="icon">💰</span>
+            <span>
+              <strong>Shop</strong>
+              <small>Cosmetics and boosts</small>
+            </span>
+          </button>
+        </div>
+
+        <div class="news">
+          <h3>Latest News</h3>
+          <p>
+            Homepage preview is live. Next steps: accounts, inventory,
+            daily rewards, and the first playable test world.
+          </p>
+        </div>
+      </aside>
     </section>
+
+    <nav class="bottom-bar">
+      <button class="bottom-btn" onclick="openModal('Roadmap')">Roadmap</button>
+      <button class="bottom-btn" onclick="openModal('Leaderboard')">Leaderboard</button>
+      <button class="bottom-btn" onclick="openModal('Discord')">Discord</button>
+      <button class="bottom-btn" onclick="openModal('Settings')">Settings</button>
+    </nav>
   </main>
+
+  <div id="modalBg" class="modal-bg" onclick="closeModal(event)">
+    <div class="modal">
+      <h2 id="modalTitle">Title</h2>
+      <p id="modalText">Text</p>
+      <button class="modal-close" onclick="hideModal()">Close</button>
+    </div>
+  </div>
 
   <div id="toast" class="toast">Message</div>
 
   <script>
-    function showMessage(message) {
+    const playerName = document.getElementById("playerName");
+    const profileName = document.getElementById("profileName");
+
+    window.addEventListener("load", () => {
+      const savedName = localStorage.getItem("redvyrPlayerName");
+      if (savedName) {
+        playerName.value = savedName;
+        profileName.textContent = savedName;
+      }
+    });
+
+    playerName.addEventListener("input", () => {
+      const name = playerName.value.trim() || "Guest Hero";
+      profileName.textContent = name;
+      localStorage.setItem("redvyrPlayerName", playerName.value.trim());
+    });
+
+    const modalInfo = {
+      "Login": "Login is not connected yet. Later this will save your account, coins, inventory, daily rewards, and kingdom progress.",
+      "Account": "Account creation is planned. For now, your name is saved only in this browser as a preview.",
+      "About": "Redvyr Kingdoms is planned as a simple browser RPG where players build camps, join kingdoms, complete quests, collect gear, and return daily.",
+      "Quests": "Quests will give players simple goals like collect resources, defeat enemies, find treasure, and help the kingdom.",
+      "Kingdoms": "Kingdoms will let players team up, build together, donate resources, and climb seasonal leaderboards.",
+      "Inventory": "Inventory will hold weapons, armor, resources, cosmetics, chests, and rewards.",
+      "Shop": "The shop will focus on cosmetics, supporter items, pets, boosts, and fair upgrades. No heavy pay-to-win.",
+      "Roadmap": "Roadmap: homepage preview → accounts → inventory → daily rewards → quests → kingdom system → playable test world.",
+      "Leaderboard": "Leaderboards will track top kingdoms, richest players, quest progress, and seasonal winners.",
+      "Discord": "Add your Discord invite link here later.",
+      "Settings": "Settings will include sound, graphics, account options, and accessibility options."
+    };
+
+    function openModal(title) {
+      document.getElementById("modalTitle").textContent = title;
+      document.getElementById("modalText").textContent = modalInfo[title] || "This feature is coming soon.";
+      document.getElementById("modalBg").classList.add("show");
+    }
+
+    function hideModal() {
+      document.getElementById("modalBg").classList.remove("show");
+    }
+
+    function closeModal(event) {
+      if (event.target.id === "modalBg") {
+        hideModal();
+      }
+    }
+
+    function playPreview() {
+      const name = playerName.value.trim() || "Guest Hero";
+      showToast("Welcome, " + name + ". Gameplay is coming soon.");
+    }
+
+    function showToast(message) {
       const toast = document.getElementById("toast");
       toast.textContent = message;
       toast.classList.add("show");
 
       setTimeout(() => {
         toast.classList.remove("show");
-      }, 2000);
+      }, 2200);
     }
   </script>
 </body>
