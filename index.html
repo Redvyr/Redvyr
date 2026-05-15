@@ -18,8 +18,8 @@
       --gold: #f2c35f;
       --cream: #fff0c8;
       --dark: #160b05;
-      --panel: rgba(25, 12, 5, 0.74);
-      --panel-dark: rgba(12, 6, 3, 0.74);
+      --panel: rgba(25, 12, 5, 0.76);
+      --panel-dark: rgba(10, 5, 2, 0.74);
     }
 
     body {
@@ -30,136 +30,116 @@
       overflow: hidden;
     }
 
-    .home {
+    .screen {
       position: relative;
       width: 100vw;
       height: 100vh;
       background-image:
-        linear-gradient(to bottom, rgba(0,0,0,0.04), rgba(0,0,0,0.38)),
+        linear-gradient(to bottom, rgba(0,0,0,0.04), rgba(0,0,0,0.42)),
         url("backround.png");
       background-size: cover;
       background-position: center;
-      display: flex;
-      flex-direction: column;
-      padding: 22px;
+      overflow: hidden;
     }
 
-    .overlay {
+    .screen::after {
+      content: "";
       position: absolute;
       inset: 0;
       background:
-        radial-gradient(circle at center, transparent 32%, rgba(0,0,0,0.26)),
-        linear-gradient(to right, rgba(0,0,0,0.25), transparent 28%, transparent 72%, rgba(0,0,0,0.25));
+        radial-gradient(circle at center, transparent 30%, rgba(0,0,0,0.28)),
+        linear-gradient(to right, rgba(0,0,0,0.28), transparent 28%, transparent 72%, rgba(0,0,0,0.28));
       pointer-events: none;
       z-index: 1;
     }
 
-    .topbar {
-      position: relative;
-      z-index: 2;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 14px;
-    }
-
-    .mini-logo {
+    .top-logo {
+      position: absolute;
+      top: 22px;
+      left: 24px;
+      z-index: 5;
       display: flex;
       align-items: center;
-      gap: 10px;
-      background: rgba(18, 8, 3, 0.72);
+      gap: 12px;
+      padding: 11px 15px;
+      background: rgba(18, 8, 3, 0.74);
       border: 2px solid rgba(242, 195, 95, 0.45);
       border-radius: 14px;
-      padding: 10px 14px;
       backdrop-filter: blur(4px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
     }
 
     .crest {
-      width: 36px;
-      height: 42px;
+      width: 38px;
+      height: 44px;
       background: linear-gradient(#d9442e, #76150e);
       border: 2px solid var(--gold);
       border-radius: 6px 6px 12px 12px;
       display: grid;
       place-items: center;
-      font-size: 20px;
+      font-size: 21px;
     }
 
-    .mini-logo strong {
+    .top-logo strong {
       display: block;
       font-family: Georgia, "Times New Roman", serif;
-      font-size: 22px;
+      font-size: 23px;
       line-height: 0.9;
       color: #ffe4a6;
       text-shadow: 2px 2px 0 #55130c;
     }
 
-    .mini-logo span {
+    .top-logo span {
       font-size: 10px;
       font-weight: 900;
       color: var(--gold);
       letter-spacing: 3px;
     }
 
-    .top-actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-    }
-
-    .small-btn {
-      cursor: pointer;
-      border-radius: 10px;
-      padding: 10px 14px;
-      color: var(--cream);
-      background: rgba(18, 8, 3, 0.72);
-      border: 2px solid rgba(242, 195, 95, 0.45);
-      font-weight: 900;
-      transition: 0.15s;
-      backdrop-filter: blur(4px);
-    }
-
-    .small-btn:hover {
-      transform: translateY(-2px);
-      filter: brightness(1.15);
-    }
-
-    .content {
+    .center-area {
       position: relative;
-      z-index: 2;
-      flex: 1;
+      z-index: 4;
+      width: 100%;
+      height: 100%;
       display: grid;
-      grid-template-columns: minmax(320px, 520px) minmax(240px, 1fr) minmax(260px, 360px);
-      gap: 28px;
-      align-items: center;
-      width: min(1320px, 100%);
-      margin: 0 auto;
+      place-items: center;
+      padding: 26px;
     }
 
-    .panel {
+    .intro-layout {
+      width: min(950px, 100%);
+      display: grid;
+      grid-template-columns: 1fr 330px;
+      gap: 42px;
+      align-items: center;
+      transition: 0.45s ease;
+    }
+
+    .intro-layout.hide {
+      opacity: 0;
+      transform: translateY(-18px) scale(0.98);
+      pointer-events: none;
+    }
+
+    .intro-panel {
       background: var(--panel);
       border: 2px solid rgba(242, 195, 95, 0.5);
-      border-radius: 16px;
-      padding: 24px;
+      border-radius: 18px;
+      padding: 28px;
       backdrop-filter: blur(4px);
-      box-shadow: 0 12px 35px rgba(0,0,0,0.35);
+      box-shadow: 0 14px 38px rgba(0,0,0,0.35);
     }
 
-    .left-panel {
-      align-self: center;
-    }
-
-    .logo {
+    .title {
       font-family: Georgia, "Times New Roman", serif;
-      font-size: clamp(52px, 6vw, 86px);
+      font-size: clamp(54px, 7vw, 90px);
       line-height: 0.88;
       color: #ffe4a6;
       text-shadow: 4px 4px 0 #55130c;
       letter-spacing: 2px;
     }
 
-    .logo span {
+    .title span {
       display: block;
       color: var(--red-light);
     }
@@ -181,14 +161,13 @@
       font-weight: 700;
     }
 
-    .name-row {
+    .login-box {
+      margin-top: 22px;
       display: grid;
-      grid-template-columns: 1fr;
-      gap: 8px;
-      margin-top: 20px;
+      gap: 10px;
     }
 
-    .name-row label {
+    label {
       color: var(--gold);
       font-size: 12px;
       font-weight: 900;
@@ -196,70 +175,46 @@
       text-transform: uppercase;
     }
 
-    input {
+    input,
+    select {
       width: 100%;
       padding: 13px 14px;
-      border-radius: 10px;
+      border-radius: 11px;
       border: 2px solid rgba(242, 195, 95, 0.45);
-      background: rgba(0,0,0,0.42);
+      background: rgba(0,0,0,0.45);
       color: var(--cream);
       font-weight: 900;
       outline: none;
     }
 
-    .buttons {
-      display: flex;
-      gap: 12px;
-      margin-top: 22px;
-      flex-wrap: wrap;
-    }
-
-    button {
-      font-family: Arial, Helvetica, sans-serif;
-    }
-
-    .play {
+    .play-btn {
       cursor: pointer;
-      border-radius: 11px;
-      padding: 14px 24px;
+      margin-top: 8px;
+      border-radius: 12px;
+      padding: 15px 24px;
       background: linear-gradient(#d9442e, #8e1c13);
       color: white;
       border: 2px solid var(--gold);
       box-shadow: 0 5px 0 #3b0a05;
       font-weight: 900;
+      font-size: 16px;
       transition: 0.15s;
     }
 
-    .info {
-      cursor: pointer;
-      border-radius: 11px;
-      padding: 14px 20px;
-      background: rgba(0,0,0,0.45);
-      color: var(--cream);
-      border: 2px solid rgba(242, 195, 95, 0.45);
-      font-weight: 900;
-      transition: 0.15s;
-    }
-
-    .play:hover,
-    .info:hover {
+    .play-btn:hover {
       transform: translateY(-2px);
       filter: brightness(1.12);
     }
 
-    .middle {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: end;
-      height: 100%;
-      padding-top: 80px;
-      padding-bottom: 50px;
+    .mascot-preview {
+      display: grid;
+      place-items: center;
+      text-align: center;
     }
 
     .mascot {
-      width: min(310px, 90%);
-      max-height: 46vh;
+      width: min(300px, 90%);
+      max-height: 56vh;
       object-fit: contain;
       filter: drop-shadow(0 18px 18px rgba(0,0,0,0.55));
       animation: floaty 3.5s ease-in-out infinite;
@@ -274,7 +229,7 @@
       }
     }
 
-    .small-note {
+    .preview-pill {
       margin-top: 12px;
       display: inline-block;
       background: rgba(0,0,0,0.55);
@@ -286,163 +241,246 @@
       font-weight: 800;
     }
 
-    .right-panel {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
+    .game-menu {
+      position: absolute;
+      inset: 0;
+      z-index: 4;
+      display: none;
+      padding: 22px;
     }
 
-    .profile-card {
-      background: var(--panel);
-      border: 2px solid rgba(242, 195, 95, 0.5);
-      border-radius: 16px;
-      padding: 16px;
-      backdrop-filter: blur(4px);
-      box-shadow: 0 12px 35px rgba(0,0,0,0.28);
-      display: grid;
-      grid-template-columns: 46px 1fr 38px;
-      gap: 12px;
+    .game-menu.show {
+      display: block;
+      animation: fadeIn 0.45s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: scale(0.98);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .profile-bar {
+      position: absolute;
+      top: 22px;
+      right: 24px;
+      display: flex;
       align-items: center;
+      gap: 12px;
+      background: rgba(18, 8, 3, 0.76);
+      border: 2px solid rgba(242, 195, 95, 0.45);
+      border-radius: 14px;
+      padding: 11px 14px;
+      backdrop-filter: blur(4px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
     }
 
     .avatar {
-      width: 46px;
-      height: 46px;
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
       display: grid;
       place-items: center;
-      border-radius: 10px;
-      background: linear-gradient(#d9442e, #7a160f);
+      background: linear-gradient(#d9442e, #76150e);
       border: 2px solid var(--gold);
-      font-size: 23px;
+      font-size: 22px;
     }
 
-    .profile-card strong {
+    .profile-bar strong {
       display: block;
       color: #ffe4a6;
       font-size: 15px;
     }
 
-    .profile-card span {
+    .profile-bar span {
       display: block;
-      margin-top: 3px;
-      color: rgba(255,240,200,0.68);
+      margin-top: 2px;
+      color: rgba(255,240,200,0.72);
       font-size: 12px;
       font-weight: 800;
     }
 
-    .level {
-      width: 36px;
-      height: 36px;
+    .world-select {
+      position: absolute;
+      top: 98px;
+      right: 24px;
+      width: 260px;
+      background: rgba(18, 8, 3, 0.76);
+      border: 2px solid rgba(242, 195, 95, 0.45);
+      border-radius: 14px;
+      padding: 14px;
+      backdrop-filter: blur(4px);
+    }
+
+    .player-stage {
+      position: absolute;
+      left: 50%;
+      bottom: 110px;
+      transform: translateX(-50%);
       display: grid;
       place-items: center;
-      border-radius: 50%;
-      background: var(--red);
-      border: 2px solid var(--gold);
+      text-align: center;
+    }
+
+    .name-tag {
+      margin-bottom: 8px;
+      padding: 8px 14px;
+      background: rgba(18, 8, 3, 0.78);
+      border: 2px solid rgba(242, 195, 95, 0.55);
+      border-radius: 999px;
+      color: #ffe4a6;
       font-weight: 900;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.35);
+      animation: floaty 3.5s ease-in-out infinite;
     }
 
-    .menu-grid {
-      display: grid;
-      grid-template-columns: 1fr;
+    .game-mascot {
+      width: min(270px, 36vw);
+      max-height: 48vh;
+      object-fit: contain;
+      filter: drop-shadow(0 18px 18px rgba(0,0,0,0.55));
+      animation: floaty 3.5s ease-in-out infinite;
+    }
+
+    .menu-buttons {
+      position: absolute;
+      left: 24px;
+      bottom: 24px;
+      display: flex;
+      flex-wrap: wrap;
       gap: 10px;
+      width: min(660px, calc(100vw - 48px));
     }
 
-    .menu-btn {
+    .menu-button {
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 12px;
-      width: 100%;
-      text-align: left;
-      padding: 13px 15px;
+      gap: 10px;
+      padding: 12px 15px;
+      min-width: 145px;
       border-radius: 13px;
       color: var(--cream);
-      background: rgba(25, 12, 5, 0.78);
-      border: 2px solid rgba(242, 195, 95, 0.46);
+      background: rgba(18, 8, 3, 0.76);
+      border: 2px solid rgba(242, 195, 95, 0.45);
       backdrop-filter: blur(4px);
-      box-shadow: 0 7px 0 rgba(0,0,0,0.22);
+      box-shadow: 0 6px 0 rgba(0,0,0,0.24);
       transition: 0.15s;
+      font-weight: 900;
     }
 
-    .menu-btn:hover {
+    .menu-button:hover {
       transform: translateY(-2px);
       filter: brightness(1.14);
     }
 
-    .menu-btn .icon {
-      width: 38px;
-      height: 38px;
+    .menu-button .icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 9px;
       display: grid;
       place-items: center;
-      border-radius: 10px;
-      background: rgba(0,0,0,0.35);
-      border: 1px solid rgba(242, 195, 95, 0.35);
-      font-size: 21px;
+      background: rgba(0,0,0,0.34);
+      border: 1px solid rgba(242, 195, 95, 0.32);
+      font-size: 18px;
     }
 
-    .menu-btn strong {
-      display: block;
-      font-size: 16px;
-    }
-
-    .menu-btn small {
-      display: block;
-      margin-top: 2px;
-      color: rgba(255,240,200,0.68);
-      font-weight: 800;
-      font-size: 12px;
-    }
-
-    .news {
-      background: var(--panel-dark);
-      border: 2px solid rgba(242, 195, 95, 0.4);
-      border-radius: 16px;
-      padding: 16px;
-      backdrop-filter: blur(4px);
-      box-shadow: 0 12px 35px rgba(0,0,0,0.24);
-    }
-
-    .news h3 {
-      color: var(--gold);
-      margin-bottom: 10px;
-      font-family: Georgia, "Times New Roman", serif;
-      font-size: 22px;
-    }
-
-    .news p {
-      color: rgba(255,240,200,0.76);
-      font-size: 13px;
-      line-height: 1.45;
-      font-weight: 700;
-    }
-
-    .bottom-bar {
-      position: relative;
-      z-index: 2;
-      width: min(920px, 100%);
-      margin: 0 auto;
+    .right-actions {
+      position: absolute;
+      right: 24px;
+      bottom: 24px;
       display: flex;
-      justify-content: center;
+      flex-direction: column;
       gap: 10px;
-      padding-bottom: 6px;
-      flex-wrap: wrap;
+      width: 210px;
     }
 
-    .bottom-btn {
+    .side-button {
       cursor: pointer;
-      padding: 10px 15px;
-      border-radius: 10px;
-      background: rgba(18, 8, 3, 0.74);
+      padding: 12px 14px;
+      border-radius: 13px;
       color: var(--cream);
-      border: 2px solid rgba(242, 195, 95, 0.42);
-      font-weight: 900;
-      transition: 0.15s;
+      background: rgba(18, 8, 3, 0.76);
+      border: 2px solid rgba(242, 195, 95, 0.45);
       backdrop-filter: blur(4px);
+      box-shadow: 0 6px 0 rgba(0,0,0,0.24);
+      transition: 0.15s;
+      font-weight: 900;
+      text-align: left;
     }
 
-    .bottom-btn:hover {
+    .side-button:hover {
       transform: translateY(-2px);
       filter: brightness(1.14);
+    }
+
+    .mail-button {
+      position: relative;
+    }
+
+    .mail-dot {
+      position: absolute;
+      top: -5px;
+      right: -5px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: #e5392b;
+      border: 2px solid white;
+      box-shadow: 0 0 10px rgba(229,57,43,0.8);
+    }
+
+    .modal-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      background: rgba(0,0,0,0.65);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+    }
+
+    .modal-bg.show {
+      display: flex;
+    }
+
+    .modal {
+      width: min(460px, 100%);
+      background: #1d0d05;
+      border: 3px solid var(--gold);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 20px 70px rgba(0,0,0,0.6);
+    }
+
+    .modal h2 {
+      color: var(--gold);
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 30px;
+      margin-bottom: 10px;
+    }
+
+    .modal p {
+      color: rgba(255,240,200,0.84);
+      line-height: 1.55;
+      font-weight: 700;
+      margin-bottom: 18px;
+    }
+
+    .modal button {
+      cursor: pointer;
+      padding: 11px 16px;
+      border-radius: 10px;
+      background: linear-gradient(#d9442e, #8e1c13);
+      color: white;
+      border: 2px solid var(--gold);
+      font-weight: 900;
     }
 
     .toast {
@@ -457,7 +495,7 @@
       padding: 12px 18px;
       font-weight: 900;
       transition: 0.25s;
-      z-index: 10;
+      z-index: 40;
       box-shadow: 0 12px 30px rgba(0,0,0,0.45);
     }
 
@@ -465,234 +503,183 @@
       transform: translateX(-50%) translateY(0);
     }
 
-    .modal-bg {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.65);
-      z-index: 20;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 18px;
-    }
-
-    .modal-bg.show {
-      display: flex;
-    }
-
-    .modal {
-      width: min(460px, 100%);
-      background: #1d0d05;
-      color: var(--cream);
-      border: 3px solid var(--gold);
-      border-radius: 16px;
-      padding: 24px;
-      box-shadow: 0 20px 70px rgba(0,0,0,0.6);
-    }
-
-    .modal h2 {
-      font-family: Georgia, "Times New Roman", serif;
-      color: var(--gold);
-      font-size: 30px;
-      margin-bottom: 10px;
-    }
-
-    .modal p {
-      color: rgba(255,240,200,0.82);
-      line-height: 1.55;
-      font-weight: 700;
-      margin-bottom: 18px;
-    }
-
-    .modal-close {
-      cursor: pointer;
-      padding: 11px 16px;
-      border-radius: 10px;
-      background: linear-gradient(#d9442e, #8e1c13);
-      color: white;
-      border: 2px solid var(--gold);
-      font-weight: 900;
-    }
-
-    @media (max-width: 1050px) {
+    @media (max-width: 850px) {
       body {
         overflow: auto;
       }
 
-      .home {
+      .screen {
         height: auto;
         min-height: 100vh;
       }
 
-      .content {
+      .intro-layout {
         grid-template-columns: 1fr;
         text-align: center;
-        padding-top: 28px;
+        padding-top: 90px;
       }
 
-      .left-panel,
-      .right-panel {
-        max-width: 620px;
-        width: 100%;
+      .intro-panel {
         margin: 0 auto;
       }
 
-      .buttons {
-        justify-content: center;
-      }
-
-      .middle {
-        order: -1;
-        padding-top: 30px;
-        padding-bottom: 10px;
-      }
-
-      .mascot {
-        width: 220px;
-      }
-
-      .menu-btn {
-        text-align: left;
-      }
-    }
-
-    @media (max-width: 620px) {
-      .topbar {
+      .game-menu.show {
+        position: relative;
+        min-height: 100vh;
+        display: flex;
         flex-direction: column;
-        align-items: stretch;
+        gap: 18px;
+        padding-top: 100px;
       }
 
-      .top-actions {
+      .profile-bar,
+      .world-select,
+      .player-stage,
+      .menu-buttons,
+      .right-actions {
+        position: relative;
+        left: auto;
+        right: auto;
+        top: auto;
+        bottom: auto;
+        transform: none;
+        width: 100%;
+        max-width: 520px;
+        margin: 0 auto;
+      }
+
+      .player-stage {
+        order: 1;
+      }
+
+      .world-select {
+        order: 2;
+      }
+
+      .menu-buttons {
+        order: 3;
         justify-content: center;
       }
 
-      .logo {
-        font-size: 48px;
+      .right-actions {
+        order: 4;
       }
 
-      .panel {
-        padding: 20px;
+      .profile-bar {
+        order: 0;
       }
 
-      .bottom-bar {
-        margin-top: 16px;
+      .game-mascot {
+        width: 220px;
+        max-height: none;
       }
     }
   </style>
 </head>
 
 <body>
-  <main class="home">
-    <div class="overlay"></div>
-
-    <header class="topbar">
-      <div class="mini-logo">
-        <div class="crest">♕</div>
-        <div>
-          <strong>REDVYR</strong>
-          <span>KINGDOMS</span>
-        </div>
+  <main class="screen">
+    <div class="top-logo">
+      <div class="crest">♕</div>
+      <div>
+        <strong>REDVYR</strong>
+        <span>KINGDOMS</span>
       </div>
+    </div>
 
-      <div class="top-actions">
-        <button class="small-btn" onclick="openModal('Login')">Log In</button>
-        <button class="small-btn" onclick="openModal('Account')">Create Account</button>
-      </div>
-    </header>
+    <!-- PHASE 1: START / LOGIN SCREEN -->
+    <section id="introLayout" class="center-area">
+      <div class="intro-layout">
+        <div class="intro-panel">
+          <h1 class="title">REDVYR <span>KINGDOMS</span></h1>
+          <div class="tagline">Build • Explore • Belong</div>
 
-    <section class="content">
-      <div class="left-panel panel">
-        <h1 class="logo">REDVYR <span>KINGDOMS</span></h1>
-        <div class="tagline">Build • Explore • Belong</div>
-
-        <p class="desc">
-          A cozy browser kingdom adventure. Build your camp, complete quests,
-          collect gear, and grow your legend in the world of Redvyr.
-        </p>
-
-        <div class="name-row">
-          <label for="playerName">Player Name</label>
-          <input id="playerName" placeholder="Guest Hero" maxlength="18" />
-        </div>
-
-        <div class="buttons">
-          <button class="play" onclick="playPreview()">Play Preview</button>
-          <button class="info" onclick="openModal('About')">What is this?</button>
-        </div>
-      </div>
-
-      <div class="middle">
-        <img class="mascot" src="mascot.png" alt="Redvyr mascot">
-        <div class="small-note">Preview site only · gameplay soon</div>
-      </div>
-
-      <aside class="right-panel">
-        <div class="profile-card">
-          <div class="avatar">🧑</div>
-          <div>
-            <strong id="profileName">Guest Hero</strong>
-            <span>Level 1 · 250 coins · 15 gems</span>
-          </div>
-          <div class="level">1</div>
-        </div>
-
-        <div class="menu-grid">
-          <button class="menu-btn" onclick="openModal('Quests')">
-            <span class="icon">📜</span>
-            <span>
-              <strong>Quests</strong>
-              <small>Daily tasks and rewards</small>
-            </span>
-          </button>
-
-          <button class="menu-btn" onclick="openModal('Kingdoms')">
-            <span class="icon">🏰</span>
-            <span>
-              <strong>Kingdoms</strong>
-              <small>Join friends and build</small>
-            </span>
-          </button>
-
-          <button class="menu-btn" onclick="openModal('Inventory')">
-            <span class="icon">🎒</span>
-            <span>
-              <strong>Inventory</strong>
-              <small>Gear, items, cosmetics</small>
-            </span>
-          </button>
-
-          <button class="menu-btn" onclick="openModal('Shop')">
-            <span class="icon">💰</span>
-            <span>
-              <strong>Shop</strong>
-              <small>Cosmetics and boosts</small>
-            </span>
-          </button>
-        </div>
-
-        <div class="news">
-          <h3>Latest News</h3>
-          <p>
-            Homepage preview is live. Next steps: accounts, inventory,
-            daily rewards, and the first playable test world.
+          <p class="desc">
+            Enter the Kingdom of Redvyr. Type your nickname, choose a preview world,
+            and step into the first version of the game menu.
           </p>
+
+          <div class="login-box">
+            <label for="playerName">Nickname</label>
+            <input id="playerName" placeholder="Guest Hero" maxlength="18" />
+
+            <label for="startWorld">World</label>
+            <select id="startWorld">
+              <option>World A - Main Realm</option>
+              <option>World B - Forest Realm</option>
+              <option>World C - Kingdom Test</option>
+            </select>
+
+            <button class="play-btn" onclick="startPreview()">Play Preview</button>
+          </div>
         </div>
-      </aside>
+
+        <div class="mascot-preview">
+          <img class="mascot" src="mascot.png" alt="Redvyr mascot">
+          <div class="preview-pill">Preview build · no gameplay yet</div>
+        </div>
+      </div>
     </section>
 
-    <nav class="bottom-bar">
-      <button class="bottom-btn" onclick="openModal('Roadmap')">Roadmap</button>
-      <button class="bottom-btn" onclick="openModal('Leaderboard')">Leaderboard</button>
-      <button class="bottom-btn" onclick="openModal('Discord')">Discord</button>
-      <button class="bottom-btn" onclick="openModal('Settings')">Settings</button>
-    </nav>
+    <!-- PHASE 2: AFTER PLAYER STARTS PREVIEW -->
+    <section id="gameMenu" class="game-menu">
+      <div class="profile-bar">
+        <div class="avatar">🧑</div>
+        <div>
+          <strong id="profileName">Guest Hero</strong>
+          <span>Level 1 · 250 coins · 15 gems</span>
+        </div>
+      </div>
+
+      <div class="world-select">
+        <label for="menuWorld">World Select</label>
+        <select id="menuWorld" onchange="worldChanged()">
+          <option>World A - Main Realm</option>
+          <option>World B - Forest Realm</option>
+          <option>World C - Kingdom Test</option>
+        </select>
+      </div>
+
+      <div class="player-stage">
+        <div id="nameTag" class="name-tag">Guest Hero</div>
+        <img class="game-mascot" src="mascot.png" alt="Your Redvyr character">
+      </div>
+
+      <div class="menu-buttons">
+        <button class="menu-button" onclick="openModal('Quests')">
+          <span class="icon">📜</span>
+          Quests
+        </button>
+
+        <button class="menu-button" onclick="openModal('Shop')">
+          <span class="icon">💰</span>
+          Shop
+        </button>
+
+        <button class="menu-button" onclick="openModal('Kingdoms')">
+          <span class="icon">🏰</span>
+          Kingdoms
+        </button>
+
+        <button class="menu-button mail-button" onclick="openMail()">
+          <span class="icon">✉️</span>
+          Mail
+          <span id="mailDot" class="mail-dot"></span>
+        </button>
+      </div>
+
+      <div class="right-actions">
+        <button class="side-button" onclick="openModal('Settings')">⚙ Settings</button>
+        <button class="side-button" onclick="goBack()">↩ Change Name</button>
+      </div>
+    </section>
   </main>
 
   <div id="modalBg" class="modal-bg" onclick="closeModal(event)">
     <div class="modal">
       <h2 id="modalTitle">Title</h2>
       <p id="modalText">Text</p>
-      <button class="modal-close" onclick="hideModal()">Close</button>
+      <button onclick="hideModal()">Close</button>
     </div>
   </div>
 
@@ -700,35 +687,75 @@
 
   <script>
     const playerName = document.getElementById("playerName");
+    const startWorld = document.getElementById("startWorld");
+    const menuWorld = document.getElementById("menuWorld");
+    const introLayout = document.getElementById("introLayout");
+    const gameMenu = document.getElementById("gameMenu");
     const profileName = document.getElementById("profileName");
+    const nameTag = document.getElementById("nameTag");
+    const mailDot = document.getElementById("mailDot");
+
+    const modalInfo = {
+      "Quests": "Quests will appear here later. For now, this is a preview menu. Planned quests: collect resources, defeat enemies, discover places, and claim daily rewards.",
+      "Shop": "The shop will sell cosmetics, skins, boosts, and simple starter items later. The plan is to keep it fair and not make it heavily pay-to-win.",
+      "Kingdoms": "Kingdoms will let players join groups, build together, donate resources, and climb seasonal leaderboards.",
+      "Settings": "Settings will include sound, graphics, account options, and display options later.",
+      "Mail": "Welcome back! You received 5 gems. Mail rewards will reset daily once accounts are added."
+    };
 
     window.addEventListener("load", () => {
-      const savedName = localStorage.getItem("redvyrPlayerName");
+      const savedName = localStorage.getItem("redvyrName");
+      const savedWorld = localStorage.getItem("redvyrWorld");
+
       if (savedName) {
         playerName.value = savedName;
-        profileName.textContent = savedName;
+      }
+
+      if (savedWorld) {
+        startWorld.value = savedWorld;
+        menuWorld.value = savedWorld;
       }
     });
 
-    playerName.addEventListener("input", () => {
+    function startPreview() {
       const name = playerName.value.trim() || "Guest Hero";
-      profileName.textContent = name;
-      localStorage.setItem("redvyrPlayerName", playerName.value.trim());
-    });
+      const world = startWorld.value;
 
-    const modalInfo = {
-      "Login": "Login is not connected yet. Later this will save your account, coins, inventory, daily rewards, and kingdom progress.",
-      "Account": "Account creation is planned. For now, your name is saved only in this browser as a preview.",
-      "About": "Redvyr Kingdoms is planned as a simple browser RPG where players build camps, join kingdoms, complete quests, collect gear, and return daily.",
-      "Quests": "Quests will give players simple goals like collect resources, defeat enemies, find treasure, and help the kingdom.",
-      "Kingdoms": "Kingdoms will let players team up, build together, donate resources, and climb seasonal leaderboards.",
-      "Inventory": "Inventory will hold weapons, armor, resources, cosmetics, chests, and rewards.",
-      "Shop": "The shop will focus on cosmetics, supporter items, pets, boosts, and fair upgrades. No heavy pay-to-win.",
-      "Roadmap": "Roadmap: homepage preview → accounts → inventory → daily rewards → quests → kingdom system → playable test world.",
-      "Leaderboard": "Leaderboards will track top kingdoms, richest players, quest progress, and seasonal winners.",
-      "Discord": "Add your Discord invite link here later.",
-      "Settings": "Settings will include sound, graphics, account options, and accessibility options."
-    };
+      localStorage.setItem("redvyrName", name);
+      localStorage.setItem("redvyrWorld", world);
+
+      profileName.textContent = name;
+      nameTag.textContent = name;
+      menuWorld.value = world;
+
+      introLayout.querySelector(".intro-layout").classList.add("hide");
+
+      setTimeout(() => {
+        introLayout.style.display = "none";
+        gameMenu.classList.add("show");
+        showToast("Welcome to " + world + ", " + name + ".");
+      }, 420);
+    }
+
+    function goBack() {
+      gameMenu.classList.remove("show");
+      introLayout.style.display = "grid";
+
+      setTimeout(() => {
+        introLayout.querySelector(".intro-layout").classList.remove("hide");
+      }, 50);
+    }
+
+    function worldChanged() {
+      const world = menuWorld.value;
+      localStorage.setItem("redvyrWorld", world);
+      showToast("Selected " + world + ". Worlds are preview-only right now.");
+    }
+
+    function openMail() {
+      mailDot.style.display = "none";
+      openModal("Mail");
+    }
 
     function openModal(title) {
       document.getElementById("modalTitle").textContent = title;
@@ -744,11 +771,6 @@
       if (event.target.id === "modalBg") {
         hideModal();
       }
-    }
-
-    function playPreview() {
-      const name = playerName.value.trim() || "Guest Hero";
-      showToast("Welcome, " + name + ". Gameplay is coming soon.");
     }
 
     function showToast(message) {
