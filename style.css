@@ -526,3 +526,42 @@ label {
     display: none;
   }
 }
+
+/* BUG FIX: prevents the lobby profile mascot from becoming giant */
+.profile-card {
+  position: absolute;
+  z-index: 3;
+  top: 18px;
+  right: 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 250px;
+  padding: 10px;
+  border-radius: 14px;
+  background: rgba(15, 8, 3, 0.78);
+  border: 2px solid rgba(242, 195, 95, 0.45);
+  backdrop-filter: blur(4px);
+}
+
+.profile-card img {
+  width: 42px;
+  height: 42px;
+  max-width: 42px;
+  max-height: 42px;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.profile-card strong {
+  display: block;
+  color: #ffe4a6;
+}
+
+.profile-card span {
+  display: block;
+  margin-top: 3px;
+  font-size: 12px;
+  color: rgba(255, 240, 200, 0.75);
+  font-weight: 800;
+}
