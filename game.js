@@ -64,9 +64,9 @@ const player = {
   y: 430,
   vx: 0,
   vy: 0,
-  speed: 3.1,
-  acceleration: 0.34,
-  friction: 0.78,
+  speed: 4.0,
+  acceleration: 0.55,
+  friction: 0.82,
   moving: false,
   bob: 0
 };
