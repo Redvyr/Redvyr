@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Redvyr Kingdoms - Phase 1</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main id="app">
+    <section id="startScreen" class="start-screen">
+      <div class="start-card">
+        <div class="mini-logo">
+          <div class="crest">R</div>
+          <div><strong>REDVYR</strong><span>KINGDOMS</span></div>
+        </div>
+        <h1>Enter Redvyr</h1>
+        <p>Phase 1 prototype: move around, collide with obstacles, interact with objects, and earn gold.</p>
+        <label for="nameInput">Nickname</label>
+        <input id="nameInput" maxlength="18" placeholder="Guest Hero" />
+        <label for="worldSelect">World</label>
+        <select id="worldSelect">
+          <option>World A - Main Realm</option>
+          <option>World B - Forest Realm</option>
+          <option>World C - Test Realm</option>
+        </select>
+        <button id="startBtn">Play Preview</button>
+      </div>
+    </section>
+
+    <section id="gameScreen" class="game-screen hidden">
+      <canvas id="gameCanvas" width="960" height="540"></canvas>
+      <div class="hud">
+        <div><strong id="hudName">Guest Hero</strong><span id="hudWorld">World A - Main Realm</span></div>
+        <div class="gold">Gold: <span id="goldText">0</span></div>
+      </div>
+      <div id="prompt" class="prompt hidden">Press E to interact</div>
+      <div class="help"><b>Move:</b> WASD / Arrows<br><b>Interact:</b> E<br><b>Goal:</b> gather gold</div>
+      <button id="backBtn" class="back-btn">Change Name</button>
+    </section>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>
