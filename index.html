@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Redvyr Kingdoms</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app">
+    <!-- PAGE 1: START -->
+    <section id="startScreen" class="screen start-screen">
+      <div class="shade"></div>
+
+      <div class="start-card">
+        <div class="brand">
+          <div class="crest">R</div>
+          <div>
+            <strong>REDVYR</strong>
+            <span>KINGDOMS</span>
+          </div>
+        </div>
+
+        <h1>Enter Redvyr</h1>
+        <p>Type your nickname, pick a world, and start the preview.</p>
+
+        <label for="nicknameInput">Nickname</label>
+        <input id="nicknameInput" maxlength="18" placeholder="Guest Hero" />
+
+        <label for="worldInput">World</label>
+        <select id="worldInput">
+          <option>World A - Main Realm</option>
+          <option>World B - Forest Realm</option>
+          <option>World C - Test Realm</option>
+        </select>
+
+        <button id="enterBtn" class="main-btn">Play Preview</button>
+      </div>
+
+      <img class="start-mascot" src="mascot.png" alt="Redvyr mascot" />
+    </section>
+
+    <!-- PAGE 2: LOBBY -->
+    <section id="lobbyScreen" class="screen lobby-screen hidden">
+      <div class="shade"></div>
+
+      <div class="top-left-brand">
+        <div class="crest small">R</div>
+        <div>
+          <strong>REDVYR</strong>
+          <span>KINGDOMS</span>
+        </div>
+      </div>
+
+      <div class="profile-card">
+        <img src="mascot.png" alt="profile" />
+        <div>
+          <strong id="profileName">Guest Hero</strong>
+          <span>Level 1 · <b id="profileGold">0</b> gold</span>
+        </div>
+      </div>
+
+      <div class="world-card">
+        <label for="lobbyWorld">World Select</label>
+        <select id="lobbyWorld">
+          <option>World A - Main Realm</option>
+          <option>World B - Forest Realm</option>
+          <option>World C - Test Realm</option>
+        </select>
+      </div>
+
+      <div class="lobby-player">
+        <div id="lobbyNameTag" class="name-tag">Guest Hero</div>
+        <img src="mascot.png" alt="Redvyr mascot" />
+      </div>
+
+      <div class="lobby-actions">
+        <button id="playGameBtn" class="big-play">Play World</button>
+        <button data-modal="Quests">Quests</button>
+        <button data-modal="Shop">Shop</button>
+        <button data-modal="Kingdoms">Kingdoms</button>
+        <button data-modal="Mail" class="mail-btn">Mail <span id="mailDot"></span></button>
+        <button data-modal="Settings">Settings</button>
+        <button id="changeNameBtn">Change Name</button>
+      </div>
+    </section>
+
+    <!-- PAGE 3: GAME -->
+    <section id="gameScreen" class="game-screen hidden">
+      <canvas id="game" width="960" height="540"></canvas>
+
+      <div class="game-hud">
+        <strong id="hudName">Guest Hero</strong>
+        <span id="hudWorld">World A - Main Realm</span>
+
+        <div class="resource-row">
+          <b>Gold: <span id="hudGold">0</span></b>
+          <b>Wood: <span id="hudWood">0</span></b>
+          <b>Stone: <span id="hudStone">0</span></b>
+        </div>
+
+        <div class="camp-row">
+          Camp Level: <span id="hudCamp">1</span>
+        </div>
+      </div>
+
+      <div id="interactPrompt" class="interact-prompt hidden">Press E</div>
+
+      <button id="backToLobbyBtn" class="back-lobby">Back to Lobby</button>
+
+      <div class="controls">
+        Move: WASD / Arrows<br>
+        Interact: E<br>
+        Gather resources, then upgrade camp.
+      </div>
+    </section>
+
+    <!-- MODAL -->
+    <div id="modal" class="modal-bg hidden">
+      <div class="modal-card">
+        <h2 id="modalTitle">Title</h2>
+        <p id="modalText">Text</p>
+        <button id="closeModalBtn">Close</button>
+      </div>
+    </div>
+
+    <div id="toast" class="toast">Saved</div>
+  </main>
+
+  <script src="game.js"></script>
+</body>
+</html>
