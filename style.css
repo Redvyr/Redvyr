@@ -455,8 +455,8 @@ label {
 }
 
 .resource-row img {
-  width: 18px;
-  height: 18px;
+  width: 26px;
+  height: 26px;
   object-fit: contain;
   image-rendering: pixelated;
 }
@@ -641,8 +641,8 @@ label {
 }
 
 .inventory-slot img {
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
   object-fit: contain;
   image-rendering: pixelated;
 }
