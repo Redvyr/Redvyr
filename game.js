@@ -162,8 +162,10 @@ lobbyWorld.addEventListener("change", () => {
   state.world = "World A - Main Realm";
   lobbyWorld.value = state.world;
   worldInput.value = state.world;
+
   save();
   syncUI();
+
   toast("World A selected.");
 });
 
@@ -171,7 +173,6 @@ $("playGameBtn").addEventListener("click", () => {
   lobbyScreen.classList.add("hidden");
   gameScreen.classList.remove("hidden");
 
-  // Regenerates the small test world each time you enter.
   createWorld();
 
   syncUI();
@@ -181,6 +182,7 @@ $("playGameBtn").addEventListener("click", () => {
 $("backToLobbyBtn").addEventListener("click", () => {
   gameScreen.classList.add("hidden");
   lobbyScreen.classList.remove("hidden");
+
   save();
   syncUI();
 });
@@ -192,6 +194,7 @@ document.querySelectorAll("[data-modal]").forEach((button) => {
     if (title === "Mail" && !state.mailClaimed) {
       state.mailClaimed = true;
       state.gold += 5;
+
       save();
       syncUI();
     }
@@ -240,12 +243,11 @@ window.addEventListener("keyup", (event) => {
 function createWorld() {
   objects = [];
 
-  // Main camp area.
   objects.push({
-    x: 480,
-    y: 388,
-    w: 32,
-    h: 32,
+    x: 472,
+    y: 380,
+    w: 64,
+    h: 64,
     kind: "campfire",
     interact: true,
     label: "upgrade camp",
@@ -253,10 +255,10 @@ function createWorld() {
   });
 
   objects.push({
-    x: 392,
-    y: 396,
-    w: 32,
-    h: 32,
+    x: 384,
+    y: 388,
+    w: 64,
+    h: 64,
     kind: "chest",
     interact: true,
     label: "open starter chest",
@@ -265,7 +267,6 @@ function createWorld() {
     used: false
   });
 
-  // Random but controlled tree placement.
   for (let i = 0; i < 18; i++) {
     const pos = randomSafePosition(64, 96);
 
@@ -282,7 +283,6 @@ function createWorld() {
     });
   }
 
-  // Random but controlled rock placement.
   for (let i = 0; i < 10; i++) {
     const pos = randomSafePosition(48, 32);
 
@@ -317,7 +317,12 @@ function randomSafePosition(w, h) {
     const x = Math.floor(randomRange(80, map.width - 140) / 32) * 32;
     const y = Math.floor(randomRange(100, map.height - 140) / 32) * 32;
 
-    const test = { x, y, w, h };
+    const test = {
+      x,
+      y,
+      w,
+      h
+    };
 
     if (isInCampArea(test)) continue;
     if (isOnMainPath(test)) continue;
@@ -327,6 +332,7 @@ function randomSafePosition(w, h) {
 
     for (const obj of objects) {
       const padding = 32;
+
       const padded = {
         x: obj.x - padding,
         y: obj.y - padding,
@@ -341,11 +347,17 @@ function randomSafePosition(w, h) {
     }
 
     if (!overlapsOther) {
-      return { x, y };
+      return {
+        x,
+        y
+      };
     }
   }
 
-  return { x: 900, y: 700 };
+  return {
+    x: 900,
+    y: 700
+  };
 }
 
 function randomRange(min, max) {
@@ -413,10 +425,19 @@ function objectHitbox(obj) {
 
   if (obj.kind === "campfire") {
     return {
-      x: obj.x + 6,
-      y: obj.y + 8,
-      w: 20,
-      h: 20
+      x: obj.x + 18,
+      y: obj.y + 26,
+      w: 28,
+      h: 26
+    };
+  }
+
+  if (obj.kind === "chest") {
+    return {
+      x: obj.x + 12,
+      y: obj.y + 18,
+      w: 40,
+      h: 34
     };
   }
 
@@ -549,14 +570,18 @@ function interact() {
   if (obj.action === "wood") {
     state.wood += obj.amount || 1;
     state.gold += 1;
+
     temporarilyHide(obj, 9000);
+
     toast("+" + (obj.amount || 1) + " wood, +1 gold");
   }
 
   if (obj.action === "stone") {
     state.stone += obj.amount || 1;
     state.gold += 1;
+
     temporarilyHide(obj, 11000);
+
     toast("+" + (obj.amount || 1) + " stone, +1 gold");
   }
 
@@ -567,6 +592,7 @@ function interact() {
       obj.used = true;
       obj.hidden = true;
       state.gold += obj.gold || 20;
+
       toast("+" + (obj.gold || 20) + " gold");
     }
   }
@@ -585,9 +611,18 @@ function interact() {
       state.wood -= neededWood;
       state.stone -= neededStone;
       state.campLevel += 1;
+
       toast("Camp upgraded to level " + state.campLevel + "!");
     } else {
-      toast("Need " + neededGold + " gold, " + neededWood + " wood, " + neededStone + " stone.");
+      toast(
+        "Need " +
+        neededGold +
+        " gold, " +
+        neededWood +
+        " wood, " +
+        neededStone +
+        " stone."
+      );
     }
   }
 
@@ -628,21 +663,18 @@ function drawMap() {
     }
   }
 
-  // Main horizontal path.
   for (let y = 352; y <= 608; y += tile) {
     for (let x = 0; x < map.width; x += tile) {
       drawImg(images.path, x, y, tile, tile, "#c98b55");
     }
   }
 
-  // Main vertical path.
   for (let x = 768; x <= 928; x += tile) {
     for (let y = 0; y < map.height; y += tile) {
       drawImg(images.path, x, y, tile, tile, "#c98b55");
     }
   }
 
-  // Camp clearing.
   for (let y = 352; y <= 480; y += tile) {
     for (let x = 352; x <= 672; x += tile) {
       drawImg(images.path, x, y, tile, tile, "#c98b55");
@@ -714,49 +746,50 @@ function drawNameTag(x, y, text) {
 
 function drawChest(x, y, w, h, opened) {
   if (!opened && images.chest.complete && images.chest.naturalWidth > 0) {
-    drawImg(images.chest, x, y, 32, 32, "#a85622");
+    drawImg(images.chest, x, y, 64, 64, "#a85622");
     return;
   }
 
   ctx.fillStyle = opened ? "#4b2410" : "#5b2b12";
-  ctx.fillRect(x, y + 12, w, h - 12);
+  ctx.fillRect(x + 8, y + 22, w - 16, h - 26);
 
   ctx.fillStyle = opened ? "#73401d" : "#a85622";
-  ctx.fillRect(x, y, w, 18);
+  ctx.fillRect(x + 8, y + 10, w - 16, 22);
 
   ctx.fillStyle = "#f2c35f";
-  ctx.fillRect(x + w / 2 - 5, y + 12, 10, 16);
+  ctx.fillRect(x + w / 2 - 5, y + 25, 10, 16);
 
   ctx.strokeStyle = "#2a1208";
   ctx.lineWidth = 3;
-  ctx.strokeRect(x, y, w, h);
+  ctx.strokeRect(x + 8, y + 10, w - 16, h - 18);
 }
 
 function drawCampfire(x, y, w, h) {
   if (images.campfire.complete && images.campfire.naturalWidth > 0) {
-    drawImg(images.campfire, x, y, 32, 32, "#ff8a22");
+    drawImg(images.campfire, x, y, 64, 64, "#ff8a22");
 
     ctx.fillStyle = "#f2c35f";
-    ctx.font = "bold 13px Arial";
-    ctx.fillText("Lv." + state.campLevel, x - 2, y - 6);
+    ctx.font = "bold 14px Arial";
+    ctx.fillText("Lv." + state.campLevel, x + 8, y - 6);
+
     return;
   }
 
   ctx.fillStyle = "rgba(0,0,0,0.22)";
-  ctx.fillRect(x + 8, y + 34, w - 16, 8);
+  ctx.fillRect(x + 12, y + 46, w - 24, 9);
 
   ctx.fillStyle = "#5b2b12";
-  ctx.fillRect(x + 8, y + 34, w - 16, 10);
+  ctx.fillRect(x + 12, y + 42, w - 24, 12);
 
   ctx.fillStyle = "#ff8a22";
-  ctx.fillRect(x + 24, y + 13, 20, 25);
+  ctx.fillRect(x + 24, y + 18, 20, 28);
 
   ctx.fillStyle = "#ffd45e";
-  ctx.fillRect(x + 30, y + 6, 8, 25);
+  ctx.fillRect(x + 30, y + 8, 9, 34);
 
   ctx.fillStyle = "#f2c35f";
-  ctx.font = "bold 13px Arial";
-  ctx.fillText("Lv." + state.campLevel, x + 14, y - 6);
+  ctx.font = "bold 14px Arial";
+  ctx.fillText("Lv." + state.campLevel, x + 8, y - 6);
 }
 
 function drawImg(img, x, y, w, h, fallback) {
@@ -781,11 +814,13 @@ function drawImg(img, x, y, w, h, fallback) {
 
 function roundRect(x, y, w, h, r, fill, stroke) {
   ctx.beginPath();
+
   ctx.moveTo(x + r, y);
   ctx.arcTo(x + w, y, x + w, y + h, r);
   ctx.arcTo(x + w, y + h, x, y + h, r);
   ctx.arcTo(x, y + h, x, y, r);
   ctx.arcTo(x, y, x + w, y, r);
+
   ctx.closePath();
 
   if (fill) ctx.fill();
