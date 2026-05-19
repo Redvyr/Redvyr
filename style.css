@@ -5,13 +5,13 @@
 }
 
 :root {
-  --red: #9f1f17;
-  --red2: #d9442e;
+  --red: #b92b1d;
+  --dark-red: #7e1710;
   --gold: #f2c35f;
   --cream: #fff0c8;
   --dark: #120804;
   --panel: rgba(18, 8, 3, 0.84);
-  --panel-soft: rgba(32, 15, 7, 0.82);
+  --panel-solid: #1b0d06;
   --shadow: rgba(0, 0, 0, 0.35);
 }
 
@@ -28,9 +28,7 @@ body {
   display: none !important;
 }
 
-/* =========================
-   SHARED SCREEN SETUP
-========================= */
+/* SHARED */
 
 .screen {
   position: relative;
@@ -38,7 +36,7 @@ body {
   height: 100vh;
   overflow: hidden;
   background-image:
-    linear-gradient(to bottom, rgba(0,0,0,0.05), rgba(0,0,0,0.45)),
+    linear-gradient(to bottom, rgba(0,0,0,0.04), rgba(0,0,0,0.48)),
     url("backround.png");
   background-size: cover;
   background-position: center;
@@ -48,8 +46,8 @@ body {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at center, transparent 35%, rgba(0,0,0,0.28)),
-    linear-gradient(to right, rgba(0,0,0,0.25), transparent 30%, transparent 72%, rgba(0,0,0,0.32));
+    radial-gradient(circle at center, transparent 38%, rgba(0,0,0,0.28)),
+    linear-gradient(to right, rgba(0,0,0,0.25), transparent 32%, transparent 72%, rgba(0,0,0,0.34));
   pointer-events: none;
 }
 
@@ -69,9 +67,9 @@ input,
 select {
   width: 100%;
   padding: 13px 14px;
-  border-radius: 10px;
-  border: 2px solid rgba(242, 195, 95, 0.52);
-  background: rgba(0,0,0,0.48);
+  border-radius: 5px;
+  border: 2px solid rgba(242, 195, 95, 0.65);
+  background: rgba(0,0,0,0.55);
   color: var(--cream);
   font-weight: 900;
   outline: none;
@@ -88,9 +86,7 @@ label {
   text-transform: uppercase;
 }
 
-/* =========================
-   LOGO / BRAND
-========================= */
+/* BRAND */
 
 .brand,
 .top-left-brand {
@@ -104,13 +100,12 @@ label {
   height: 48px;
   display: grid;
   place-items: center;
-  border-radius: 6px 6px 12px 12px;
+  border-radius: 4px 4px 10px 10px;
   border: 2px solid var(--gold);
   background: linear-gradient(#d9442e, #76150e);
   font-family: Georgia, serif;
   font-weight: 900;
   color: #ffe4a6;
-  box-shadow: inset 0 0 0 2px rgba(255,255,255,0.08);
 }
 
 .crest.small {
@@ -135,9 +130,7 @@ label {
   letter-spacing: 3px;
 }
 
-/* =========================
-   START SCREEN
-========================= */
+/* START SCREEN */
 
 .start-card {
   position: absolute;
@@ -147,10 +140,10 @@ label {
   transform: translateY(-50%);
   width: min(450px, 86vw);
   padding: 26px;
-  border-radius: 16px;
+  border-radius: 6px;
   background: var(--panel);
-  border: 2px solid rgba(242, 195, 95, 0.58);
-  box-shadow: 0 8px 0 rgba(0,0,0,0.26), 0 18px 48px rgba(0,0,0,0.42);
+  border: 2px solid rgba(242, 195, 95, 0.62);
+  box-shadow: 0 6px 0 rgba(0,0,0,0.3), 0 18px 48px rgba(0,0,0,0.42);
   backdrop-filter: blur(5px);
 }
 
@@ -173,7 +166,7 @@ label {
   width: 100%;
   margin-top: 18px;
   padding: 15px 20px;
-  border-radius: 10px;
+  border-radius: 5px;
   color: white;
   background: linear-gradient(#d9442e, #8e1c13);
   border: 2px solid var(--gold);
@@ -203,39 +196,35 @@ label {
   }
 }
 
-/* =========================
-   LOBBY SCREEN
-========================= */
+/* LOBBY */
 
 .top-left-brand {
   position: absolute;
-  z-index: 3;
+  z-index: 5;
   top: 18px;
   left: 18px;
   padding: 10px 13px;
-  border-radius: 14px;
+  border-radius: 6px;
   background: var(--panel);
-  border: 2px solid rgba(242, 195, 95, 0.48);
+  border: 2px solid rgba(242, 195, 95, 0.55);
   backdrop-filter: blur(4px);
-  box-shadow: 0 6px 0 rgba(0,0,0,0.25);
+  box-shadow: 0 5px 0 rgba(0,0,0,0.28);
 }
 
-/* World selector */
 .world-card {
   position: absolute;
-  z-index: 3;
+  z-index: 5;
   top: 86px;
   right: 24px;
   width: 275px;
   padding: 14px;
-  border-radius: 14px;
+  border-radius: 6px;
   background: var(--panel);
-  border: 2px solid rgba(242, 195, 95, 0.48);
+  border: 2px solid rgba(242, 195, 95, 0.55);
   backdrop-filter: blur(4px);
-  box-shadow: 0 6px 0 rgba(0,0,0,0.25);
+  box-shadow: 0 5px 0 rgba(0,0,0,0.28);
 }
 
-/* Center homepage character */
 .lobby-player {
   position: absolute;
   z-index: 2;
@@ -244,6 +233,7 @@ label {
   transform: translateX(-50%);
   display: grid;
   place-items: center;
+  pointer-events: none;
 }
 
 .lobby-player img {
@@ -258,58 +248,56 @@ label {
   margin-bottom: 8px;
   padding: 8px 15px;
   border-radius: 999px;
-  background: rgba(15, 8, 3, 0.82);
-  border: 2px solid rgba(242, 195, 95, 0.55);
+  background: rgba(15, 8, 3, 0.86);
+  border: 2px solid rgba(242, 195, 95, 0.6);
   color: #ffe4a6;
   font-size: 15px;
   font-weight: 900;
-  box-shadow: 0 8px 18px rgba(0,0,0,0.35);
+  box-shadow: 0 6px 0 rgba(0,0,0,0.25);
 }
 
-/* Player profile card */
+/* Bigger homepage player card */
 .profile-card {
   position: absolute;
-  z-index: 3;
-  top: auto;
-  right: auto;
+  z-index: 4;
   left: 24px;
   bottom: 112px;
-  width: 300px;
-  min-height: 76px;
+  width: 375px;
+  min-height: 96px;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px;
-  border-radius: 14px;
+  gap: 15px;
+  padding: 15px;
+  border-radius: 6px;
   background: var(--panel);
-  border: 2px solid rgba(242, 195, 95, 0.55);
+  border: 2px solid rgba(242, 195, 95, 0.65);
   box-shadow: 0 6px 0 rgba(0,0,0,0.28), 0 14px 28px rgba(0,0,0,0.3);
   backdrop-filter: blur(4px);
 }
 
 .profile-card img {
-  width: 48px;
-  height: 48px;
-  max-width: 48px;
-  max-height: 48px;
+  width: 68px;
+  height: 68px;
+  max-width: 68px;
+  max-height: 68px;
   object-fit: contain;
-  border-radius: 10px;
-  background: rgba(0,0,0,0.2);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.22);
   border: 1px solid rgba(242, 195, 95, 0.35);
 }
 
 .profile-card strong {
   display: block;
   color: #ffe4a6;
-  font-size: 18px;
+  font-size: 23px;
   text-shadow: 1px 1px 0 #000;
 }
 
 .profile-card span {
   display: block;
-  margin-top: 3px;
-  color: rgba(255,240,200,0.85);
-  font-size: 13px;
+  margin-top: 6px;
+  color: rgba(255,240,200,0.88);
+  font-size: 15px;
   font-weight: 800;
 }
 
@@ -326,7 +314,7 @@ label {
   flex-wrap: nowrap;
   justify-content: center;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
 }
 
 .lobby-actions button {
@@ -340,7 +328,7 @@ label {
   color: #fff0c8;
   background: var(--panel);
   border: 2px solid rgba(242, 195, 95, 0.55);
-  border-radius: 12px;
+  border-radius: 5px;
   box-shadow: 0 5px 0 rgba(0,0,0,0.28);
   font-size: 14px;
   line-height: 1;
@@ -372,9 +360,7 @@ label {
   box-shadow: 0 0 8px rgba(227, 58, 45, 0.8);
 }
 
-/* =========================
-   GAME SCREEN
-========================= */
+/* GAME */
 
 .game-screen {
   position: relative;
@@ -397,11 +383,11 @@ label {
   left: 18px;
   bottom: 18px;
   top: auto;
-  min-width: 330px;
+  min-width: 350px;
   padding: 14px;
-  border-radius: 14px;
+  border-radius: 6px;
   background: var(--panel);
-  border: 2px solid rgba(242, 195, 95, 0.55);
+  border: 2px solid rgba(242, 195, 95, 0.58);
   box-shadow: 0 6px 0 rgba(0,0,0,0.28), 0 14px 30px rgba(0,0,0,0.32);
   backdrop-filter: blur(4px);
   color: var(--cream);
@@ -410,7 +396,7 @@ label {
 .game-hud strong {
   display: block;
   color: #ffe4a6;
-  font-size: 19px;
+  font-size: 20px;
   text-shadow: 1px 1px 0 #000;
 }
 
@@ -422,6 +408,31 @@ label {
   font-weight: 800;
 }
 
+.level-row {
+  margin-top: 9px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--gold);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.xp-bar {
+  flex: 1;
+  height: 10px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(242, 195, 95, 0.35);
+  overflow: hidden;
+}
+
+.xp-bar i {
+  display: block;
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #d9442e, #f2c35f);
+}
+
 .resource-row {
   margin-top: 10px;
   display: grid;
@@ -430,9 +441,12 @@ label {
 }
 
 .resource-row b {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   padding: 8px 6px;
-  border-radius: 8px;
+  border-radius: 4px;
   background: rgba(0,0,0,0.3);
   border: 1px solid rgba(242,195,95,0.35);
   color: #ffe4a6;
@@ -440,10 +454,17 @@ label {
   text-align: center;
 }
 
+.resource-row img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
 .camp-row {
   margin-top: 9px;
   padding: 7px 9px;
-  border-radius: 8px;
+  border-radius: 4px;
   background: rgba(0,0,0,0.24);
   border: 1px solid rgba(242,195,95,0.28);
   color: var(--gold);
@@ -451,14 +472,13 @@ label {
   font-weight: 900;
 }
 
-/* Controls box */
 .controls {
   position: absolute;
   z-index: 5;
   top: 18px;
   right: 18px;
   padding: 12px 14px;
-  border-radius: 14px;
+  border-radius: 6px;
   background: var(--panel);
   border: 2px solid rgba(242, 195, 95, 0.48);
   box-shadow: 0 6px 0 rgba(0,0,0,0.25);
@@ -474,7 +494,7 @@ label {
   right: 18px;
   bottom: 18px;
   padding: 12px 15px;
-  border-radius: 12px;
+  border-radius: 5px;
   background: var(--panel);
   border: 2px solid rgba(242, 195, 95, 0.48);
   box-shadow: 0 5px 0 rgba(0,0,0,0.25);
@@ -486,7 +506,7 @@ label {
   position: absolute;
   z-index: 5;
   left: 50%;
-  bottom: 160px;
+  bottom: 150px;
   transform: translateX(-50%);
   padding: 10px 15px;
   border-radius: 999px;
@@ -498,9 +518,181 @@ label {
   font-weight: 900;
 }
 
-/* =========================
-   MODAL + TOAST
-========================= */
+/* Game bottom action buttons */
+.game-bottom-actions {
+  position: absolute;
+  z-index: 6;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-action {
+  width: 132px;
+  height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgba(18, 8, 3, 0.88);
+  border: 2px solid rgba(242, 195, 95, 0.65);
+  color: var(--cream);
+  box-shadow: 0 5px 0 rgba(0,0,0,0.28);
+  text-shadow: 1px 1px 0 #000;
+}
+
+.icon-action img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.inventory-action {
+  width: 150px;
+}
+
+/* Panels */
+.side-panel {
+  position: absolute;
+  z-index: 15;
+  right: 24px;
+  top: 92px;
+  width: 390px;
+  max-height: calc(100vh - 140px);
+  overflow: auto;
+  padding: 16px;
+  border-radius: 6px;
+  background: rgba(18, 8, 3, 0.94);
+  border: 3px solid rgba(242, 195, 95, 0.7);
+  box-shadow: 0 9px 0 rgba(0,0,0,0.35), 0 25px 60px rgba(0,0,0,0.45);
+  backdrop-filter: blur(5px);
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.panel-header h2 {
+  color: var(--gold);
+  font-size: 26px;
+  text-shadow: 2px 2px 0 #000;
+}
+
+.panel-header button {
+  width: 38px;
+  height: 38px;
+  border-radius: 4px;
+  background: var(--red);
+  color: white;
+  border: 2px solid var(--gold);
+}
+
+.inventory-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.inventory-stats div {
+  padding: 10px;
+  border-radius: 4px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(242,195,95,0.35);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.inventory-stats img {
+  width: 18px;
+  height: 18px;
+  vertical-align: middle;
+  image-rendering: pixelated;
+}
+
+.inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.inventory-slot {
+  aspect-ratio: 1;
+  position: relative;
+  display: grid;
+  place-items: center;
+  border-radius: 4px;
+  background: rgba(0,0,0,0.26);
+  border: 2px solid rgba(242,195,95,0.35);
+}
+
+.inventory-slot.empty {
+  opacity: 0.35;
+}
+
+.inventory-slot img {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.inventory-slot span {
+  position: absolute;
+  right: 5px;
+  bottom: 4px;
+  color: white;
+  font-size: 12px;
+  font-weight: 900;
+  text-shadow: 1px 1px 0 #000;
+}
+
+.quest-panel {
+  left: 50%;
+  right: auto;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(520px, calc(100vw - 40px));
+}
+
+.quest-body {
+  padding: 14px;
+  border-radius: 4px;
+  background: rgba(0,0,0,0.25);
+  border: 1px solid rgba(242,195,95,0.35);
+  white-space: pre-line;
+  color: rgba(255,240,200,0.9);
+  line-height: 1.55;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.claim-btn {
+  width: 100%;
+  margin-top: 12px;
+  padding: 13px 16px;
+  border-radius: 4px;
+  background: linear-gradient(#d9442e, #8e1c13);
+  color: white;
+  border: 2px solid var(--gold);
+}
+
+.claim-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* MODAL + TOAST */
 
 .modal-bg {
   position: fixed;
@@ -515,7 +707,7 @@ label {
 .modal-card {
   width: min(460px, 100%);
   padding: 24px;
-  border-radius: 16px;
+  border-radius: 6px;
   background: #1d0d05;
   border: 3px solid var(--gold);
   box-shadow: 0 20px 70px rgba(0,0,0,0.6);
@@ -539,7 +731,7 @@ label {
 
 .modal-card button {
   padding: 11px 16px;
-  border-radius: 10px;
+  border-radius: 5px;
   background: linear-gradient(#d9442e, #8e1c13);
   color: white;
   border: 2px solid var(--gold);
@@ -550,10 +742,10 @@ label {
   position: fixed;
   z-index: 30;
   left: 50%;
-  bottom: 24px;
+  bottom: 92px;
   transform: translateX(-50%) translateY(120px);
   padding: 12px 18px;
-  border-radius: 12px;
+  border-radius: 6px;
   background: #160b05;
   color: var(--cream);
   border: 2px solid var(--gold);
@@ -566,9 +758,7 @@ label {
   transform: translateX(-50%) translateY(0);
 }
 
-/* =========================
-   MOBILE SAFETY
-========================= */
+/* MOBILE */
 
 @media (max-width: 900px) {
   body {
@@ -615,7 +805,7 @@ label {
 
   .world-card,
   .profile-card {
-    width: min(360px, 100%);
+    width: min(380px, 100%);
   }
 
   .lobby-actions {
@@ -633,7 +823,7 @@ label {
   }
 
   .game-hud {
-    width: min(330px, calc(100vw - 32px));
+    width: min(350px, calc(100vw - 32px));
     min-width: 0;
   }
 
@@ -641,7 +831,18 @@ label {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .interact-prompt {
-    bottom: 150px;
+  .game-bottom-actions {
+    bottom: 16px;
+  }
+
+  .side-panel {
+    left: 16px;
+    right: 16px;
+    top: 80px;
+    width: auto;
+  }
+
+  .inventory-grid {
+    grid-template-columns: repeat(4, 1fr);
   }
 }
