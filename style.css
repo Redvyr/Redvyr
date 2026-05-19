@@ -950,3 +950,138 @@ select {
     min-width: 0 !important;
   }
 }
+
+/* =====================================================
+   PHASE 2C/2D FLAT PIXEL UI CLEANUP
+   Paste at very bottom of style.css
+===================================================== */
+
+body,
+button,
+input,
+select {
+  font-family: "Courier New", monospace !important;
+  font-weight: 900 !important;
+}
+
+button,
+.profile-card,
+.world-card,
+.top-left-brand,
+.game-hud,
+.controls,
+.back-lobby,
+.interact-prompt,
+.modal-card,
+.start-card {
+  border-radius: 6px !important;
+  box-shadow: 0 5px 0 rgba(0,0,0,0.45) !important;
+}
+
+button {
+  background: #1b0d06 !important;
+  border: 3px solid #f2c35f !important;
+  color: #fff0c8 !important;
+  text-shadow: 2px 2px 0 #000 !important;
+}
+
+button:hover {
+  transform: translateY(-3px) !important;
+  filter: brightness(1.18) !important;
+}
+
+.main-btn,
+.big-play,
+.lobby-actions .big-play {
+  background: #b92b1d !important;
+  color: white !important;
+}
+
+/* Bottom lobby buttons: bigger and more spaced */
+.lobby-actions {
+  left: 50% !important;
+  bottom: 24px !important;
+  transform: translateX(-50%) !important;
+  width: min(980px, calc(100vw - 48px)) !important;
+  display: flex !important;
+  justify-content: center !important;
+  gap: 18px !important;
+}
+
+.lobby-actions button {
+  min-width: 135px !important;
+  padding: 16px 18px !important;
+  font-size: 15px !important;
+}
+
+/* Player card moved upward/left and made clearer */
+.profile-card {
+  top: auto !important;
+  right: auto !important;
+  left: 26px !important;
+  bottom: 132px !important;
+  width: 345px !important;
+  min-height: 88px !important;
+  padding: 14px !important;
+  background: rgba(18, 8, 3, 0.88) !important;
+  border: 3px solid #f2c35f !important;
+}
+
+.profile-card img {
+  width: 58px !important;
+  height: 58px !important;
+  max-width: 58px !important;
+  max-height: 58px !important;
+  object-fit: contain !important;
+}
+
+.profile-card strong {
+  font-size: 21px !important;
+  color: #ffe4a6 !important;
+  text-shadow: 2px 2px 0 #000;
+}
+
+.profile-card span {
+  font-size: 14px !important;
+  color: #fff0c8 !important;
+}
+
+/* Game HUD clearer and easier to read */
+.game-hud {
+  width: 370px !important;
+  min-width: 370px !important;
+  background: rgba(18, 8, 3, 0.9) !important;
+  border: 3px solid #f2c35f !important;
+}
+
+.game-hud strong {
+  font-size: 22px !important;
+  text-shadow: 2px 2px 0 #000;
+}
+
+.resource-row {
+  margin-top: 10px !important;
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 8px !important;
+}
+
+.resource-row b {
+  background: rgba(0,0,0,0.3) !important;
+  border: 2px solid rgba(242,195,95,0.45) !important;
+  padding: 8px 6px !important;
+  text-align: center !important;
+  border-radius: 4px !important;
+}
+
+.camp-row {
+  margin-top: 9px !important;
+  color: #f2c35f !important;
+  font-size: 14px !important;
+}
+
+/* Prompt sits above HUD */
+.interact-prompt {
+  bottom: 176px !important;
+  font-size: 15px !important;
+}
