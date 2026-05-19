@@ -31,7 +31,7 @@ canvas.width = 960;
 canvas.height = 540;
 ctx.imageSmoothingEnabled = false;
 
-const saveKey = "redvyr_phase2b_save";
+const saveKey = "redvyr_phase2cd_save";
 
 const images = {};
 const files = {
@@ -57,7 +57,15 @@ const state = {
   wood: 0,
   stone: 0,
   campLevel: 1,
-  mailClaimed: false
+  mailClaimed: false,
+  questClaimed: false
+};
+
+const quest = {
+  name: "Gather Supplies",
+  woodNeeded: 6,
+  stoneNeeded: 4,
+  rewardGold: 25
 };
 
 const player = {
@@ -88,12 +96,47 @@ const map = {
 const keys = new Set();
 let objects = [];
 
+function getQuestProgressText() {
+  const wood = Math.min(state.wood, quest.woodNeeded);
+  const stone = Math.min(state.stone, quest.stoneNeeded);
+
+  if (state.questClaimed) {
+    return "Quest Complete: Gather Supplies. Reward already claimed.";
+  }
+
+  return (
+    "Quest: " + quest.name + "\\n" +
+    "Wood: " + wood + "/" + quest.woodNeeded + "\\n" +
+    "Stone: " + stone + "/" + quest.stoneNeeded + "\\n" +
+    "Reward: " + quest.rewardGold + " gold\\n\\n" +
+    "Gather enough resources, then open Quests again to claim."
+  );
+}
+
+function canClaimQuest() {
+  return (
+    !state.questClaimed &&
+    state.wood >= quest.woodNeeded &&
+    state.stone >= quest.stoneNeeded
+  );
+}
+
+function getInventoryText() {
+  return (
+    "Inventory / Resources\\n" +
+    "Gold: " + state.gold + "\\n" +
+    "Wood: " + state.wood + "\\n" +
+    "Stone: " + state.stone + "\\n" +
+    "Camp Level: " + state.campLevel
+  );
+}
+
 const modalInfo = {
-  Quests: "Phase 2 is building the first real loop: gather wood and stone, earn gold, then upgrade your camp.",
-  Shop: "Shop is preview-only for now. Later it can hold cosmetics, pets, boosts, and simple account upgrades.",
+  Quests: getQuestProgressText,
+  Shop: "Shop is preview-only for now. Later it can hold cosmetics, pets, boosts, and account upgrades.",
   Kingdoms: "Kingdoms come later. First we need the base loop to feel fun and smooth.",
   Mail: "Welcome to Redvyr! You claimed 5 bonus gold for checking your mail.",
-  Settings: "Settings will be added later for sound, graphics, controls, and account options."
+  Settings: getInventoryText
 };
 
 function loadSave() {
@@ -110,6 +153,7 @@ function loadSave() {
     state.stone = Number(data.stone || 0);
     state.campLevel = Number(data.campLevel || 1);
     state.mailClaimed = Boolean(data.mailClaimed);
+    state.questClaimed = Boolean(data.questClaimed);
   } catch {}
 
   nicknameInput.value = state.name;
@@ -199,13 +243,30 @@ document.querySelectorAll("[data-modal]").forEach((button) => {
       syncUI();
     }
 
+    if (title === "Quests" && canClaimQuest()) {
+      state.questClaimed = true;
+      state.gold += quest.rewardGold;
+
+      save();
+      syncUI();
+      toast("Quest complete! +" + quest.rewardGold + " gold");
+    }
+
     openModal(title);
   });
 });
 
 function openModal(title) {
   modalTitle.textContent = title;
-  modalText.textContent = modalInfo[title] || "Coming soon.";
+
+  const info = modalInfo[title];
+
+  if (typeof info === "function") {
+    modalText.textContent = info();
+  } else {
+    modalText.textContent = info || "Coming soon.";
+  }
+
   modal.classList.remove("hidden");
 }
 
@@ -277,10 +338,15 @@ function createWorld() {
       h: 96,
       kind: "tree",
       interact: true,
-      label: "gather wood",
+      label: "hit tree",
       action: "wood",
-      amount: 2
+      amount: 2,
+      hitsNeeded: randomInt(2, 5),
+      hitsLeft: 0,
+      shake: 0
     });
+
+    objects[objects.length - 1].hitsLeft = objects[objects.length - 1].hitsNeeded;
   }
 
   for (let i = 0; i < 10; i++) {
@@ -293,10 +359,15 @@ function createWorld() {
       h: 32,
       kind: "rock",
       interact: true,
-      label: "mine stone",
+      label: "mine rock",
       action: "stone",
-      amount: 2
+      amount: 2,
+      hitsNeeded: randomInt(2, 5),
+      hitsLeft: 0,
+      shake: 0
     });
+
+    objects[objects.length - 1].hitsLeft = objects[objects.length - 1].hitsNeeded;
   }
 
   player.x = 520;
@@ -362,6 +433,10 @@ function randomSafePosition(w, h) {
 
 function randomRange(min, max) {
   return Math.random() * (max - min) + min;
+}
+
+function randomInt(min, max) {
+  return Math.floor(randomRange(min, max + 1));
 }
 
 function isInCampArea(box) {
@@ -484,6 +559,12 @@ function canMoveTo(x, y) {
 function update() {
   if (gameScreen.classList.contains("hidden")) return;
 
+  for (const obj of objects) {
+    if (obj.shake && obj.shake > 0) {
+      obj.shake -= 1;
+    }
+  }
+
   let inputX = 0;
   let inputY = 0;
 
@@ -538,7 +619,12 @@ function update() {
   const prompt = $("interactPrompt");
 
   if (near) {
-    prompt.textContent = "Press E to " + near.label;
+    if (near.action === "wood" || near.action === "stone") {
+      prompt.textContent = "Press E to " + near.label + " (" + near.hitsLeft + " hits left)";
+    } else {
+      prompt.textContent = "Press E to " + near.label;
+    }
+
     prompt.classList.remove("hidden");
   } else {
     prompt.classList.add("hidden");
@@ -567,22 +653,8 @@ function interact() {
 
   if (!obj) return;
 
-  if (obj.action === "wood") {
-    state.wood += obj.amount || 1;
-    state.gold += 1;
-
-    temporarilyHide(obj, 9000);
-
-    toast("+" + (obj.amount || 1) + " wood, +1 gold");
-  }
-
-  if (obj.action === "stone") {
-    state.stone += obj.amount || 1;
-    state.gold += 1;
-
-    temporarilyHide(obj, 11000);
-
-    toast("+" + (obj.amount || 1) + " stone, +1 gold");
+  if (obj.action === "wood" || obj.action === "stone") {
+    hitResource(obj);
   }
 
   if (obj.action === "chest") {
@@ -598,40 +670,69 @@ function interact() {
   }
 
   if (obj.action === "camp") {
-    const neededGold = 25 * state.campLevel;
-    const neededWood = 8 * state.campLevel;
-    const neededStone = 5 * state.campLevel;
-
-    if (
-      state.gold >= neededGold &&
-      state.wood >= neededWood &&
-      state.stone >= neededStone
-    ) {
-      state.gold -= neededGold;
-      state.wood -= neededWood;
-      state.stone -= neededStone;
-      state.campLevel += 1;
-
-      toast("Camp upgraded to level " + state.campLevel + "!");
-    } else {
-      toast(
-        "Need " +
-        neededGold +
-        " gold, " +
-        neededWood +
-        " wood, " +
-        neededStone +
-        " stone."
-      );
-    }
+    upgradeCamp();
   }
 
   save();
   syncUI();
 }
 
+function hitResource(obj) {
+  obj.hitsLeft -= 1;
+  obj.shake = 8;
+
+  if (obj.hitsLeft > 0) {
+    toast("Hit! " + obj.hitsLeft + " left");
+    return;
+  }
+
+  if (obj.action === "wood") {
+    state.wood += obj.amount || 1;
+    state.gold += 1;
+    toast("+" + (obj.amount || 1) + " wood, +1 gold");
+    temporarilyHide(obj, 9000);
+  }
+
+  if (obj.action === "stone") {
+    state.stone += obj.amount || 1;
+    state.gold += 1;
+    toast("+" + (obj.amount || 1) + " stone, +1 gold");
+    temporarilyHide(obj, 11000);
+  }
+}
+
+function upgradeCamp() {
+  const neededGold = 25 * state.campLevel;
+  const neededWood = 8 * state.campLevel;
+  const neededStone = 5 * state.campLevel;
+
+  if (
+    state.gold >= neededGold &&
+    state.wood >= neededWood &&
+    state.stone >= neededStone
+  ) {
+    state.gold -= neededGold;
+    state.wood -= neededWood;
+    state.stone -= neededStone;
+    state.campLevel += 1;
+
+    toast("Camp upgraded to level " + state.campLevel + "!");
+  } else {
+    toast(
+      "Need " +
+      neededGold +
+      " gold, " +
+      neededWood +
+      " wood, " +
+      neededStone +
+      " stone."
+    );
+  }
+}
+
 function temporarilyHide(obj, ms) {
   obj.hidden = true;
+  obj.hitsLeft = obj.hitsNeeded;
 
   setTimeout(() => {
     obj.hidden = false;
@@ -690,20 +791,23 @@ function drawObjects() {
   for (const obj of sorted) {
     if (obj.hidden) continue;
 
+    const shakeX = obj.shake > 0 ? Math.sin(obj.shake * 2.5) * 3 : 0;
+    const drawX = obj.x + shakeX;
+
     if (obj.kind === "tree") {
-      drawImg(images.tree, obj.x, obj.y, obj.w, obj.h, "#2f7832");
+      drawImg(images.tree, drawX, obj.y, obj.w, obj.h, "#2f7832");
     }
 
     if (obj.kind === "rock") {
-      drawImg(images.rock, obj.x, obj.y, obj.w, obj.h, "#89939e");
+      drawImg(images.rock, drawX, obj.y, obj.w, obj.h, "#89939e");
     }
 
     if (obj.kind === "chest") {
-      drawChest(obj.x, obj.y, obj.w, obj.h, obj.used);
+      drawChest(drawX, obj.y, obj.w, obj.h, obj.used);
     }
 
     if (obj.kind === "campfire") {
-      drawCampfire(obj.x, obj.y, obj.w, obj.h);
+      drawCampfire(drawX, obj.y, obj.w, obj.h);
     }
   }
 }
@@ -729,16 +833,16 @@ function drawPlayer() {
 }
 
 function drawNameTag(x, y, text) {
-  ctx.font = "bold 13px Arial";
+  ctx.font = "bold 13px Courier New";
 
   const width = ctx.measureText(text).width + 18;
 
   ctx.fillStyle = "rgba(15, 8, 3, 0.82)";
-  roundRect(x - width / 2, y, width, 22, 8, true, false);
+  roundRect(x - width / 2, y, width, 22, 4, true, false);
 
   ctx.strokeStyle = "#f2c35f";
   ctx.lineWidth = 2;
-  roundRect(x - width / 2, y, width, 22, 8, false, true);
+  roundRect(x - width / 2, y, width, 22, 4, false, true);
 
   ctx.fillStyle = "#ffe4a6";
   ctx.fillText(text, x - width / 2 + 9, y + 15);
@@ -769,7 +873,7 @@ function drawCampfire(x, y, w, h) {
     drawImg(images.campfire, x, y, 64, 64, "#ff8a22");
 
     ctx.fillStyle = "#f2c35f";
-    ctx.font = "bold 14px Arial";
+    ctx.font = "bold 14px Courier New";
     ctx.fillText("Lv." + state.campLevel, x + 8, y - 6);
 
     return;
@@ -788,7 +892,7 @@ function drawCampfire(x, y, w, h) {
   ctx.fillRect(x + 30, y + 8, 9, 34);
 
   ctx.fillStyle = "#f2c35f";
-  ctx.font = "bold 14px Arial";
+  ctx.font = "bold 14px Courier New";
   ctx.fillText("Lv." + state.campLevel, x + 8, y - 6);
 }
 
