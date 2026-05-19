@@ -62,7 +62,6 @@ const files = {
   gold: "gold.png",
   wood: "wood.png",
   stone: "stone.png",
-  questbutton: "questbutton.png",
   inventory: "inventory.png",
   campfire: "campfire.png",
   chest: "chest.png"
@@ -462,7 +461,6 @@ window.addEventListener("keyup", (event) => {
 function createWorld() {
   objects = [];
 
-  // Campsite moved off the main path, slightly left/up on the grass.
   objects.push({
     x: 300,
     y: 245,
@@ -961,7 +959,6 @@ function drawMap() {
     }
   }
 
-  // small camp clearing off the road
   for (let y = 224; y <= 320; y += tile) {
     for (let x = 256; x <= 448; x += tile) {
       drawImg(images.path, x, y, tile, tile, "#c98b55");
