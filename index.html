@@ -54,7 +54,7 @@
         <img src="mascot.png" alt="profile" />
         <div>
           <strong id="profileName">Guest Hero</strong>
-          <span>Level 1 · <b id="profileGold">0</b> gold</span>
+          <span>Level <b id="profileLevel">1</b> · <b id="profileGold">0</b> gold</span>
         </div>
       </div>
 
@@ -72,7 +72,7 @@
 
       <div class="lobby-actions">
         <button id="playGameBtn" class="big-play">Play World</button>
-        <button data-modal="Quests">Quests</button>
+        <button id="lobbyQuestBtn">Quests</button>
         <button data-modal="Shop">Shop</button>
         <button data-modal="Kingdoms">Kingdoms</button>
         <button data-modal="Mail" class="mail-btn">Mail <span id="mailDot"></span></button>
@@ -89,15 +89,34 @@
         <strong id="hudName">Guest Hero</strong>
         <span id="hudWorld">World A - Main Realm</span>
 
+        <div class="level-row">
+          Level <span id="hudLevel">1</span>
+          <div class="xp-bar">
+            <i id="xpFill"></i>
+          </div>
+        </div>
+
         <div class="resource-row">
-          <b>Gold: <span id="hudGold">0</span></b>
-          <b>Wood: <span id="hudWood">0</span></b>
-          <b>Stone: <span id="hudStone">0</span></b>
+          <b><img src="gold.png" alt="" /> <span id="hudGold">0</span></b>
+          <b><img src="wood.png" alt="" /> <span id="hudWood">0</span></b>
+          <b><img src="stone.png" alt="" /> <span id="hudStone">0</span></b>
         </div>
 
         <div class="camp-row">
           Camp Level: <span id="hudCamp">1</span>
         </div>
+      </div>
+
+      <div class="game-bottom-actions">
+        <button id="gameQuestBtn" class="icon-action">
+          <img src="questbutton.png" alt="" />
+          <span>Quests</span>
+        </button>
+
+        <button id="inventoryBtn" class="icon-action inventory-action">
+          <img src="inventory.png" alt="" />
+          <span>Inventory</span>
+        </button>
       </div>
 
       <div id="interactPrompt" class="interact-prompt hidden">Press E</div>
@@ -107,11 +126,37 @@
       <div class="controls">
         Move: WASD / Arrows<br>
         Interact: E<br>
-        Gather resources, then upgrade camp.
+        Hit resources, gather, quest, upgrade.
+      </div>
+
+      <!-- INVENTORY PANEL -->
+      <div id="inventoryPanel" class="side-panel hidden">
+        <div class="panel-header">
+          <h2>Inventory</h2>
+          <button id="closeInventoryBtn">X</button>
+        </div>
+
+        <div class="inventory-stats">
+          <div><img src="gold.png" alt="" /> Gold: <b id="invGold">0</b></div>
+          <div>Camp Level: <b id="invCamp">1</b></div>
+        </div>
+
+        <div id="inventoryGrid" class="inventory-grid"></div>
+      </div>
+
+      <!-- QUEST PANEL -->
+      <div id="questPanel" class="side-panel quest-panel hidden">
+        <div class="panel-header">
+          <h2>Quests</h2>
+          <button id="closeQuestBtn">X</button>
+        </div>
+
+        <div id="questBody" class="quest-body"></div>
+        <button id="claimQuestBtn" class="claim-btn">Claim Reward</button>
       </div>
     </section>
 
-    <!-- MODAL -->
+    <!-- BASIC MODAL -->
     <div id="modal" class="modal-bg hidden">
       <div class="modal-card">
         <h2 id="modalTitle">Title</h2>
