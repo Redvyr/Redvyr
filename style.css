@@ -545,7 +545,11 @@ label {
   color: var(--cream);
   box-shadow: 0 5px 0 rgba(0,0,0,0.28);
   text-shadow: 1px 1px 0 #000;
+  .text-action {
+  width: 132px;
+  font-size: 15px;
 }
+
 
 .icon-action img {
   width: 28px;
@@ -743,7 +747,9 @@ label {
   z-index: 30;
   left: 50%;
   bottom: 92px;
-  transform: translateX(-50%) translateY(120px);
+  transform: translateX(-50%) translateY(140px);
+  opacity: 0;
+  pointer-events: none;
   padding: 12px 18px;
   border-radius: 6px;
   background: #160b05;
@@ -751,11 +757,12 @@ label {
   border: 2px solid var(--gold);
   font-weight: 900;
   box-shadow: 0 12px 30px rgba(0,0,0,0.45);
-  transition: 0.25s;
+  transition: transform 0.25s, opacity 0.25s;
 }
 
 .toast.show {
   transform: translateX(-50%) translateY(0);
+  opacity: 1;
 }
 
 /* MOBILE */
