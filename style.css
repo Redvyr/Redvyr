@@ -853,3 +853,80 @@ label {
     grid-template-columns: repeat(4, 1fr);
   }
 }
+
+/* =====================================================
+   HOTFIX: Inventory button got huge
+   Keeps bottom buttons small, inventory grid icons bigger
+===================================================== */
+
+/* Bottom game action bar */
+.game-bottom-actions {
+  position: absolute !important;
+  z-index: 6 !important;
+  left: 50% !important;
+  bottom: 20px !important;
+  transform: translateX(-50%) !important;
+  display: flex !important;
+  gap: 14px !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Quest / Inventory buttons */
+.icon-action {
+  width: 132px !important;
+  height: 58px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 9px !important;
+  padding: 8px 10px !important;
+  border-radius: 6px !important;
+  background: rgba(18, 8, 3, 0.88) !important;
+  border: 2px solid rgba(242, 195, 95, 0.65) !important;
+  color: var(--cream) !important;
+  box-shadow: 0 5px 0 rgba(0,0,0,0.28) !important;
+  text-shadow: 1px 1px 0 #000 !important;
+  overflow: hidden !important;
+}
+
+/* This is the important fix */
+.icon-action img {
+  width: 28px !important;
+  height: 28px !important;
+  max-width: 28px !important;
+  max-height: 28px !important;
+  object-fit: contain !important;
+  image-rendering: pixelated !important;
+  flex-shrink: 0 !important;
+}
+
+.inventory-action {
+  width: 150px !important;
+}
+
+.icon-action span {
+  font-size: 13px !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+}
+
+/* Inventory panel item icons can stay bigger */
+.inventory-slot img {
+  width: 44px !important;
+  height: 44px !important;
+  max-width: 44px !important;
+  max-height: 44px !important;
+  object-fit: contain !important;
+  image-rendering: pixelated !important;
+}
+
+/* HUD resource icons slightly bigger but controlled */
+.resource-row img {
+  width: 26px !important;
+  height: 26px !important;
+  max-width: 26px !important;
+  max-height: 26px !important;
+  object-fit: contain !important;
+  image-rendering: pixelated !important;
+}
