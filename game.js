@@ -50,7 +50,7 @@ canvas.width = 960;
 canvas.height = 540;
 ctx.imageSmoothingEnabled = false;
 
-const saveKey = "redvyr_phase2ef_save";
+const saveKey = "redvyr_phase2f_save";
 
 const images = {};
 const files = {
@@ -75,22 +75,23 @@ for (const key in files) {
 const state = {
   name: "Guest Hero",
   world: "World A - Main Realm",
+
   gold: 0,
   wood: 0,
   stone: 0,
+
   campLevel: 1,
   level: 1,
   xp: 0,
-  mailClaimed: false,
-  questClaimed: false
-};
 
-const quest = {
-  name: "Gather Supplies",
-  woodNeeded: 6,
-  stoneNeeded: 4,
-  rewardGold: 25,
-  rewardXp: 25
+  mailClaimed: false,
+
+  questStep: 0,
+  questCycle: 1,
+  questBaseGold: 0,
+  questBaseWood: 0,
+  questBaseStone: 0,
+  questBaseCamp: 1
 };
 
 const player = {
@@ -123,11 +124,15 @@ let objects = [];
 let floatingTexts = [];
 
 const modalInfo = {
-  Shop: "Shop is preview-only for now. Later it can hold cosmetics, pets, boosts, and account upgrades.",
-  Kingdoms: "Kingdoms come later. First we need the base loop to feel fun and smooth.",
+  Shop: "Shop is preview-only for now. Later you could buy axes, backpacks, boosts, cosmetics, and camp upgrades.",
+  Kingdoms: "Kingdoms come later. First we are finishing the core grind loop.",
   Mail: "Welcome to Redvyr! You claimed 5 bonus gold for checking your mail.",
   Settings: "Settings are coming later. For now, use Inventory to view your resources."
 };
+
+/* =========================
+   LEVEL / XP
+========================= */
 
 function xpNeeded() {
   return 50 + (state.level - 1) * 25;
@@ -139,40 +144,153 @@ function addXp(amount) {
   while (state.xp >= xpNeeded()) {
     state.xp -= xpNeeded();
     state.level += 1;
+
     toast("Level Up! You are now Level " + state.level);
     addFloatingText(player.x, player.y - 70, "LEVEL UP!");
   }
 }
 
-function getQuestText() {
-  const wood = Math.min(state.wood, quest.woodNeeded);
-  const stone = Math.min(state.stone, quest.stoneNeeded);
+/* =========================
+   QUEST CHAIN
+========================= */
 
-  if (state.questClaimed) {
-    return (
-      quest.name + "\n\n" +
-      "Status: Complete\n" +
-      "Reward claimed.\n\n" +
-      "More quests will be added soon."
-    );
+function getCurrentQuest() {
+  const cycle = state.questCycle;
+
+  const quests = [
+    {
+      id: "gather",
+      title: "Gather Supplies",
+      desc: "Collect resources for your camp.",
+      woodNeeded: 6 + (cycle - 1) * 4,
+      stoneNeeded: 4 + (cycle - 1) * 3,
+      goldNeeded: 0,
+      campNeeded: 0,
+      rewardGold: 25 + (cycle - 1) * 15,
+      rewardXp: 25 + (cycle - 1) * 10
+    },
+    {
+      id: "upgrade",
+      title: "Upgrade Your Camp",
+      desc: "Make your camp stronger.",
+      woodNeeded: 0,
+      stoneNeeded: 0,
+      goldNeeded: 0,
+      campNeeded: 2 + (cycle - 1),
+      rewardGold: 40 + (cycle - 1) * 20,
+      rewardXp: 35 + (cycle - 1) * 15
+    },
+    {
+      id: "earn",
+      title: "Earn Gold",
+      desc: "Gather, mine, and open chests to earn gold.",
+      woodNeeded: 0,
+      stoneNeeded: 0,
+      goldNeeded: 60 + (cycle - 1) * 40,
+      campNeeded: 0,
+      rewardGold: 30 + (cycle - 1) * 20,
+      rewardXp: 40 + (cycle - 1) * 20
+    }
+  ];
+
+  return quests[state.questStep] || quests[0];
+}
+
+function getQuestProgressText() {
+  const quest = getCurrentQuest();
+
+  const woodGained = Math.max(0, state.wood - state.questBaseWood);
+  const stoneGained = Math.max(0, state.stone - state.questBaseStone);
+  const goldGained = Math.max(0, state.gold - state.questBaseGold);
+
+  let lines = [];
+
+  lines.push("Chain " + state.questCycle + " · Quest " + (state.questStep + 1) + "/3");
+  lines.push("");
+  lines.push(quest.title);
+  lines.push(quest.desc);
+  lines.push("");
+
+  if (quest.woodNeeded > 0) {
+    lines.push("Wood: " + Math.min(woodGained, quest.woodNeeded) + "/" + quest.woodNeeded);
   }
 
-  return (
-    quest.name + "\n\n" +
-    "Collect wood and stone for your camp.\n\n" +
-    "Wood: " + wood + "/" + quest.woodNeeded + "\n" +
-    "Stone: " + stone + "/" + quest.stoneNeeded + "\n\n" +
-    "Reward: " + quest.rewardGold + " gold + " + quest.rewardXp + " XP"
-  );
+  if (quest.stoneNeeded > 0) {
+    lines.push("Stone: " + Math.min(stoneGained, quest.stoneNeeded) + "/" + quest.stoneNeeded);
+  }
+
+  if (quest.goldNeeded > 0) {
+    lines.push("Gold Earned: " + Math.min(goldGained, quest.goldNeeded) + "/" + quest.goldNeeded);
+  }
+
+  if (quest.campNeeded > 0) {
+    lines.push("Camp Level: " + Math.min(state.campLevel, quest.campNeeded) + "/" + quest.campNeeded);
+  }
+
+  lines.push("");
+  lines.push("Reward: " + quest.rewardGold + " gold + " + quest.rewardXp + " XP");
+
+  if (canClaimQuest()) {
+    lines.push("");
+    lines.push("Ready to claim!");
+  }
+
+  return lines.join("\n");
 }
 
 function canClaimQuest() {
-  return (
-    !state.questClaimed &&
-    state.wood >= quest.woodNeeded &&
-    state.stone >= quest.stoneNeeded
-  );
+  const quest = getCurrentQuest();
+
+  const woodGained = Math.max(0, state.wood - state.questBaseWood);
+  const stoneGained = Math.max(0, state.stone - state.questBaseStone);
+  const goldGained = Math.max(0, state.gold - state.questBaseGold);
+
+  if (quest.woodNeeded > 0 && woodGained < quest.woodNeeded) return false;
+  if (quest.stoneNeeded > 0 && stoneGained < quest.stoneNeeded) return false;
+  if (quest.goldNeeded > 0 && goldGained < quest.goldNeeded) return false;
+  if (quest.campNeeded > 0 && state.campLevel < quest.campNeeded) return false;
+
+  return true;
 }
+
+function claimQuest() {
+  if (!canClaimQuest()) {
+    toast("Quest is not ready yet.");
+    return;
+  }
+
+  const quest = getCurrentQuest();
+
+  state.gold += quest.rewardGold;
+  addXp(quest.rewardXp);
+
+  addFloatingText(player.x, player.y - 60, "+QUEST");
+  toast("Quest claimed! +" + quest.rewardGold + " gold");
+
+  state.questStep += 1;
+
+  if (state.questStep >= 3) {
+    state.questStep = 0;
+    state.questCycle += 1;
+    toast("Quest chain complete! Chain " + state.questCycle + " started.");
+  }
+
+  resetQuestBaseline();
+
+  save();
+  syncUI();
+}
+
+function resetQuestBaseline() {
+  state.questBaseGold = state.gold;
+  state.questBaseWood = state.wood;
+  state.questBaseStone = state.stone;
+  state.questBaseCamp = state.campLevel;
+}
+
+/* =========================
+   SAVE / UI
+========================= */
 
 function loadSave() {
   try {
@@ -183,14 +301,23 @@ function loadSave() {
 
     state.name = data.name || state.name;
     state.world = "World A - Main Realm";
+
     state.gold = Number(data.gold || 0);
     state.wood = Number(data.wood || 0);
     state.stone = Number(data.stone || 0);
+
     state.campLevel = Number(data.campLevel || 1);
     state.level = Number(data.level || 1);
     state.xp = Number(data.xp || 0);
+
     state.mailClaimed = Boolean(data.mailClaimed);
-    state.questClaimed = Boolean(data.questClaimed);
+
+    state.questStep = Number(data.questStep || 0);
+    state.questCycle = Number(data.questCycle || 1);
+    state.questBaseGold = Number(data.questBaseGold || 0);
+    state.questBaseWood = Number(data.questBaseWood || 0);
+    state.questBaseStone = Number(data.questBaseStone || 0);
+    state.questBaseCamp = Number(data.questBaseCamp || 1);
   } catch {}
 
   nicknameInput.value = state.name;
@@ -226,6 +353,10 @@ function syncUI() {
   updateInventoryPanel();
   updateQuestPanel();
 }
+
+/* =========================
+   BUTTONS / PANELS
+========================= */
 
 $("enterBtn").addEventListener("click", () => {
   state.name = nicknameInput.value.trim() || "Guest Hero";
@@ -333,6 +464,7 @@ function closeInventory() {
 gameQuestBtn.addEventListener("click", openQuest);
 lobbyQuestBtn.addEventListener("click", openQuest);
 closeQuestBtn.addEventListener("click", closeQuest);
+claimQuestBtn.addEventListener("click", claimQuest);
 
 function openQuest() {
   closeInventory();
@@ -344,33 +476,14 @@ function closeQuest() {
   questPanel.classList.add("hidden");
 }
 
-claimQuestBtn.addEventListener("click", () => {
-  if (!canClaimQuest()) {
-    toast("Quest is not ready yet.");
-    return;
-  }
-
-  state.questClaimed = true;
-  state.gold += quest.rewardGold;
-  addXp(quest.rewardXp);
-
-  toast("Quest claimed! +" + quest.rewardGold + " gold");
-  addFloatingText(player.x, player.y - 60, "+QUEST");
-
-  save();
-  syncUI();
-});
-
 function updateQuestPanel() {
   if (!questBody || !claimQuestBtn) return;
 
-  questBody.textContent = getQuestText();
+  questBody.textContent = getQuestProgressText();
 
   claimQuestBtn.disabled = !canClaimQuest();
 
-  if (state.questClaimed) {
-    claimQuestBtn.textContent = "Reward Claimed";
-  } else if (canClaimQuest()) {
+  if (canClaimQuest()) {
     claimQuestBtn.textContent = "Claim Reward";
   } else {
     claimQuestBtn.textContent = "Quest In Progress";
@@ -441,6 +554,10 @@ function toast(message) {
   }, 1900);
 }
 
+/* =========================
+   INPUT
+========================= */
+
 window.addEventListener("keydown", (event) => {
   keys.add(event.key.toLowerCase());
 
@@ -452,11 +569,20 @@ window.addEventListener("keydown", (event) => {
     if (inventoryPanel.classList.contains("hidden")) openInventory();
     else closeInventory();
   }
+
+  if (!gameScreen.classList.contains("hidden") && event.key.toLowerCase() === "q") {
+    if (questPanel.classList.contains("hidden")) openQuest();
+    else closeQuest();
+  }
 });
 
 window.addEventListener("keyup", (event) => {
   keys.delete(event.key.toLowerCase());
 });
+
+/* =========================
+   WORLD
+========================= */
 
 function createWorld() {
   objects = [];
@@ -627,6 +753,10 @@ function isTooCloseToPlayer(box) {
   return overlap(box, spawn);
 }
 
+/* =========================
+   COLLISION
+========================= */
+
 function playerHitbox(x = player.x, y = player.y) {
   return {
     x: x - 18,
@@ -703,6 +833,10 @@ function canMoveTo(x, y) {
 
   return true;
 }
+
+/* =========================
+   UPDATE / INTERACT
+========================= */
 
 function update() {
   if (gameScreen.classList.contains("hidden")) return;
@@ -920,6 +1054,10 @@ function addFloatingText(x, y, text) {
     life: 70
   });
 }
+
+/* =========================
+   DRAW
+========================= */
 
 function draw() {
   if (gameScreen.classList.contains("hidden")) return;
