@@ -565,3 +565,158 @@ label {
   color: rgba(255, 240, 200, 0.75);
   font-weight: 800;
 }
+
+/* ================================
+   PHASE 2B CLEAN GUI OVERRIDES
+   Keeps Phase 2A working, only cleans layout.
+================================ */
+
+/* Make the lobby feel more like a game menu */
+.lobby-screen .shade {
+  background:
+    radial-gradient(circle at center, transparent 38%, rgba(0,0,0,0.25)),
+    linear-gradient(to right, rgba(0,0,0,0.35), transparent 32%, transparent 72%, rgba(0,0,0,0.38));
+}
+
+/* Logo stays clean top-left */
+.top-left-brand {
+  top: 18px !important;
+  left: 18px !important;
+  padding: 12px 16px !important;
+  border-radius: 15px !important;
+}
+
+/* World select stays top-right, but cleaner */
+.world-card {
+  top: 82px !important;
+  right: 24px !important;
+  width: 285px !important;
+  padding: 15px !important;
+  border-radius: 16px !important;
+}
+
+.world-card select {
+  font-size: 13px;
+}
+
+/* Main character: keep centered and not too huge */
+.lobby-player {
+  left: 50% !important;
+  bottom: 17% !important;
+  transform: translateX(-50%) !important;
+}
+
+.lobby-player img {
+  width: min(285px, 30vw) !important;
+  max-height: 50vh !important;
+}
+
+.name-tag {
+  font-size: 14px;
+  padding: 8px 15px !important;
+}
+
+/* Profile/stats now bottom-left and much easier to see */
+.profile-card {
+  top: auto !important;
+  right: auto !important;
+  left: 24px !important;
+  bottom: 118px !important;
+  width: 330px !important;
+  min-height: 86px !important;
+  padding: 13px !important;
+  display: grid !important;
+  grid-template-columns: 58px 1fr !important;
+  gap: 12px !important;
+  align-items: center !important;
+  border-radius: 17px !important;
+  background: linear-gradient(180deg, rgba(58, 29, 12, 0.88), rgba(15, 8, 3, 0.86)) !important;
+  border: 3px solid rgba(242, 195, 95, 0.58) !important;
+  box-shadow: 0 7px 0 rgba(0,0,0,0.28), 0 16px 34px rgba(0,0,0,0.32) !important;
+}
+
+.profile-card img {
+  width: 58px !important;
+  height: 58px !important;
+  max-width: 58px !important;
+  max-height: 58px !important;
+  object-fit: contain !important;
+  background: rgba(0,0,0,0.22);
+  border: 2px solid rgba(242,195,95,0.45);
+  border-radius: 13px;
+}
+
+.profile-card strong {
+  font-size: 20px !important;
+  color: #ffe4a6 !important;
+  text-shadow: 2px 2px 0 #4a170b;
+}
+
+.profile-card span {
+  font-size: 13px !important;
+  font-weight: 900 !important;
+}
+
+/* Buttons: bigger, cleaner, spread across bottom */
+.lobby-actions {
+  left: 24px !important;
+  bottom: 24px !important;
+  width: min(850px, calc(100vw - 48px)) !important;
+  gap: 12px !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+}
+
+.lobby-actions button {
+  min-width: 132px !important;
+  padding: 14px 18px !important;
+  border-radius: 14px !important;
+  font-size: 14px !important;
+  background: linear-gradient(180deg, rgba(58, 29, 12, 0.9), rgba(15, 8, 3, 0.88)) !important;
+  border: 3px solid rgba(242, 195, 95, 0.52) !important;
+  box-shadow: 0 7px 0 rgba(0,0,0,0.28) !important;
+}
+
+.lobby-actions .big-play {
+  min-width: 160px !important;
+  background: linear-gradient(#e84b34, #8e1c13) !important;
+  border-color: #f2c35f !important;
+}
+
+/* Mail dot stays visible */
+#mailDot {
+  width: 18px !important;
+  height: 18px !important;
+}
+
+/* Game HUD readable but not massive */
+.game-hud {
+  min-width: 280px !important;
+  border-radius: 16px !important;
+  border: 3px solid rgba(242, 195, 95, 0.55) !important;
+  background: linear-gradient(180deg, rgba(58, 29, 12, 0.88), rgba(15, 8, 3, 0.86)) !important;
+}
+
+.resource-row b {
+  font-size: 14px !important;
+}
+
+/* Mobile safety */
+@media (max-width: 850px) {
+  .profile-card {
+    position: relative !important;
+    left: auto !important;
+    bottom: auto !important;
+    width: min(420px, 100%) !important;
+    margin: 14px auto !important;
+  }
+
+  .lobby-actions {
+    position: relative !important;
+    left: auto !important;
+    bottom: auto !important;
+    width: min(520px, 100%) !important;
+    justify-content: center !important;
+    margin: 14px auto !important;
+  }
+}
