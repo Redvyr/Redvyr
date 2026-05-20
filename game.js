@@ -21,6 +21,8 @@ const hudStone = $("hudStone");
 const hudCamp = $("hudCamp");
 const hudLevel = $("hudLevel");
 const xpFill = $("xpFill");
+const hpFill = $("hpFill");
+const hudHpText = $("hudHpText");
 
 const mailDot = $("mailDot");
 
@@ -43,6 +45,14 @@ const claimQuestBtn = $("claimQuestBtn");
 const gameQuestBtn = $("gameQuestBtn");
 const lobbyQuestBtn = $("lobbyQuestBtn");
 
+const statsPanel = $("statsPanel");
+const statsBtn = $("statsBtn");
+const closeStatsBtn = $("closeStatsBtn");
+const statsList = $("statsList");
+const statPoints = $("statPoints");
+const statGatherDamage = $("statGatherDamage");
+const statMaxHp = $("statMaxHp");
+
 const canvas = $("game");
 const ctx = canvas.getContext("2d");
 
@@ -50,14 +60,19 @@ canvas.width = 960;
 canvas.height = 540;
 ctx.imageSmoothingEnabled = false;
 
-const saveKey = "redvyr_phase2f_save";
+const saveKey = "redvyr_phase3a_save";
 
 const images = {};
 const files = {
   grass: "grass.png",
+  grassflower: "grassflower.png",
+  grassrock: "grassrock.png",
   path: "path.png",
+  rockpath: "rockpath.png",
   tree: "tree.png",
   rock: "rock.png",
+  bush1: "bush1.png",
+  bush2: "bush2.png",
   mascot: "mascot.png",
   gold: "gold.png",
   wood: "wood.png",
@@ -84,6 +99,16 @@ const state = {
   level: 1,
   xp: 0,
 
+  hp: 100,
+  statPoints: 0,
+  stats: {
+    strength: 0,
+    defense: 0,
+    magic: 0,
+    sword: 0,
+    archery: 0
+  },
+
   mailClaimed: false,
 
   questStep: 0,
@@ -93,6 +118,34 @@ const state = {
   questBaseStone: 0,
   questBaseCamp: 1
 };
+
+const statInfo = [
+  {
+    key: "strength",
+    name: "Strength",
+    desc: "Increases gathering damage."
+  },
+  {
+    key: "defense",
+    name: "Defense",
+    desc: "Increases max HP."
+  },
+  {
+    key: "magic",
+    name: "Magic",
+    desc: "Future spell power."
+  },
+  {
+    key: "sword",
+    name: "Sword",
+    desc: "Future melee damage."
+  },
+  {
+    key: "archery",
+    name: "Archery",
+    desc: "Future projectile damage."
+  }
+];
 
 const player = {
   x: 520,
@@ -122,20 +175,31 @@ const map = {
 const keys = new Set();
 let objects = [];
 let floatingTexts = [];
+let tileVariants = [];
 
 const modalInfo = {
-  Shop: "Shop is preview-only for now. Later you could buy axes, backpacks, boosts, cosmetics, and camp upgrades.",
-  Kingdoms: "Kingdoms come later. First we are finishing the core grind loop.",
+  Shop: "Shop is preview-only for now. Later you could buy cosmetics on the homepage and tools/items from NPCs inside the world.",
+  Kingdoms: "Kingdoms come later. First we are finishing the core RPG loop.",
   Mail: "Welcome to Redvyr! You claimed 5 bonus gold for checking your mail.",
-  Settings: "Settings are coming later. For now, use Inventory to view your resources."
+  Settings: "Settings are coming later. For now, use Inventory and Stats to manage your character."
 };
 
-/* =========================
-   LEVEL / XP
-========================= */
+/* LEVEL / STATS */
 
 function xpNeeded() {
   return 50 + (state.level - 1) * 25;
+}
+
+function maxHp() {
+  return 100 + state.stats.defense * 10;
+}
+
+function strengthMultiplier() {
+  return Math.min(4, 1 + state.stats.strength * 0.08);
+}
+
+function gatheringDamage() {
+  return Number(strengthMultiplier().toFixed(2));
 }
 
 function addXp(amount) {
@@ -144,15 +208,35 @@ function addXp(amount) {
   while (state.xp >= xpNeeded()) {
     state.xp -= xpNeeded();
     state.level += 1;
+    state.statPoints += 3;
 
-    toast("Level Up! You are now Level " + state.level);
+    state.hp = maxHp();
+
+    toast("Level Up! +3 stat points");
     addFloatingText(player.x, player.y - 70, "LEVEL UP!");
   }
 }
 
-/* =========================
-   QUEST CHAIN
-========================= */
+function addStat(statKey) {
+  if (state.statPoints <= 0) {
+    toast("No stat points available.");
+    return;
+  }
+
+  if (!Object.prototype.hasOwnProperty.call(state.stats, statKey)) return;
+
+  state.stats[statKey] += 1;
+  state.statPoints -= 1;
+
+  if (statKey === "defense") {
+    state.hp = maxHp();
+  }
+
+  save();
+  syncUI();
+}
+
+/* QUESTS */
 
 function getCurrentQuest() {
   const cycle = state.questCycle;
@@ -288,9 +372,7 @@ function resetQuestBaseline() {
   state.questBaseCamp = state.campLevel;
 }
 
-/* =========================
-   SAVE / UI
-========================= */
+/* SAVE / UI */
 
 function loadSave() {
   try {
@@ -310,6 +392,17 @@ function loadSave() {
     state.level = Number(data.level || 1);
     state.xp = Number(data.xp || 0);
 
+    state.hp = Number(data.hp || maxHp());
+    state.statPoints = Number(data.statPoints || 0);
+
+    if (data.stats) {
+      state.stats.strength = Number(data.stats.strength || 0);
+      state.stats.defense = Number(data.stats.defense || 0);
+      state.stats.magic = Number(data.stats.magic || 0);
+      state.stats.sword = Number(data.stats.sword || 0);
+      state.stats.archery = Number(data.stats.archery || 0);
+    }
+
     state.mailClaimed = Boolean(data.mailClaimed);
 
     state.questStep = Number(data.questStep || 0);
@@ -319,6 +412,8 @@ function loadSave() {
     state.questBaseStone = Number(data.questBaseStone || 0);
     state.questBaseCamp = Number(data.questBaseCamp || 1);
   } catch {}
+
+  state.hp = Math.min(state.hp, maxHp());
 
   nicknameInput.value = state.name;
   worldInput.value = state.world;
@@ -348,15 +443,18 @@ function syncUI() {
   const xpPercent = Math.min(100, (state.xp / xpNeeded()) * 100);
   xpFill.style.width = xpPercent + "%";
 
+  const hpPercent = Math.min(100, (state.hp / maxHp()) * 100);
+  hpFill.style.width = hpPercent + "%";
+  hudHpText.textContent = Math.round(state.hp) + "/" + maxHp();
+
   mailDot.style.display = state.mailClaimed ? "none" : "inline-block";
 
   updateInventoryPanel();
   updateQuestPanel();
+  updateStatsPanel();
 }
 
-/* =========================
-   BUTTONS / PANELS
-========================= */
+/* BUTTONS / PANELS */
 
 $("enterBtn").addEventListener("click", () => {
   state.name = nicknameInput.value.trim() || "Guest Hero";
@@ -405,6 +503,7 @@ $("backToLobbyBtn").addEventListener("click", () => {
 
   closeInventory();
   closeQuest();
+  closeStats();
 
   save();
   syncUI();
@@ -442,17 +541,15 @@ modal.addEventListener("click", (event) => {
 });
 
 inventoryBtn.addEventListener("click", () => {
-  if (inventoryPanel.classList.contains("hidden")) {
-    openInventory();
-  } else {
-    closeInventory();
-  }
+  if (inventoryPanel.classList.contains("hidden")) openInventory();
+  else closeInventory();
 });
 
 closeInventoryBtn.addEventListener("click", closeInventory);
 
 function openInventory() {
   closeQuest();
+  closeStats();
   updateInventoryPanel();
   inventoryPanel.classList.remove("hidden");
 }
@@ -468,12 +565,31 @@ claimQuestBtn.addEventListener("click", claimQuest);
 
 function openQuest() {
   closeInventory();
+  closeStats();
   updateQuestPanel();
   questPanel.classList.remove("hidden");
 }
 
 function closeQuest() {
   questPanel.classList.add("hidden");
+}
+
+statsBtn.addEventListener("click", () => {
+  if (statsPanel.classList.contains("hidden")) openStats();
+  else closeStats();
+});
+
+closeStatsBtn.addEventListener("click", closeStats);
+
+function openStats() {
+  closeInventory();
+  closeQuest();
+  updateStatsPanel();
+  statsPanel.classList.remove("hidden");
+}
+
+function closeStats() {
+  statsPanel.classList.add("hidden");
 }
 
 function updateQuestPanel() {
@@ -526,6 +642,46 @@ function updateInventoryPanel() {
   }
 }
 
+function updateStatsPanel() {
+  if (!statsList) return;
+
+  statPoints.textContent = state.statPoints;
+  statGatherDamage.textContent = gatheringDamage().toFixed(2) + "x";
+  statMaxHp.textContent = maxHp();
+
+  statsList.innerHTML = "";
+
+  for (const stat of statInfo) {
+    const row = document.createElement("div");
+    row.className = "stat-line";
+
+    const info = document.createElement("div");
+
+    const title = document.createElement("strong");
+    title.textContent = stat.name + ": " + state.stats[stat.key];
+
+    const desc = document.createElement("span");
+    desc.textContent = stat.desc;
+
+    info.appendChild(title);
+    info.appendChild(desc);
+
+    const value = document.createElement("span");
+    value.textContent = "+" + state.stats[stat.key];
+
+    const button = document.createElement("button");
+    button.textContent = "+";
+    button.disabled = state.statPoints <= 0;
+    button.addEventListener("click", () => addStat(stat.key));
+
+    row.appendChild(info);
+    row.appendChild(value);
+    row.appendChild(button);
+
+    statsList.appendChild(row);
+  }
+}
+
 function makeStacks(type, amount, image) {
   const result = [];
   let remaining = amount;
@@ -554,9 +710,7 @@ function toast(message) {
   }, 1900);
 }
 
-/* =========================
-   INPUT
-========================= */
+/* INPUT */
 
 window.addEventListener("keydown", (event) => {
   keys.add(event.key.toLowerCase());
@@ -574,18 +728,23 @@ window.addEventListener("keydown", (event) => {
     if (questPanel.classList.contains("hidden")) openQuest();
     else closeQuest();
   }
+
+  if (!gameScreen.classList.contains("hidden") && event.key.toLowerCase() === "c") {
+    if (statsPanel.classList.contains("hidden")) openStats();
+    else closeStats();
+  }
 });
 
 window.addEventListener("keyup", (event) => {
   keys.delete(event.key.toLowerCase());
 });
 
-/* =========================
-   WORLD
-========================= */
+/* WORLD */
 
 function createWorld() {
   objects = [];
+  floatingTexts = [];
+  tileVariants = buildTileVariants();
 
   objects.push({
     x: 300,
@@ -614,45 +773,51 @@ function createWorld() {
   for (let i = 0; i < 18; i++) {
     const pos = randomSafePosition(64, 96);
 
-    const tree = {
+    objects.push(makeResource({
       x: pos.x,
       y: pos.y,
       w: 64,
       h: 96,
       kind: "tree",
-      interact: true,
-      label: "hit tree",
       action: "wood",
+      label: "hit tree",
       amount: 2,
-      hitsNeeded: randomInt(2, 5),
-      hitsLeft: 0,
-      shake: 0
-    };
-
-    tree.hitsLeft = tree.hitsNeeded;
-    objects.push(tree);
+      maxHp: randomInt(5, 9)
+    }));
   }
 
   for (let i = 0; i < 10; i++) {
-    const pos = randomSafePosition(48, 32);
+    const pos = randomSafePosition(52, 44);
 
-    const rock = {
+    objects.push(makeResource({
+      x: pos.x,
+      y: pos.y,
+      w: 52,
+      h: 44,
+      kind: "rock",
+      action: "stone",
+      label: "mine rock",
+      amount: 2,
+      maxHp: randomInt(7, 12)
+    }));
+  }
+
+  for (let i = 0; i < 16; i++) {
+    const pos = randomSafePosition(48, 54);
+
+    objects.push(makeResource({
       x: pos.x,
       y: pos.y,
       w: 48,
-      h: 32,
-      kind: "rock",
-      interact: true,
-      label: "mine rock",
-      action: "stone",
-      amount: 2,
-      hitsNeeded: randomInt(2, 5),
-      hitsLeft: 0,
-      shake: 0
-    };
-
-    rock.hitsLeft = rock.hitsNeeded;
-    objects.push(rock);
+      h: 54,
+      kind: Math.random() < 0.5 ? "bush1" : "bush2",
+      action: "bush",
+      label: "shake bush",
+      amount: 1,
+      maxHp: randomInt(2, 3),
+      decorativeLayer: true,
+      noCollision: true
+    }));
   }
 
   player.x = 520;
@@ -662,6 +827,53 @@ function createWorld() {
 
   camera.x = 0;
   camera.y = 0;
+}
+
+function makeResource(data) {
+  return {
+    ...data,
+    interact: true,
+    hp: data.maxHp,
+    shake: 0,
+    hidden: false
+  };
+}
+
+function buildTileVariants() {
+  const variants = [];
+
+  for (let y = 0; y < map.height; y += map.tile) {
+    const row = [];
+
+    for (let x = 0; x < map.width; x += map.tile) {
+      const path = isPathTile(x, y);
+      const r = Math.random();
+
+      let tile = "grass";
+
+      if (path) {
+        tile = r < 0.14 ? "rockpath" : "path";
+      } else {
+        if (r < 0.08) tile = "grassflower";
+        else if (r < 0.15) tile = "grassrock";
+        else tile = "grass";
+      }
+
+      row.push(tile);
+    }
+
+    variants.push(row);
+  }
+
+  return variants;
+}
+
+function isPathTile(x, y) {
+  const onMainHorizontal = y >= 352 && y <= 608;
+  const onMainVertical = x >= 768 && x <= 928;
+  const onCampClearing = y >= 224 && y <= 320 && x >= 256 && x <= 448;
+
+  return onMainHorizontal || onMainVertical || onCampClearing;
 }
 
 function randomSafePosition(w, h) {
@@ -682,7 +894,7 @@ function randomSafePosition(w, h) {
     let overlapsOther = false;
 
     for (const obj of objects) {
-      const padding = 32;
+      const padding = 28;
 
       const padded = {
         x: obj.x - padding,
@@ -753,9 +965,7 @@ function isTooCloseToPlayer(box) {
   return overlap(box, spawn);
 }
 
-/* =========================
-   COLLISION
-========================= */
+/* COLLISION */
 
 function playerHitbox(x = player.x, y = player.y) {
   return {
@@ -767,6 +977,15 @@ function playerHitbox(x = player.x, y = player.y) {
 }
 
 function objectHitbox(obj) {
+  if (obj.noCollision) {
+    return {
+      x: obj.x + obj.w / 2,
+      y: obj.y + obj.h / 2,
+      w: 0,
+      h: 0
+    };
+  }
+
   if (obj.kind === "tree") {
     return {
       x: obj.x + 20,
@@ -802,6 +1021,19 @@ function objectHitbox(obj) {
   };
 }
 
+function interactHitbox(obj) {
+  if (obj.kind === "bush1" || obj.kind === "bush2") {
+    return {
+      x: obj.x + 6,
+      y: obj.y + 12,
+      w: obj.w - 12,
+      h: obj.h - 12
+    };
+  }
+
+  return objectHitbox(obj);
+}
+
 function overlap(a, b) {
   return (
     a.x < b.x + b.w &&
@@ -824,7 +1056,7 @@ function canMoveTo(x, y) {
   }
 
   for (const obj of objects) {
-    if (obj.hidden) continue;
+    if (obj.hidden || obj.noCollision) continue;
 
     if (overlap(box, objectHitbox(obj))) {
       return false;
@@ -834,12 +1066,12 @@ function canMoveTo(x, y) {
   return true;
 }
 
-/* =========================
-   UPDATE / INTERACT
-========================= */
+/* UPDATE / INTERACT */
 
 function update() {
   if (gameScreen.classList.contains("hidden")) return;
+
+  healNearCampfire();
 
   for (const obj of objects) {
     if (obj.shake && obj.shake > 0) {
@@ -908,8 +1140,8 @@ function update() {
   const prompt = $("interactPrompt");
 
   if (near) {
-    if (near.action === "wood" || near.action === "stone") {
-      prompt.textContent = "Press E to " + near.label + " (" + near.hitsLeft + " hits left)";
+    if (near.action === "wood" || near.action === "stone" || near.action === "bush") {
+      prompt.textContent = "Press E to " + near.label + " (" + Math.max(0, Math.ceil(near.hp)) + " HP)";
     } else {
       prompt.textContent = "Press E to " + near.label;
     }
@@ -917,6 +1149,29 @@ function update() {
     prompt.classList.remove("hidden");
   } else {
     prompt.classList.add("hidden");
+  }
+
+  syncBarsOnly();
+}
+
+function syncBarsOnly() {
+  const hpPercent = Math.min(100, (state.hp / maxHp()) * 100);
+  hpFill.style.width = hpPercent + "%";
+  hudHpText.textContent = Math.round(state.hp) + "/" + maxHp();
+}
+
+function healNearCampfire() {
+  const camp = objects.find((obj) => obj.kind === "campfire");
+
+  if (!camp) return;
+
+  const dx = player.x - (camp.x + camp.w / 2);
+  const dy = player.y - (camp.y + camp.h / 2);
+  const distance = Math.hypot(dx, dy);
+  const radius = 90 + state.campLevel * 14;
+
+  if (distance <= radius && state.hp < maxHp()) {
+    state.hp = Math.min(maxHp(), state.hp + 0.025 * state.campLevel);
   }
 }
 
@@ -926,14 +1181,14 @@ function clamp(value, min, max) {
 
 function nearbyInteractable() {
   const reach = {
-    x: player.x - 54,
-    y: player.y - 54,
-    w: 108,
-    h: 108
+    x: player.x - 58,
+    y: player.y - 58,
+    w: 116,
+    h: 116
   };
 
   return objects.find((obj) => {
-    return obj.interact && !obj.hidden && overlap(reach, objectHitbox(obj));
+    return obj.interact && !obj.hidden && overlap(reach, interactHitbox(obj));
   });
 }
 
@@ -942,7 +1197,7 @@ function interact() {
 
   if (!obj) return;
 
-  if (obj.action === "wood" || obj.action === "stone") {
+  if (obj.action === "wood" || obj.action === "stone" || obj.action === "bush") {
     hitResource(obj);
   }
 
@@ -969,11 +1224,13 @@ function interact() {
 }
 
 function hitResource(obj) {
-  obj.hitsLeft -= 1;
+  const damage = gatheringDamage();
+
+  obj.hp -= damage;
   obj.shake = 8;
 
-  if (obj.hitsLeft > 0) {
-    toast("Hit! " + obj.hitsLeft + " left");
+  if (obj.hp > 0) {
+    toast("Hit! -" + damage.toFixed(2));
     return;
   }
 
@@ -993,6 +1250,14 @@ function hitResource(obj) {
     toast("+" + (obj.amount || 1) + " stone");
     addFloatingText(obj.x, obj.y, "+" + (obj.amount || 1) + " Stone");
     temporarilyHide(obj, resourceRespawnTime() + 2000);
+  }
+
+  if (obj.action === "bush") {
+    state.wood += 1;
+    addXp(2);
+    toast("+1 wood");
+    addFloatingText(obj.x, obj.y, "+1 Wood");
+    temporarilyHide(obj, 8000);
   }
 }
 
@@ -1039,7 +1304,7 @@ function upgradeCamp() {
 
 function temporarilyHide(obj, ms) {
   obj.hidden = true;
-  obj.hitsLeft = obj.hitsNeeded;
+  obj.hp = obj.maxHp;
 
   setTimeout(() => {
     obj.hidden = false;
@@ -1055,9 +1320,7 @@ function addFloatingText(x, y, text) {
   });
 }
 
-/* =========================
-   DRAW
-========================= */
+/* DRAW */
 
 function draw() {
   if (gameScreen.classList.contains("hidden")) return;
@@ -1069,8 +1332,7 @@ function draw() {
   ctx.translate(-Math.round(camera.x), -Math.round(camera.y));
 
   drawMap();
-  drawObjects();
-  drawPlayer();
+  drawEntitiesLayered();
   drawFloatingTexts();
 
   ctx.restore();
@@ -1081,55 +1343,70 @@ function drawMap() {
 
   for (let y = 0; y < map.height; y += tile) {
     for (let x = 0; x < map.width; x += tile) {
-      drawImg(images.grass, x, y, tile, tile, "#55b943");
-    }
-  }
+      const row = Math.floor(y / tile);
+      const col = Math.floor(x / tile);
+      const key = tileVariants[row]?.[col] || "grass";
 
-  for (let y = 352; y <= 608; y += tile) {
-    for (let x = 0; x < map.width; x += tile) {
-      drawImg(images.path, x, y, tile, tile, "#c98b55");
-    }
-  }
-
-  for (let x = 768; x <= 928; x += tile) {
-    for (let y = 0; y < map.height; y += tile) {
-      drawImg(images.path, x, y, tile, tile, "#c98b55");
-    }
-  }
-
-  for (let y = 224; y <= 320; y += tile) {
-    for (let x = 256; x <= 448; x += tile) {
-      drawImg(images.path, x, y, tile, tile, "#c98b55");
+      drawImg(images[key], x, y, tile, tile, key === "path" || key === "rockpath" ? "#c98b55" : "#55b943");
     }
   }
 }
 
-function drawObjects() {
-  const sorted = [...objects].sort((a, b) => {
-    return a.y + a.h - (b.y + b.h);
-  });
+function drawEntitiesLayered() {
+  const renderables = [];
 
-  for (const obj of sorted) {
+  for (const obj of objects) {
     if (obj.hidden) continue;
 
-    const shakeX = obj.shake > 0 ? Math.sin(obj.shake * 2.5) * 3 : 0;
-    const drawX = obj.x + shakeX;
+    renderables.push({
+      type: "object",
+      obj,
+      depth: obj.y + obj.h
+    });
+  }
 
-    if (obj.kind === "tree") {
-      drawImg(images.tree, drawX, obj.y, obj.w, obj.h, "#2f7832");
-    }
+  renderables.push({
+    type: "player",
+    depth: player.y + 44
+  });
 
-    if (obj.kind === "rock") {
-      drawImg(images.rock, drawX, obj.y, obj.w, obj.h, "#89939e");
-    }
+  renderables.sort((a, b) => a.depth - b.depth);
 
-    if (obj.kind === "chest") {
-      drawChest(drawX, obj.y, obj.w, obj.h, obj.used);
+  for (const item of renderables) {
+    if (item.type === "player") {
+      drawPlayer();
+    } else {
+      drawObject(item.obj);
     }
+  }
+}
 
-    if (obj.kind === "campfire") {
-      drawCampfire(drawX, obj.y, obj.w, obj.h);
-    }
+function drawObject(obj) {
+  const shakeX = obj.shake > 0 ? Math.sin(obj.shake * 2.5) * 3 : 0;
+  const drawX = obj.x + shakeX;
+
+  if (obj.kind === "tree") {
+    drawImg(images.tree, drawX, obj.y, obj.w, obj.h, "#2f7832");
+  }
+
+  if (obj.kind === "rock") {
+    drawImg(images.rock, drawX, obj.y, obj.w, obj.h, "#89939e");
+  }
+
+  if (obj.kind === "bush1") {
+    drawImg(images.bush1, drawX, obj.y, obj.w, obj.h, "#3a9136");
+  }
+
+  if (obj.kind === "bush2") {
+    drawImg(images.bush2, drawX, obj.y, obj.w, obj.h, "#3a9136");
+  }
+
+  if (obj.kind === "chest") {
+    drawChest(drawX, obj.y, obj.w, obj.h, obj.used);
+  }
+
+  if (obj.kind === "campfire") {
+    drawCampfire(drawX, obj.y, obj.w, obj.h);
   }
 }
 
@@ -1202,6 +1479,25 @@ function drawChest(x, y, w, h, opened) {
 }
 
 function drawCampfire(x, y, w, h) {
+  const radius = 90 + state.campLevel * 14;
+
+  const gradient = ctx.createRadialGradient(
+    x + 32,
+    y + 32,
+    12,
+    x + 32,
+    y + 32,
+    radius
+  );
+
+  gradient.addColorStop(0, "rgba(255, 190, 60, 0.18)");
+  gradient.addColorStop(1, "rgba(255, 190, 60, 0)");
+
+  ctx.fillStyle = gradient;
+  ctx.beginPath();
+  ctx.arc(x + 32, y + 32, radius, 0, Math.PI * 2);
+  ctx.fill();
+
   if (images.campfire.complete && images.campfire.naturalWidth > 0) {
     drawImg(images.campfire, x, y, 64, 64, "#ff8a22");
 
@@ -1212,25 +1508,15 @@ function drawCampfire(x, y, w, h) {
     return;
   }
 
-  ctx.fillStyle = "rgba(0,0,0,0.22)";
-  ctx.fillRect(x + 12, y + 46, w - 24, 9);
-
-  ctx.fillStyle = "#5b2b12";
-  ctx.fillRect(x + 12, y + 42, w - 24, 12);
-
   ctx.fillStyle = "#ff8a22";
   ctx.fillRect(x + 24, y + 18, 20, 28);
 
   ctx.fillStyle = "#ffd45e";
   ctx.fillRect(x + 30, y + 8, 9, 34);
-
-  ctx.fillStyle = "#f2c35f";
-  ctx.font = "bold 14px Arial";
-  ctx.fillText("Lv." + state.campLevel, x + 8, y - 6);
 }
 
 function drawImg(img, x, y, w, h, fallback) {
-  if (img.complete && img.naturalWidth > 0) {
+  if (img && img.complete && img.naturalWidth > 0) {
     ctx.drawImage(
       img,
       Math.round(x),
