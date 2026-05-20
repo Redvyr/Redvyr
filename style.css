@@ -129,7 +129,7 @@ label {
   letter-spacing: 3px;
 }
 
-/* START SCREEN */
+/* START */
 
 .start-card {
   position: absolute;
@@ -404,7 +404,8 @@ label {
   font-weight: 800;
 }
 
-.level-row {
+.level-row,
+.health-row {
   margin-top: 9px;
   display: flex;
   align-items: center;
@@ -414,7 +415,8 @@ label {
   font-weight: 900;
 }
 
-.xp-bar {
+.xp-bar,
+.hp-bar {
   flex: 1;
   height: 10px;
   background: rgba(0,0,0,0.3);
@@ -422,11 +424,19 @@ label {
   overflow: hidden;
 }
 
-.xp-bar i {
+.xp-bar i,
+.hp-bar i {
   display: block;
   height: 100%;
   width: 0%;
+}
+
+.xp-bar i {
   background: linear-gradient(90deg, #d9442e, #f2c35f);
+}
+
+.hp-bar i {
+  background: linear-gradient(90deg, #1fb860, #7eff9d);
 }
 
 .resource-row {
@@ -609,14 +619,20 @@ label {
   border: 2px solid var(--gold);
 }
 
-.inventory-stats {
+.inventory-stats,
+.stat-summary {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
   margin-bottom: 14px;
 }
 
-.inventory-stats div {
+.stat-summary {
+  grid-template-columns: 1fr;
+}
+
+.inventory-stats div,
+.stat-summary div {
   padding: 10px;
   border-radius: 4px;
   background: rgba(0,0,0,0.3);
@@ -671,7 +687,8 @@ label {
   text-shadow: 1px 1px 0 #000;
 }
 
-.quest-panel {
+.quest-panel,
+.stats-panel {
   left: 50%;
   right: auto;
   top: 50%;
@@ -703,6 +720,45 @@ label {
 
 .claim-btn:disabled {
   opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.stats-list {
+  display: grid;
+  gap: 9px;
+}
+
+.stat-line {
+  display: grid;
+  grid-template-columns: 1fr 60px 42px;
+  gap: 9px;
+  align-items: center;
+  padding: 10px;
+  border-radius: 4px;
+  background: rgba(0,0,0,0.25);
+  border: 1px solid rgba(242,195,95,0.35);
+}
+
+.stat-line strong {
+  color: #ffe4a6;
+}
+
+.stat-line span {
+  color: rgba(255,240,200,0.82);
+  font-size: 13px;
+}
+
+.stat-line button {
+  width: 42px;
+  height: 34px;
+  border-radius: 4px;
+  background: linear-gradient(#d9442e, #8e1c13);
+  color: white;
+  border: 2px solid var(--gold);
+}
+
+.stat-line button:disabled {
+  opacity: 0.45;
   cursor: not-allowed;
 }
 
@@ -850,6 +906,15 @@ label {
 
   .game-bottom-actions {
     bottom: 16px;
+    gap: 8px;
+  }
+
+  .icon-action {
+    width: 108px;
+  }
+
+  .inventory-action {
+    width: 128px;
   }
 
   .side-panel {
