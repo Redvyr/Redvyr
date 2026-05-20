@@ -23,6 +23,8 @@ const hudLevel = $("hudLevel");
 const xpFill = $("xpFill");
 const hpFill = $("hpFill");
 const hudHpText = $("hudHpText");
+const dayNightLabel = $("dayNightLabel");
+const dayNightFill = $("dayNightFill");
 
 const mailDot = $("mailDot");
 
@@ -53,6 +55,11 @@ const statPoints = $("statPoints");
 const statGatherDamage = $("statGatherDamage");
 const statMaxHp = $("statMaxHp");
 
+const campPanel = $("campPanel");
+const closeCampBtn = $("closeCampBtn");
+const campBody = $("campBody");
+const campUpgradeBtn = $("campUpgradeBtn");
+
 const canvas = $("game");
 const ctx = canvas.getContext("2d");
 
@@ -60,7 +67,11 @@ canvas.width = 960;
 canvas.height = 540;
 ctx.imageSmoothingEnabled = false;
 
-const saveKey = "redvyr_phase3a_save";
+const saveKey = "redvyr_phase3b_save";
+
+const DAY_MS = 180000;
+const NIGHT_MS = 90000;
+const FULL_CYCLE_MS = DAY_MS + NIGHT_MS;
 
 const images = {};
 const files = {
@@ -116,35 +127,17 @@ const state = {
   questBaseGold: 0,
   questBaseWood: 0,
   questBaseStone: 0,
-  questBaseCamp: 1
+  questBaseCamp: 1,
+
+  cycleStartedAt: Date.now()
 };
 
 const statInfo = [
-  {
-    key: "strength",
-    name: "Strength",
-    desc: "Increases gathering damage."
-  },
-  {
-    key: "defense",
-    name: "Defense",
-    desc: "Increases max HP."
-  },
-  {
-    key: "magic",
-    name: "Magic",
-    desc: "Future spell power."
-  },
-  {
-    key: "sword",
-    name: "Sword",
-    desc: "Future melee damage."
-  },
-  {
-    key: "archery",
-    name: "Archery",
-    desc: "Future projectile damage."
-  }
+  { key: "strength", name: "Strength", desc: "Increases gathering damage." },
+  { key: "defense", name: "Defense", desc: "Increases max HP." },
+  { key: "magic", name: "Magic", desc: "Future spell power." },
+  { key: "sword", name: "Sword", desc: "Future melee damage." },
+  { key: "archery", name: "Archery", desc: "Future projectile damage." }
 ];
 
 const player = {
@@ -179,9 +172,9 @@ let tileVariants = [];
 
 const modalInfo = {
   Shop: "Shop is preview-only for now. Later you could buy cosmetics on the homepage and tools/items from NPCs inside the world.",
-  Kingdoms: "Kingdoms come later. First we are finishing the core RPG loop.",
+  Kingdoms: "Kingdoms come later. Your campfire is the first step toward a future kingdom core.",
   Mail: "Welcome to Redvyr! You claimed 5 bonus gold for checking your mail.",
-  Settings: "Settings are coming later. For now, use Inventory and Stats to manage your character."
+  Settings: "Settings are coming later. For now, use Inventory, Quests, Stats, and your Campfire panel."
 };
 
 /* LEVEL / STATS */
@@ -234,6 +227,50 @@ function addStat(statKey) {
 
   save();
   syncUI();
+}
+
+/* DAY / NIGHT */
+
+function cycleInfo() {
+  const elapsed = (Date.now() - state.cycleStartedAt) % FULL_CYCLE_MS;
+
+  if (elapsed < DAY_MS) {
+    return {
+      phase: "Day",
+      progress: elapsed / DAY_MS,
+      nightAlpha: 0
+    };
+  }
+
+  const nightElapsed = elapsed - DAY_MS;
+  const nightProgress = nightElapsed / NIGHT_MS;
+
+  let alpha = 0.52;
+
+  if (nightProgress < 0.18) {
+    alpha = 0.52 * (nightProgress / 0.18);
+  } else if (nightProgress > 0.82) {
+    alpha = 0.52 * ((1 - nightProgress) / 0.18);
+  }
+
+  return {
+    phase: "Night",
+    progress: nightProgress,
+    nightAlpha: Math.max(0, Math.min(0.52, alpha))
+  };
+}
+
+function updateDayNightUI() {
+  const info = cycleInfo();
+
+  dayNightLabel.textContent = info.phase;
+  dayNightFill.style.width = Math.round(info.progress * 100) + "%";
+
+  if (info.phase === "Night") {
+    dayNightFill.style.background = "linear-gradient(90deg, #3952b8, #80d7ff)";
+  } else {
+    dayNightFill.style.background = "linear-gradient(90deg, #f2c35f, #80d7ff)";
+  }
 }
 
 /* QUESTS */
@@ -372,6 +409,110 @@ function resetQuestBaseline() {
   state.questBaseCamp = state.campLevel;
 }
 
+/* CAMP */
+
+function campUpgradeCost() {
+  return {
+    gold: 25 * state.campLevel,
+    wood: 8 * state.campLevel,
+    stone: 5 * state.campLevel
+  };
+}
+
+function campLightRadius() {
+  return 90 + state.campLevel * 16;
+}
+
+function campHealRadius() {
+  return 85 + state.campLevel * 14;
+}
+
+function campHealRate() {
+  return 0.025 * state.campLevel;
+}
+
+function campTierName() {
+  if (state.campLevel >= 20) return "Kingdom Core Preview";
+  if (state.campLevel >= 10) return "Village Core Preview";
+  if (state.campLevel >= 5) return "Camp Core Preview";
+  return "Campfire";
+}
+
+function campBenefitsHTML() {
+  const benefits = [
+    { level: 1, text: "Healing zone unlocked" },
+    { level: 2, text: "+2 gold from gathering" },
+    { level: 3, text: "Faster resource respawn" },
+    { level: 4, text: "Bigger healing and light radius" },
+    { level: 5, text: "Camp Core preview unlocked" },
+    { level: 10, text: "Village Core preview unlocked later" },
+    { level: 20, text: "Kingdom Core preview unlocked later" }
+  ];
+
+  return benefits
+    .map((benefit) => {
+      const unlocked = state.campLevel >= benefit.level ? " unlocked" : "";
+      return `<div class="camp-benefit${unlocked}">Level ${benefit.level}: ${benefit.text}</div>`;
+    })
+    .join("");
+}
+
+function updateCampPanel() {
+  if (!campBody) return;
+
+  const cost = campUpgradeCost();
+
+  campBody.innerHTML = `
+    <div class="camp-card">
+      <strong>${campTierName()} · Level ${state.campLevel}</strong>
+      Your campfire is the heart of your future settlement. Upgrade it to improve healing, light, gathering rewards, and future kingdom systems.
+    </div>
+
+    <div class="camp-card">
+      <strong>Next Upgrade Cost</strong>
+      <div class="camp-cost">
+        <div>${cost.gold} Gold</div>
+        <div>${cost.wood} Wood</div>
+        <div>${cost.stone} Stone</div>
+      </div>
+    </div>
+
+    <div class="camp-card">
+      <strong>Current Power</strong>
+      Healing Radius: ${Math.round(campHealRadius())}<br>
+      Light Radius: ${Math.round(campLightRadius())}<br>
+      Heal Rate: ${campHealRate().toFixed(3)} HP/tick
+    </div>
+
+    <div class="camp-card">
+      <strong>Camp Benefits</strong>
+      <div class="camp-benefit-list">
+        ${campBenefitsHTML()}
+      </div>
+    </div>
+  `;
+
+  const canUpgrade =
+    state.gold >= cost.gold &&
+    state.wood >= cost.wood &&
+    state.stone >= cost.stone;
+
+  campUpgradeBtn.disabled = !canUpgrade;
+  campUpgradeBtn.textContent = canUpgrade ? "Upgrade Camp" : "Need More Resources";
+}
+
+function openCamp() {
+  closeInventory();
+  closeQuest();
+  closeStats();
+  updateCampPanel();
+  campPanel.classList.remove("hidden");
+}
+
+function closeCamp() {
+  campPanel.classList.add("hidden");
+}
+
 /* SAVE / UI */
 
 function loadSave() {
@@ -411,6 +552,8 @@ function loadSave() {
     state.questBaseWood = Number(data.questBaseWood || 0);
     state.questBaseStone = Number(data.questBaseStone || 0);
     state.questBaseCamp = Number(data.questBaseCamp || 1);
+
+    state.cycleStartedAt = Number(data.cycleStartedAt || Date.now());
   } catch {}
 
   state.hp = Math.min(state.hp, maxHp());
@@ -449,9 +592,11 @@ function syncUI() {
 
   mailDot.style.display = state.mailClaimed ? "none" : "inline-block";
 
+  updateDayNightUI();
   updateInventoryPanel();
   updateQuestPanel();
   updateStatsPanel();
+  updateCampPanel();
 }
 
 /* BUTTONS / PANELS */
@@ -504,6 +649,7 @@ $("backToLobbyBtn").addEventListener("click", () => {
   closeInventory();
   closeQuest();
   closeStats();
+  closeCamp();
 
   save();
   syncUI();
@@ -550,6 +696,7 @@ closeInventoryBtn.addEventListener("click", closeInventory);
 function openInventory() {
   closeQuest();
   closeStats();
+  closeCamp();
   updateInventoryPanel();
   inventoryPanel.classList.remove("hidden");
 }
@@ -566,6 +713,7 @@ claimQuestBtn.addEventListener("click", claimQuest);
 function openQuest() {
   closeInventory();
   closeStats();
+  closeCamp();
   updateQuestPanel();
   questPanel.classList.remove("hidden");
 }
@@ -584,6 +732,7 @@ closeStatsBtn.addEventListener("click", closeStats);
 function openStats() {
   closeInventory();
   closeQuest();
+  closeCamp();
   updateStatsPanel();
   statsPanel.classList.remove("hidden");
 }
@@ -591,6 +740,12 @@ function openStats() {
 function closeStats() {
   statsPanel.classList.add("hidden");
 }
+
+closeCampBtn.addEventListener("click", closeCamp);
+campUpgradeBtn.addEventListener("click", () => {
+  upgradeCamp();
+  updateCampPanel();
+});
 
 function updateQuestPanel() {
   if (!questBody || !claimQuestBtn) return;
@@ -753,7 +908,7 @@ function createWorld() {
     h: 64,
     kind: "campfire",
     interact: true,
-    label: "upgrade camp",
+    label: "open camp",
     action: "camp"
   });
 
@@ -815,7 +970,6 @@ function createWorld() {
       label: "shake bush",
       amount: 1,
       maxHp: randomInt(2, 3),
-      decorativeLayer: true,
       noCollision: true
     }));
   }
@@ -978,57 +1132,27 @@ function playerHitbox(x = player.x, y = player.y) {
 
 function objectHitbox(obj) {
   if (obj.noCollision) {
-    return {
-      x: obj.x + obj.w / 2,
-      y: obj.y + obj.h / 2,
-      w: 0,
-      h: 0
-    };
+    return { x: obj.x + obj.w / 2, y: obj.y + obj.h / 2, w: 0, h: 0 };
   }
 
   if (obj.kind === "tree") {
-    return {
-      x: obj.x + 20,
-      y: obj.y + 64,
-      w: 24,
-      h: 28
-    };
+    return { x: obj.x + 20, y: obj.y + 64, w: 24, h: 28 };
   }
 
   if (obj.kind === "campfire") {
-    return {
-      x: obj.x + 18,
-      y: obj.y + 26,
-      w: 28,
-      h: 26
-    };
+    return { x: obj.x + 18, y: obj.y + 26, w: 28, h: 26 };
   }
 
   if (obj.kind === "chest") {
-    return {
-      x: obj.x + 12,
-      y: obj.y + 18,
-      w: 40,
-      h: 34
-    };
+    return { x: obj.x + 12, y: obj.y + 18, w: 40, h: 34 };
   }
 
-  return {
-    x: obj.x + 4,
-    y: obj.y + 4,
-    w: obj.w - 8,
-    h: obj.h - 8
-  };
+  return { x: obj.x + 4, y: obj.y + 4, w: obj.w - 8, h: obj.h - 8 };
 }
 
 function interactHitbox(obj) {
   if (obj.kind === "bush1" || obj.kind === "bush2") {
-    return {
-      x: obj.x + 6,
-      y: obj.y + 12,
-      w: obj.w - 12,
-      h: obj.h - 12
-    };
+    return { x: obj.x + 6, y: obj.y + 12, w: obj.w - 12, h: obj.h - 12 };
   }
 
   return objectHitbox(obj);
@@ -1072,11 +1196,10 @@ function update() {
   if (gameScreen.classList.contains("hidden")) return;
 
   healNearCampfire();
+  updateDayNightUI();
 
   for (const obj of objects) {
-    if (obj.shake && obj.shake > 0) {
-      obj.shake -= 1;
-    }
+    if (obj.shake && obj.shake > 0) obj.shake -= 1;
   }
 
   for (const text of floatingTexts) {
@@ -1114,21 +1237,13 @@ function update() {
 
   player.moving = Math.abs(player.vx) > 0.08 || Math.abs(player.vy) > 0.08;
 
-  if (canMoveTo(player.x + player.vx, player.y)) {
-    player.x += player.vx;
-  } else {
-    player.vx = 0;
-  }
+  if (canMoveTo(player.x + player.vx, player.y)) player.x += player.vx;
+  else player.vx = 0;
 
-  if (canMoveTo(player.x, player.y + player.vy)) {
-    player.y += player.vy;
-  } else {
-    player.vy = 0;
-  }
+  if (canMoveTo(player.x, player.y + player.vy)) player.y += player.vy;
+  else player.vy = 0;
 
-  if (player.moving) {
-    player.bob += 0.18;
-  }
+  if (player.moving) player.bob += 0.18;
 
   camera.tx = clamp(player.x - canvas.width / 2, 0, map.width - canvas.width);
   camera.ty = clamp(player.y - canvas.height / 2, 0, map.height - canvas.height);
@@ -1168,10 +1283,9 @@ function healNearCampfire() {
   const dx = player.x - (camp.x + camp.w / 2);
   const dy = player.y - (camp.y + camp.h / 2);
   const distance = Math.hypot(dx, dy);
-  const radius = 90 + state.campLevel * 14;
 
-  if (distance <= radius && state.hp < maxHp()) {
-    state.hp = Math.min(maxHp(), state.hp + 0.025 * state.campLevel);
+  if (distance <= campHealRadius() && state.hp < maxHp()) {
+    state.hp = Math.min(maxHp(), state.hp + campHealRate());
   }
 }
 
@@ -1180,12 +1294,7 @@ function clamp(value, min, max) {
 }
 
 function nearbyInteractable() {
-  const reach = {
-    x: player.x - 58,
-    y: player.y - 58,
-    w: 116,
-    h: 116
-  };
+  const reach = { x: player.x - 58, y: player.y - 58, w: 116, h: 116 };
 
   return objects.find((obj) => {
     return obj.interact && !obj.hidden && overlap(reach, interactHitbox(obj));
@@ -1216,7 +1325,7 @@ function interact() {
   }
 
   if (obj.action === "camp") {
-    upgradeCamp();
+    openCamp();
   }
 
   save();
@@ -1272,34 +1381,23 @@ function resourceRespawnTime() {
 }
 
 function upgradeCamp() {
-  const neededGold = 25 * state.campLevel;
-  const neededWood = 8 * state.campLevel;
-  const neededStone = 5 * state.campLevel;
+  const cost = campUpgradeCost();
 
-  if (
-    state.gold >= neededGold &&
-    state.wood >= neededWood &&
-    state.stone >= neededStone
-  ) {
-    state.gold -= neededGold;
-    state.wood -= neededWood;
-    state.stone -= neededStone;
+  if (state.gold >= cost.gold && state.wood >= cost.wood && state.stone >= cost.stone) {
+    state.gold -= cost.gold;
+    state.wood -= cost.wood;
+    state.stone -= cost.stone;
     state.campLevel += 1;
     addXp(20);
 
     toast("Camp upgraded to level " + state.campLevel + "!");
     addFloatingText(player.x, player.y - 50, "Camp Lv." + state.campLevel);
   } else {
-    toast(
-      "Need " +
-      neededGold +
-      " gold, " +
-      neededWood +
-      " wood, " +
-      neededStone +
-      " stone."
-    );
+    toast("Need " + cost.gold + " gold, " + cost.wood + " wood, " + cost.stone + " stone.");
   }
+
+  save();
+  syncUI();
 }
 
 function temporarilyHide(obj, ms) {
@@ -1312,12 +1410,7 @@ function temporarilyHide(obj, ms) {
 }
 
 function addFloatingText(x, y, text) {
-  floatingTexts.push({
-    x,
-    y,
-    text,
-    life: 70
-  });
+  floatingTexts.push({ x, y, text, life: 70 });
 }
 
 /* DRAW */
@@ -1336,6 +1429,8 @@ function draw() {
   drawFloatingTexts();
 
   ctx.restore();
+
+  drawNightOverlay();
 }
 
 function drawMap() {
@@ -1357,27 +1452,16 @@ function drawEntitiesLayered() {
 
   for (const obj of objects) {
     if (obj.hidden) continue;
-
-    renderables.push({
-      type: "object",
-      obj,
-      depth: obj.y + obj.h
-    });
+    renderables.push({ type: "object", obj, depth: obj.y + obj.h });
   }
 
-  renderables.push({
-    type: "player",
-    depth: player.y + 44
-  });
+  renderables.push({ type: "player", depth: player.y + 44 });
 
   renderables.sort((a, b) => a.depth - b.depth);
 
   for (const item of renderables) {
-    if (item.type === "player") {
-      drawPlayer();
-    } else {
-      drawObject(item.obj);
-    }
+    if (item.type === "player") drawPlayer();
+    else drawObject(item.obj);
   }
 }
 
@@ -1385,29 +1469,12 @@ function drawObject(obj) {
   const shakeX = obj.shake > 0 ? Math.sin(obj.shake * 2.5) * 3 : 0;
   const drawX = obj.x + shakeX;
 
-  if (obj.kind === "tree") {
-    drawImg(images.tree, drawX, obj.y, obj.w, obj.h, "#2f7832");
-  }
-
-  if (obj.kind === "rock") {
-    drawImg(images.rock, drawX, obj.y, obj.w, obj.h, "#89939e");
-  }
-
-  if (obj.kind === "bush1") {
-    drawImg(images.bush1, drawX, obj.y, obj.w, obj.h, "#3a9136");
-  }
-
-  if (obj.kind === "bush2") {
-    drawImg(images.bush2, drawX, obj.y, obj.w, obj.h, "#3a9136");
-  }
-
-  if (obj.kind === "chest") {
-    drawChest(drawX, obj.y, obj.w, obj.h, obj.used);
-  }
-
-  if (obj.kind === "campfire") {
-    drawCampfire(drawX, obj.y, obj.w, obj.h);
-  }
+  if (obj.kind === "tree") drawImg(images.tree, drawX, obj.y, obj.w, obj.h, "#2f7832");
+  if (obj.kind === "rock") drawImg(images.rock, drawX, obj.y, obj.w, obj.h, "#89939e");
+  if (obj.kind === "bush1") drawImg(images.bush1, drawX, obj.y, obj.w, obj.h, "#3a9136");
+  if (obj.kind === "bush2") drawImg(images.bush2, drawX, obj.y, obj.w, obj.h, "#3a9136");
+  if (obj.kind === "chest") drawChest(drawX, obj.y, obj.w, obj.h, obj.used);
+  if (obj.kind === "campfire") drawCampfire(drawX, obj.y, obj.w, obj.h);
 }
 
 function drawPlayer() {
@@ -1479,18 +1546,10 @@ function drawChest(x, y, w, h, opened) {
 }
 
 function drawCampfire(x, y, w, h) {
-  const radius = 90 + state.campLevel * 14;
+  const radius = campLightRadius();
 
-  const gradient = ctx.createRadialGradient(
-    x + 32,
-    y + 32,
-    12,
-    x + 32,
-    y + 32,
-    radius
-  );
-
-  gradient.addColorStop(0, "rgba(255, 190, 60, 0.18)");
+  const gradient = ctx.createRadialGradient(x + 32, y + 32, 12, x + 32, y + 32, radius);
+  gradient.addColorStop(0, "rgba(255, 190, 60, 0.24)");
   gradient.addColorStop(1, "rgba(255, 190, 60, 0)");
 
   ctx.fillStyle = gradient;
@@ -1515,23 +1574,59 @@ function drawCampfire(x, y, w, h) {
   ctx.fillRect(x + 30, y + 8, 9, 34);
 }
 
+function drawNightOverlay() {
+  const info = cycleInfo();
+
+  if (info.nightAlpha <= 0.01) return;
+
+  ctx.save();
+
+  ctx.fillStyle = "rgba(5, 10, 28, " + info.nightAlpha + ")";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const camp = objects.find((obj) => obj.kind === "campfire");
+
+  if (camp) {
+    const sx = camp.x - camera.x + 32;
+    const sy = camp.y - camera.y + 32;
+
+    const light = ctx.createRadialGradient(sx, sy, 12, sx, sy, campLightRadius());
+    light.addColorStop(0, "rgba(255, 198, 84, 0.26)");
+    light.addColorStop(0.45, "rgba(255, 198, 84, 0.12)");
+    light.addColorStop(1, "rgba(255, 198, 84, 0)");
+
+    ctx.fillStyle = light;
+    ctx.beginPath();
+    ctx.arc(sx, sy, campLightRadius(), 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  const playerLight = ctx.createRadialGradient(
+    player.x - camera.x,
+    player.y - camera.y,
+    10,
+    player.x - camera.x,
+    player.y - camera.y,
+    85
+  );
+
+  playerLight.addColorStop(0, "rgba(255,255,255,0.08)");
+  playerLight.addColorStop(1, "rgba(255,255,255,0)");
+
+  ctx.fillStyle = playerLight;
+  ctx.beginPath();
+  ctx.arc(player.x - camera.x, player.y - camera.y, 85, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
 function drawImg(img, x, y, w, h, fallback) {
   if (img && img.complete && img.naturalWidth > 0) {
-    ctx.drawImage(
-      img,
-      Math.round(x),
-      Math.round(y),
-      Math.round(w),
-      Math.round(h)
-    );
+    ctx.drawImage(img, Math.round(x), Math.round(y), Math.round(w), Math.round(h));
   } else {
     ctx.fillStyle = fallback;
-    ctx.fillRect(
-      Math.round(x),
-      Math.round(y),
-      Math.round(w),
-      Math.round(h)
-    );
+    ctx.fillRect(Math.round(x), Math.round(y), Math.round(w), Math.round(h));
   }
 }
 
