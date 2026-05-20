@@ -136,6 +136,13 @@
           </div>
         </div>
 
+        <div class="day-row">
+          <span id="dayNightLabel">Day</span>
+          <div class="day-bar">
+            <i id="dayNightFill"></i>
+          </div>
+        </div>
+
         <div class="resource-row">
           <b><img src="gold.png" alt="" /> <span id="hudGold">0</span></b>
           <b><img src="wood.png" alt="" /> <span id="hudWood">0</span></b>
@@ -209,6 +216,16 @@
         </div>
 
         <div id="statsList" class="stats-list"></div>
+      </div>
+
+      <div id="campPanel" class="side-panel camp-panel hidden">
+        <div class="panel-header">
+          <h2>Campfire</h2>
+          <button id="closeCampBtn">X</button>
+        </div>
+
+        <div id="campBody" class="camp-body"></div>
+        <button id="campUpgradeBtn" class="claim-btn">Upgrade Camp</button>
       </div>
     </section>
 
