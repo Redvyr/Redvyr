@@ -67,7 +67,7 @@ canvas.width = 960;
 canvas.height = 540;
 ctx.imageSmoothingEnabled = false;
 
-const saveKey = "redvyr_phase3b_save";
+const saveKey = "redvyr_phase3c_save";
 
 const DAY_MS = 180000;
 const NIGHT_MS = 90000;
@@ -90,7 +90,9 @@ const files = {
   stone: "stone.png",
   inventory: "inventory.png",
   campfire: "campfire.png",
-  chest: "chest.png"
+  chest: "chest.png",
+  rarechest: "rarechest.png",
+  legendarychest: "legendarychest.png"
 };
 
 for (const key in files) {
@@ -441,9 +443,9 @@ function campTierName() {
 function campBenefitsHTML() {
   const benefits = [
     { level: 1, text: "Healing zone unlocked" },
-    { level: 2, text: "+2 gold from gathering" },
-    { level: 3, text: "Faster resource respawn" },
-    { level: 4, text: "Bigger healing and light radius" },
+    { level: 2, text: "Improved healing power" },
+    { level: 3, text: "Bigger campfire light radius" },
+    { level: 4, text: "Bigger healing radius" },
     { level: 5, text: "Camp Core preview unlocked" },
     { level: 10, text: "Village Core preview unlocked later" },
     { level: 20, text: "Kingdom Core preview unlocked later" }
@@ -465,7 +467,7 @@ function updateCampPanel() {
   campBody.innerHTML = `
     <div class="camp-card">
       <strong>${campTierName()} · Level ${state.campLevel}</strong>
-      Your campfire is the heart of your future settlement. Upgrade it to improve healing, light, gathering rewards, and future kingdom systems.
+      Your campfire is the heart of your future settlement. Upgrade it to improve healing, light, safety, and future kingdom systems.
     </div>
 
     <div class="camp-card">
@@ -921,7 +923,7 @@ function createWorld() {
     interact: true,
     label: "open starter chest",
     action: "chest",
-    gold: 20,
+    chestType: "starter",
     used: false
   });
 
@@ -974,6 +976,8 @@ function createWorld() {
     }));
   }
 
+  spawnRareChests();
+
   player.x = 520;
   player.y = 430;
   player.vx = 0;
@@ -981,6 +985,44 @@ function createWorld() {
 
   camera.x = 0;
   camera.y = 0;
+}
+
+function spawnRareChests() {
+  const rareCount = randomInt(4, 6);
+
+  for (let i = 0; i < rareCount; i++) {
+    const pos = randomSafePosition(64, 64);
+
+    objects.push({
+      x: pos.x,
+      y: pos.y,
+      w: 64,
+      h: 64,
+      kind: "rarechest",
+      interact: true,
+      label: "open rare chest",
+      action: "chest",
+      chestType: "rare",
+      used: false
+    });
+  }
+
+  if (Math.random() < 0.65) {
+    const pos = randomSafePosition(64, 64);
+
+    objects.push({
+      x: pos.x,
+      y: pos.y,
+      w: 64,
+      h: 64,
+      kind: "legendarychest",
+      interact: true,
+      label: "open legendary chest",
+      action: "chest",
+      chestType: "legendary",
+      used: false
+    });
+  }
 }
 
 function makeResource(data) {
@@ -1143,7 +1185,7 @@ function objectHitbox(obj) {
     return { x: obj.x + 18, y: obj.y + 26, w: 28, h: 26 };
   }
 
-  if (obj.kind === "chest") {
+  if (obj.kind === "chest" || obj.kind === "rarechest" || obj.kind === "legendarychest") {
     return { x: obj.x + 12, y: obj.y + 18, w: 40, h: 34 };
   }
 
@@ -1311,17 +1353,7 @@ function interact() {
   }
 
   if (obj.action === "chest") {
-    if (obj.used) {
-      toast("Chest is empty.");
-    } else {
-      obj.used = true;
-      obj.hidden = true;
-      state.gold += obj.gold || 20;
-      addXp(10);
-
-      toast("+" + (obj.gold || 20) + " gold");
-      addFloatingText(obj.x, obj.y, "+Gold");
-    }
+    openChest(obj);
   }
 
   if (obj.action === "camp") {
@@ -1330,6 +1362,67 @@ function interact() {
 
   save();
   syncUI();
+}
+
+function openChest(obj) {
+  if (obj.used) {
+    toast("Chest is empty.");
+    return;
+  }
+
+  obj.used = true;
+  obj.hidden = true;
+
+  let goldReward = 20;
+  let xpReward = 8;
+  let woodReward = 0;
+  let stoneReward = 0;
+  let message = "+Gold";
+
+  if (obj.chestType === "starter") {
+    goldReward = 20;
+    xpReward = 10;
+    message = "Starter Chest!";
+  }
+
+  if (obj.chestType === "rare") {
+    goldReward = randomInt(60, 120);
+    xpReward = 20;
+    woodReward = Math.random() < 0.45 ? randomInt(2, 6) : 0;
+    stoneReward = Math.random() < 0.45 ? randomInt(2, 6) : 0;
+    message = "RARE CHEST!";
+  }
+
+  if (obj.chestType === "legendary") {
+    goldReward = randomInt(200, 350);
+    xpReward = 60;
+    woodReward = randomInt(8, 18);
+    stoneReward = randomInt(8, 18);
+    message = "LEGENDARY!";
+  }
+
+  state.gold += goldReward;
+  state.wood += woodReward;
+  state.stone += stoneReward;
+  addXp(xpReward);
+
+  toast(message + " +" + goldReward + " gold");
+  addFloatingText(obj.x, obj.y, message);
+
+  if (woodReward > 0) {
+    addFloatingText(obj.x, obj.y + 20, "+" + woodReward + " Wood");
+  }
+
+  if (stoneReward > 0) {
+    addFloatingText(obj.x, obj.y + 38, "+" + stoneReward + " Stone");
+  }
+
+  const respawnTime = obj.chestType === "legendary" ? 90000 : 45000;
+
+  setTimeout(() => {
+    obj.used = false;
+    obj.hidden = false;
+  }, respawnTime);
 }
 
 function hitResource(obj) {
@@ -1376,7 +1469,6 @@ function campGoldBonus() {
 }
 
 function resourceRespawnTime() {
-  if (state.campLevel >= 3) return 6500;
   return 9500;
 }
 
@@ -1473,7 +1565,9 @@ function drawObject(obj) {
   if (obj.kind === "rock") drawImg(images.rock, drawX, obj.y, obj.w, obj.h, "#89939e");
   if (obj.kind === "bush1") drawImg(images.bush1, drawX, obj.y, obj.w, obj.h, "#3a9136");
   if (obj.kind === "bush2") drawImg(images.bush2, drawX, obj.y, obj.w, obj.h, "#3a9136");
-  if (obj.kind === "chest") drawChest(drawX, obj.y, obj.w, obj.h, obj.used);
+  if (obj.kind === "chest") drawChest(drawX, obj.y, obj.w, obj.h, obj.used, "normal");
+  if (obj.kind === "rarechest") drawChest(drawX, obj.y, obj.w, obj.h, obj.used, "rare");
+  if (obj.kind === "legendarychest") drawChest(drawX, obj.y, obj.w, obj.h, obj.used, "legendary");
   if (obj.kind === "campfire") drawCampfire(drawX, obj.y, obj.w, obj.h);
 }
 
@@ -1525,7 +1619,17 @@ function drawFloatingTexts() {
   }
 }
 
-function drawChest(x, y, w, h, opened) {
+function drawChest(x, y, w, h, opened, chestStyle) {
+  if (!opened && chestStyle === "rare" && images.rarechest.complete && images.rarechest.naturalWidth > 0) {
+    drawImg(images.rarechest, x, y, 64, 64, "#4aa3ff");
+    return;
+  }
+
+  if (!opened && chestStyle === "legendary" && images.legendarychest.complete && images.legendarychest.naturalWidth > 0) {
+    drawImg(images.legendarychest, x, y, 64, 64, "#ffd24a");
+    return;
+  }
+
   if (!opened && images.chest.complete && images.chest.naturalWidth > 0) {
     drawImg(images.chest, x, y, 64, 64, "#a85622");
     return;
