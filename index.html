@@ -20,11 +20,9 @@
   <meta name="robots" content="index, follow" />
   <link rel="canonical" href="https://redvyr.com/" />
 
-  <!-- Site icon -->
   <link rel="icon" type="image/png" href="favicon.png" />
   <link rel="apple-touch-icon" href="favicon.png" />
 
-  <!-- Social / Discord preview -->
   <meta property="og:title" content="Redvyr Kingdoms" />
   <meta
     property="og:description"
@@ -34,7 +32,6 @@
   <meta property="og:url" content="https://redvyr.com/" />
   <meta property="og:type" content="website" />
 
-  <!-- Twitter / X preview -->
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Redvyr Kingdoms" />
   <meta
@@ -47,7 +44,6 @@
 </head>
 <body>
   <main class="app">
-    <!-- PAGE 1: START -->
     <section id="startScreen" class="screen start-screen">
       <div class="shade"></div>
 
@@ -77,7 +73,6 @@
       <img class="start-mascot" src="mascot.png" alt="Redvyr mascot" />
     </section>
 
-    <!-- PAGE 2: LOBBY -->
     <section id="lobbyScreen" class="screen lobby-screen hidden">
       <div class="shade"></div>
 
@@ -120,7 +115,6 @@
       </div>
     </section>
 
-    <!-- PAGE 3: GAME -->
     <section id="gameScreen" class="game-screen hidden">
       <canvas id="game" width="960" height="540"></canvas>
 
@@ -132,6 +126,13 @@
           Level <span id="hudLevel">1</span>
           <div class="xp-bar">
             <i id="xpFill"></i>
+          </div>
+        </div>
+
+        <div class="health-row">
+          HP <span id="hudHpText">100/100</span>
+          <div class="hp-bar">
+            <i id="hpFill"></i>
           </div>
         </div>
 
@@ -155,6 +156,10 @@
           <img src="inventory.png" alt="" />
           <span>Inventory</span>
         </button>
+
+        <button id="statsBtn" class="icon-action text-action">
+          <span>Stats</span>
+        </button>
       </div>
 
       <div id="interactPrompt" class="interact-prompt hidden">Press E</div>
@@ -164,10 +169,9 @@
       <div class="controls">
         Move: WASD / Arrows<br>
         Interact: E<br>
-        Hit resources, gather, quest, upgrade.
+        Inventory: I · Quests: Q · Stats: C
       </div>
 
-      <!-- INVENTORY PANEL -->
       <div id="inventoryPanel" class="side-panel hidden">
         <div class="panel-header">
           <h2>Inventory</h2>
@@ -182,7 +186,6 @@
         <div id="inventoryGrid" class="inventory-grid"></div>
       </div>
 
-      <!-- QUEST PANEL -->
       <div id="questPanel" class="side-panel quest-panel hidden">
         <div class="panel-header">
           <h2>Quests</h2>
@@ -192,9 +195,23 @@
         <div id="questBody" class="quest-body"></div>
         <button id="claimQuestBtn" class="claim-btn">Claim Reward</button>
       </div>
+
+      <div id="statsPanel" class="side-panel stats-panel hidden">
+        <div class="panel-header">
+          <h2>Stats</h2>
+          <button id="closeStatsBtn">X</button>
+        </div>
+
+        <div class="stat-summary">
+          <div>Unused Points: <b id="statPoints">0</b></div>
+          <div>Gather Damage: <b id="statGatherDamage">1.00x</b></div>
+          <div>Max HP: <b id="statMaxHp">100</b></div>
+        </div>
+
+        <div id="statsList" class="stats-list"></div>
+      </div>
     </section>
 
-    <!-- BASIC MODAL -->
     <div id="modal" class="modal-bg hidden">
       <div class="modal-card">
         <h2 id="modalTitle">Title</h2>
