@@ -60,6 +60,22 @@ const closeCampBtn = $("closeCampBtn");
 const campBody = $("campBody");
 const campUpgradeBtn = $("campUpgradeBtn");
 
+const npcDialogue = $("npcDialogue");
+const npcDialogueText = $("npcDialogueText");
+const dialogueBuyBtn = $("dialogueBuyBtn");
+const dialogueSellBtn = $("dialogueSellBtn");
+const dialogueNoBtn = $("dialogueNoBtn");
+
+const buyPanel = $("buyPanel");
+const closeBuyBtn = $("closeBuyBtn");
+const buyGoldText = $("buyGoldText");
+const buyItems = $("buyItems");
+
+const sellPanel = $("sellPanel");
+const closeSellBtn = $("closeSellBtn");
+const sellGoldText = $("sellGoldText");
+const sellItems = $("sellItems");
+
 const canvas = $("game");
 const ctx = canvas.getContext("2d");
 
@@ -67,7 +83,7 @@ canvas.width = 960;
 canvas.height = 540;
 ctx.imageSmoothingEnabled = false;
 
-const saveKey = "redvyr_phase3c_save";
+const saveKey = "redvyr_phase3d_save";
 
 const DAY_MS = 180000;
 const NIGHT_MS = 90000;
@@ -92,7 +108,10 @@ const files = {
   campfire: "campfire.png",
   chest: "chest.png",
   rarechest: "rarechest.png",
-  legendarychest: "legendarychest.png"
+  legendarychest: "legendarychest.png",
+  npc: "npc.png",
+  potion: "potion.png",
+  axe: "axe.png"
 };
 
 for (const key in files) {
@@ -107,6 +126,10 @@ const state = {
   gold: 0,
   wood: 0,
   stone: 0,
+  potions: 0,
+
+  axeOwned: false,
+  axeEquipped: false,
 
   campLevel: 1,
   level: 1,
@@ -171,13 +194,26 @@ const keys = new Set();
 let objects = [];
 let floatingTexts = [];
 let tileVariants = [];
+let dialogueTimer = null;
 
 const modalInfo = {
-  Shop: "Shop is preview-only for now. Later you could buy cosmetics on the homepage and tools/items from NPCs inside the world.",
+  Shop: "The main shop will be cosmetic later. In-game buying and selling is handled by NPCs inside World A.",
   Kingdoms: "Kingdoms come later. Your campfire is the first step toward a future kingdom core.",
   Mail: "Welcome to Redvyr! You claimed 5 bonus gold for checking your mail.",
-  Settings: "Settings are coming later. For now, use Inventory, Quests, Stats, and your Campfire panel."
+  Settings: "Settings are coming later. For now, use Inventory, Quests, Stats, Campfire, and NPC shops."
 };
+
+/* FORMAT */
+
+function formatNumber(num) {
+  const n = Number(num || 0);
+
+  if (n >= 1000000000) return (n / 1000000000).toFixed(1).replace(".0", "") + "B";
+  if (n >= 1000000) return (n / 1000000).toFixed(1).replace(".0", "") + "M";
+  if (n >= 1000) return (n / 1000).toFixed(1).replace(".0", "") + "K";
+
+  return String(Math.floor(n));
+}
 
 /* LEVEL / STATS */
 
@@ -190,7 +226,8 @@ function maxHp() {
 }
 
 function strengthMultiplier() {
-  return Math.min(4, 1 + state.stats.strength * 0.08);
+  const axeBonus = state.axeEquipped ? 0.35 : 0;
+  return Math.min(4, 1 + state.stats.strength * 0.08 + axeBonus);
 }
 
 function gatheringDamage() {
@@ -306,7 +343,7 @@ function getCurrentQuest() {
     {
       id: "earn",
       title: "Earn Gold",
-      desc: "Gather, mine, and open chests to earn gold.",
+      desc: "Gather, mine, open chests, or sell resources to earn gold.",
       woodNeeded: 0,
       stoneNeeded: 0,
       goldNeeded: 60 + (cycle - 1) * 40,
@@ -351,7 +388,7 @@ function getQuestProgressText() {
   }
 
   lines.push("");
-  lines.push("Reward: " + quest.rewardGold + " gold + " + quest.rewardXp + " XP");
+  lines.push("Reward: " + formatNumber(quest.rewardGold) + " gold + " + quest.rewardXp + " XP");
 
   if (canClaimQuest()) {
     lines.push("");
@@ -388,7 +425,7 @@ function claimQuest() {
   addXp(quest.rewardXp);
 
   addFloatingText(player.x, player.y - 60, "+QUEST");
-  toast("Quest claimed! +" + quest.rewardGold + " gold");
+  toast("Quest claimed! +" + formatNumber(quest.rewardGold) + " gold");
 
   state.questStep += 1;
 
@@ -473,7 +510,7 @@ function updateCampPanel() {
     <div class="camp-card">
       <strong>Next Upgrade Cost</strong>
       <div class="camp-cost">
-        <div>${cost.gold} Gold</div>
+        <div>${formatNumber(cost.gold)} Gold</div>
         <div>${cost.wood} Wood</div>
         <div>${cost.stone} Stone</div>
       </div>
@@ -504,15 +541,231 @@ function updateCampPanel() {
 }
 
 function openCamp() {
-  closeInventory();
-  closeQuest();
-  closeStats();
+  closeAllGamePanels();
   updateCampPanel();
   campPanel.classList.remove("hidden");
 }
 
 function closeCamp() {
   campPanel.classList.add("hidden");
+}
+
+/* SHOP */
+
+function openNpcDialogue(npcName = "Rowan") {
+  closeAllGamePanels();
+
+  npcDialogue.classList.remove("hidden");
+  dialogueBuyBtn.style.display = "none";
+  dialogueSellBtn.style.display = "none";
+  dialogueNoBtn.style.display = "none";
+
+  typeNpcText("Hi, I'm " + npcName + ". How may I help you today?", () => {
+    dialogueBuyBtn.style.display = "inline-flex";
+    dialogueSellBtn.style.display = "inline-flex";
+    dialogueNoBtn.style.display = "inline-flex";
+  });
+}
+
+function closeNpcDialogue() {
+  npcDialogue.classList.add("hidden");
+  npcDialogueText.textContent = "";
+
+  if (dialogueTimer) {
+    clearInterval(dialogueTimer);
+    dialogueTimer = null;
+  }
+}
+
+function typeNpcText(text, onDone) {
+  if (dialogueTimer) {
+    clearInterval(dialogueTimer);
+    dialogueTimer = null;
+  }
+
+  npcDialogueText.textContent = "";
+
+  let i = 0;
+
+  dialogueTimer = setInterval(() => {
+    npcDialogueText.textContent += text[i] || "";
+    i += 1;
+
+    if (i >= text.length) {
+      clearInterval(dialogueTimer);
+      dialogueTimer = null;
+
+      if (onDone) onDone();
+    }
+  }, 22);
+}
+
+function openBuyPanel() {
+  closeNpcDialogue();
+  closeAllGamePanels();
+  updateBuyPanel();
+  buyPanel.classList.remove("hidden");
+}
+
+function closeBuyPanel() {
+  buyPanel.classList.add("hidden");
+}
+
+function openSellPanel() {
+  closeNpcDialogue();
+  closeAllGamePanels();
+  updateSellPanel();
+  sellPanel.classList.remove("hidden");
+}
+
+function closeSellPanel() {
+  sellPanel.classList.add("hidden");
+}
+
+function updateBuyPanel() {
+  buyGoldText.textContent = formatNumber(state.gold);
+  buyItems.innerHTML = "";
+
+  const items = [
+    {
+      id: "potion",
+      name: "Small Potion",
+      desc: "Stores a potion. Later it can be used in combat.",
+      cost: 25,
+      img: images.potion.src,
+      buy: () => {
+        state.gold -= 25;
+        state.potions += 1;
+        toast("Bought Small Potion");
+      },
+      canBuy: () => state.gold >= 25
+    },
+    {
+      id: "axe",
+      name: state.axeOwned ? "Axe Owned" : "Basic Axe",
+      desc: state.axeOwned ? "Equipped. Gives +0.35x gathering damage." : "Auto-equips and boosts gathering damage.",
+      cost: 250,
+      img: images.axe.src,
+      buy: () => {
+        state.gold -= 250;
+        state.axeOwned = true;
+        state.axeEquipped = true;
+        toast("Basic Axe equipped!");
+      },
+      canBuy: () => state.gold >= 250 && !state.axeOwned
+    },
+    {
+      id: "manual",
+      name: "Training Manual",
+      desc: "Gives 35 XP instantly.",
+      cost: 100,
+      img: images.gold.src,
+      buy: () => {
+        state.gold -= 100;
+        addXp(35);
+        toast("+35 XP");
+      },
+      canBuy: () => state.gold >= 100
+    }
+  ];
+
+  for (const item of items) {
+    buyItems.appendChild(createShopItem({
+      img: item.img,
+      name: item.name,
+      desc: item.desc,
+      price: item.cost + " gold",
+      buttonText: item.id === "axe" && state.axeOwned ? "Owned" : "Buy",
+      disabled: !item.canBuy(),
+      onClick: () => {
+        item.buy();
+        save();
+        syncUI();
+        updateBuyPanel();
+      }
+    }));
+  }
+}
+
+function updateSellPanel() {
+  sellGoldText.textContent = formatNumber(state.gold);
+  sellItems.innerHTML = "";
+
+  const sellOptions = [
+    {
+      name: "Sell Wood Stack",
+      desc: "Sell 16 wood for gold.",
+      img: images.wood.src,
+      amountNeeded: 16,
+      reward: 20,
+      resource: "wood"
+    },
+    {
+      name: "Sell Stone Stack",
+      desc: "Sell 16 stone for gold.",
+      img: images.stone.src,
+      amountNeeded: 16,
+      reward: 25,
+      resource: "stone"
+    }
+  ];
+
+  for (const option of sellOptions) {
+    const canSell = state[option.resource] >= option.amountNeeded;
+
+    sellItems.appendChild(createShopItem({
+      img: option.img,
+      name: option.name,
+      desc: option.desc,
+      price: "+" + option.reward + " gold",
+      buttonText: "Sell",
+      disabled: !canSell,
+      onClick: () => {
+        if (state[option.resource] < option.amountNeeded) {
+          toast("Not enough " + option.resource + ".");
+          return;
+        }
+
+        state[option.resource] -= option.amountNeeded;
+        state.gold += option.reward;
+
+        toast("Sold " + option.amountNeeded + " " + option.resource);
+        save();
+        syncUI();
+        updateSellPanel();
+      }
+    }));
+  }
+}
+
+function createShopItem({ img, name, desc, price, buttonText, disabled, onClick }) {
+  const card = document.createElement("div");
+  card.className = "shop-item";
+
+  const icon = document.createElement("img");
+  icon.src = img;
+
+  const info = document.createElement("div");
+
+  const title = document.createElement("strong");
+  title.textContent = name;
+
+  const description = document.createElement("span");
+  description.textContent = desc + " · " + price;
+
+  info.appendChild(title);
+  info.appendChild(description);
+
+  const button = document.createElement("button");
+  button.textContent = buttonText;
+  button.disabled = disabled;
+  button.addEventListener("click", onClick);
+
+  card.appendChild(icon);
+  card.appendChild(info);
+  card.appendChild(button);
+
+  return card;
 }
 
 /* SAVE / UI */
@@ -530,6 +783,10 @@ function loadSave() {
     state.gold = Number(data.gold || 0);
     state.wood = Number(data.wood || 0);
     state.stone = Number(data.stone || 0);
+    state.potions = Number(data.potions || 0);
+
+    state.axeOwned = Boolean(data.axeOwned);
+    state.axeEquipped = Boolean(data.axeEquipped);
 
     state.campLevel = Number(data.campLevel || 1);
     state.level = Number(data.level || 1);
@@ -573,15 +830,15 @@ function save() {
 
 function syncUI() {
   profileName.textContent = state.name;
-  profileGold.textContent = state.gold;
+  profileGold.textContent = formatNumber(state.gold);
   profileLevel.textContent = state.level;
   lobbyNameTag.textContent = state.name;
 
   hudName.textContent = state.name;
   hudWorld.textContent = state.world;
-  hudGold.textContent = state.gold;
-  hudWood.textContent = state.wood;
-  hudStone.textContent = state.stone;
+  hudGold.textContent = formatNumber(state.gold);
+  hudWood.textContent = formatNumber(state.wood);
+  hudStone.textContent = formatNumber(state.stone);
   hudCamp.textContent = state.campLevel;
   hudLevel.textContent = state.level;
 
@@ -599,6 +856,9 @@ function syncUI() {
   updateQuestPanel();
   updateStatsPanel();
   updateCampPanel();
+
+  if (!buyPanel.classList.contains("hidden")) updateBuyPanel();
+  if (!sellPanel.classList.contains("hidden")) updateSellPanel();
 }
 
 /* BUTTONS / PANELS */
@@ -648,10 +908,10 @@ $("backToLobbyBtn").addEventListener("click", () => {
   gameScreen.classList.add("hidden");
   lobbyScreen.classList.remove("hidden");
 
-  closeInventory();
-  closeQuest();
-  closeStats();
-  closeCamp();
+  closeAllGamePanels();
+  closeNpcDialogue();
+  closeBuyPanel();
+  closeSellPanel();
 
   save();
   syncUI();
@@ -696,9 +956,7 @@ inventoryBtn.addEventListener("click", () => {
 closeInventoryBtn.addEventListener("click", closeInventory);
 
 function openInventory() {
-  closeQuest();
-  closeStats();
-  closeCamp();
+  closeAllGamePanels();
   updateInventoryPanel();
   inventoryPanel.classList.remove("hidden");
 }
@@ -713,9 +971,7 @@ closeQuestBtn.addEventListener("click", closeQuest);
 claimQuestBtn.addEventListener("click", claimQuest);
 
 function openQuest() {
-  closeInventory();
-  closeStats();
-  closeCamp();
+  closeAllGamePanels();
   updateQuestPanel();
   questPanel.classList.remove("hidden");
 }
@@ -732,9 +988,7 @@ statsBtn.addEventListener("click", () => {
 closeStatsBtn.addEventListener("click", closeStats);
 
 function openStats() {
-  closeInventory();
-  closeQuest();
-  closeCamp();
+  closeAllGamePanels();
   updateStatsPanel();
   statsPanel.classList.remove("hidden");
 }
@@ -748,6 +1002,21 @@ campUpgradeBtn.addEventListener("click", () => {
   upgradeCamp();
   updateCampPanel();
 });
+
+dialogueBuyBtn.addEventListener("click", openBuyPanel);
+dialogueSellBtn.addEventListener("click", openSellPanel);
+dialogueNoBtn.addEventListener("click", closeNpcDialogue);
+closeBuyBtn.addEventListener("click", closeBuyPanel);
+closeSellBtn.addEventListener("click", closeSellPanel);
+
+function closeAllGamePanels() {
+  closeInventory();
+  closeQuest();
+  closeStats();
+  closeCamp();
+  closeBuyPanel();
+  closeSellPanel();
+}
 
 function updateQuestPanel() {
   if (!questBody || !claimQuestBtn) return;
@@ -766,15 +1035,24 @@ function updateQuestPanel() {
 function updateInventoryPanel() {
   if (!inventoryGrid) return;
 
-  invGold.textContent = state.gold;
+  invGold.textContent = formatNumber(state.gold);
   invCamp.textContent = state.campLevel;
 
   inventoryGrid.innerHTML = "";
 
   const stacks = [
     ...makeStacks("wood", state.wood, images.wood),
-    ...makeStacks("stone", state.stone, images.stone)
+    ...makeStacks("stone", state.stone, images.stone),
+    ...makeStacks("potion", state.potions, images.potion)
   ];
+
+  if (state.axeOwned) {
+    stacks.unshift({
+      type: "axe",
+      count: 1,
+      src: images.axe.src
+    });
+  }
 
   const totalSlots = 25;
 
@@ -787,7 +1065,7 @@ function updateInventoryPanel() {
       img.src = stacks[i].src;
 
       const count = document.createElement("span");
-      count.textContent = "x" + stacks[i].count;
+      count.textContent = stacks[i].type === "axe" ? "EQ" : "x" + stacks[i].count;
 
       slot.appendChild(img);
       slot.appendChild(count);
@@ -925,6 +1203,18 @@ function createWorld() {
     action: "chest",
     chestType: "starter",
     used: false
+  });
+
+  objects.push({
+    x: 505,
+    y: 250,
+    w: 64,
+    h: 84,
+    kind: "npc",
+    interact: true,
+    label: "talk to Rowan",
+    action: "npc",
+    npcName: "Rowan"
   });
 
   for (let i = 0; i < 18; i++) {
@@ -1125,8 +1415,8 @@ function isInCampArea(box) {
   const camp = {
     x: 240,
     y: 190,
-    w: 260,
-    h: 190
+    w: 360,
+    h: 210
   };
 
   return overlap(box, camp);
@@ -1183,6 +1473,10 @@ function objectHitbox(obj) {
 
   if (obj.kind === "campfire") {
     return { x: obj.x + 18, y: obj.y + 26, w: 28, h: 26 };
+  }
+
+  if (obj.kind === "npc") {
+    return { x: obj.x + 14, y: obj.y + 44, w: 36, h: 34 };
   }
 
   if (obj.kind === "chest" || obj.kind === "rarechest" || obj.kind === "legendarychest") {
@@ -1360,6 +1654,10 @@ function interact() {
     openCamp();
   }
 
+  if (obj.action === "npc") {
+    openNpcDialogue(obj.npcName || "Rowan");
+  }
+
   save();
   syncUI();
 }
@@ -1406,16 +1704,11 @@ function openChest(obj) {
   state.stone += stoneReward;
   addXp(xpReward);
 
-  toast(message + " +" + goldReward + " gold");
+  toast(message + " +" + formatNumber(goldReward) + " gold");
   addFloatingText(obj.x, obj.y, message);
 
-  if (woodReward > 0) {
-    addFloatingText(obj.x, obj.y + 20, "+" + woodReward + " Wood");
-  }
-
-  if (stoneReward > 0) {
-    addFloatingText(obj.x, obj.y + 38, "+" + stoneReward + " Stone");
-  }
+  if (woodReward > 0) addFloatingText(obj.x, obj.y + 20, "+" + woodReward + " Wood");
+  if (stoneReward > 0) addFloatingText(obj.x, obj.y + 38, "+" + stoneReward + " Stone");
 
   const respawnTime = obj.chestType === "legendary" ? 90000 : 45000;
 
@@ -1485,7 +1778,7 @@ function upgradeCamp() {
     toast("Camp upgraded to level " + state.campLevel + "!");
     addFloatingText(player.x, player.y - 50, "Camp Lv." + state.campLevel);
   } else {
-    toast("Need " + cost.gold + " gold, " + cost.wood + " wood, " + cost.stone + " stone.");
+    toast("Need " + formatNumber(cost.gold) + " gold, " + cost.wood + " wood, " + cost.stone + " stone.");
   }
 
   save();
@@ -1569,6 +1862,7 @@ function drawObject(obj) {
   if (obj.kind === "rarechest") drawChest(drawX, obj.y, obj.w, obj.h, obj.used, "rare");
   if (obj.kind === "legendarychest") drawChest(drawX, obj.y, obj.w, obj.h, obj.used, "legendary");
   if (obj.kind === "campfire") drawCampfire(drawX, obj.y, obj.w, obj.h);
+  if (obj.kind === "npc") drawNpc(drawX, obj.y, obj.w, obj.h, obj.npcName || "Rowan");
 }
 
 function drawPlayer() {
@@ -1589,6 +1883,30 @@ function drawPlayer() {
   );
 
   drawNameTag(player.x, player.y - 82, state.name);
+}
+
+function drawNpc(x, y, w, h, name) {
+  ctx.fillStyle = "rgba(0,0,0,0.22)";
+  ctx.fillRect(x + 8, y + h - 10, w - 16, 8);
+
+  if (images.npc.complete && images.npc.naturalWidth > 0) {
+    drawImg(images.npc, x, y, w, h, "#69331c");
+  } else {
+    ctx.fillStyle = "#69331c";
+    ctx.fillRect(x + 18, y + 26, 28, 42);
+
+    ctx.fillStyle = "#e0a66a";
+    ctx.fillRect(x + 20, y + 8, 24, 22);
+
+    ctx.fillStyle = "#2a1208";
+    ctx.fillRect(x + 24, y + 15, 4, 4);
+    ctx.fillRect(x + 36, y + 15, 4, 4);
+
+    ctx.fillStyle = "#f2c35f";
+    ctx.fillRect(x + 14, y + 24, 36, 8);
+  }
+
+  drawNameTag(x + w / 2, y - 18, name);
 }
 
 function drawNameTag(x, y, text) {
