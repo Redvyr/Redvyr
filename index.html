@@ -227,6 +227,45 @@
         <div id="campBody" class="camp-body"></div>
         <button id="campUpgradeBtn" class="claim-btn">Upgrade Camp</button>
       </div>
+      <!-- NPC DIALOGUE -->
+<div id="npcDialogue" class="npc-dialogue hidden">
+  <div class="npc-text" id="npcDialogueText"></div>
+  <div class="npc-options">
+    <button id="dialogueBuyBtn">Buy</button>
+    <button id="dialogueSellBtn">Sell</button>
+    <button id="dialogueNoBtn">No Thanks</button>
+  </div>
+</div>
+
+<!-- BUY PANEL -->
+<div id="buyPanel" class="side-panel shop-panel hidden">
+  <div class="panel-header">
+    <h2>Buy</h2>
+    <button id="closeBuyBtn">X</button>
+  </div>
+
+  <div class="shop-gold">
+    <img src="gold.png" alt="" />
+    <span id="buyGoldText">0</span>
+  </div>
+
+  <div id="buyItems" class="shop-items"></div>
+</div>
+
+<!-- SELL PANEL -->
+<div id="sellPanel" class="side-panel shop-panel hidden">
+  <div class="panel-header">
+    <h2>Sell</h2>
+    <button id="closeSellBtn">X</button>
+  </div>
+
+  <div class="shop-gold">
+    <img src="gold.png" alt="" />
+    <span id="sellGoldText">0</span>
+  </div>
+
+  <div id="sellItems" class="shop-items"></div>
+</div>
     </section>
 
     <div id="modal" class="modal-bg hidden">
