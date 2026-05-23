@@ -136,6 +136,7 @@ const state = {
   equippedAxeId: null,
   nextItemId: 1,
   hotbar: [null, null, null, null, null],
+  droppedTools: [],
 
   campLevel: 1,
   level: 1,
@@ -202,6 +203,7 @@ let objects = [];
 let floatingTexts = [];
 let tileVariants = [];
 let dialogueTimer = null;
+let selectedInventoryItem = null;
 
 const modalInfo = {
   Shop: "The main shop will be cosmetic later. In-game buying and selling is handled by NPCs inside World A.",
@@ -479,7 +481,6 @@ function claimQuest() {
   save();
   syncUI();
 }
-
 function resetQuestBaseline() {
   state.questBaseGold = state.gold;
   state.questBaseWood = state.wood;
@@ -589,6 +590,292 @@ function closeCamp() {
   campPanel.classList.add("hidden");
 }
 
+/* INVENTORY ITEM MANAGEMENT */
+
+function ensureItemDetailPanel() {
+  let details = $("inventoryItemDetails");
+
+  if (!details) {
+    details = document.createElement("div");
+    details.id = "inventoryItemDetails";
+    details.className = "inventory-item-details hidden";
+    inventoryGrid.insertAdjacentElement("afterend", details);
+  }
+
+  if (!$("phase3GInventoryStyles")) {
+    const style = document.createElement("style");
+    style.id = "phase3GInventoryStyles";
+    style.textContent = `
+      .inventory-slot.selected-item {
+        border-color: #ffe4a6;
+        box-shadow: inset 0 0 0 2px rgba(242,195,95,0.4), 0 0 12px rgba(242,195,95,0.32);
+      }
+
+      .inventory-item-details {
+        margin-top: 12px;
+        padding: 12px;
+        border-radius: 5px;
+        background: rgba(0,0,0,0.32);
+        border: 2px solid rgba(242,195,95,0.42);
+      }
+
+      .inventory-item-head {
+        display: flex;
+        gap: 11px;
+        align-items: center;
+        margin-bottom: 9px;
+      }
+
+      .inventory-item-head img {
+        width: 44px;
+        height: 44px;
+        object-fit: contain;
+        image-rendering: pixelated;
+      }
+
+      .inventory-item-head strong {
+        display: block;
+        color: #ffe4a6;
+        font-size: 16px;
+      }
+
+      .inventory-item-head span,
+      .inventory-item-description {
+        color: rgba(255,240,200,0.82);
+        font-size: 12px;
+        line-height: 1.4;
+      }
+
+      .inventory-item-description {
+        margin-bottom: 10px;
+      }
+
+      .inventory-item-actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      .inventory-item-actions button {
+        flex: 1;
+        padding: 9px 8px;
+        border-radius: 4px;
+        color: white;
+        background: linear-gradient(#d9442e, #8e1c13);
+        border: 2px solid #f2c35f;
+      }
+
+      .inventory-item-actions .drop-item-btn {
+        background: rgba(40,22,14,0.94);
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  return details;
+}
+
+function selectedItemData() {
+  if (!selectedInventoryItem) return null;
+
+  if (selectedInventoryItem.type === "axe") {
+    return getAxeById(selectedInventoryItem.itemId);
+  }
+
+  if (selectedInventoryItem.type === "potion" && state.potions > 0) {
+    return { type: "potion", name: "Small Potion", count: state.potions };
+  }
+
+  if (selectedInventoryItem.type === "wood" && state.wood > 0) {
+    return { type: "wood", name: "Wood", count: state.wood };
+  }
+
+  if (selectedInventoryItem.type === "stone" && state.stone > 0) {
+    return { type: "stone", name: "Stone", count: state.stone };
+  }
+
+  return null;
+}
+
+function selectInventoryItem(item) {
+  selectedInventoryItem =
+    item.type === "axe"
+      ? { type: "axe", itemId: item.itemId }
+      : { type: item.type };
+
+  updateInventoryPanel();
+}
+
+function inventoryItemIsSelected(item) {
+  if (!selectedInventoryItem) return false;
+
+  if (item.type === "axe") {
+    return selectedInventoryItem.type === "axe" && selectedInventoryItem.itemId === item.itemId;
+  }
+
+  return selectedInventoryItem.type === item.type;
+}
+
+function updateInventoryItemDetails() {
+  const details = ensureItemDetailPanel();
+  const item = selectedItemData();
+
+  if (!item) {
+    selectedInventoryItem = null;
+    details.classList.add("hidden");
+    details.innerHTML = "";
+    return;
+  }
+
+  details.classList.remove("hidden");
+  details.innerHTML = "";
+
+  const head = document.createElement("div");
+  head.className = "inventory-item-head";
+
+  const icon = document.createElement("img");
+  icon.src = images[item.type].src;
+  icon.alt = item.name || item.type;
+
+  const heading = document.createElement("div");
+  const title = document.createElement("strong");
+  const sub = document.createElement("span");
+
+  if (item.type === "axe") {
+    title.textContent = "Basic Axe";
+    sub.textContent = axeDurabilityText(item) + "/" + item.maxDurability + " durability";
+  } else if (item.type === "potion") {
+    title.textContent = "Small Potion";
+    sub.textContent = "Owned: x" + item.count;
+  } else {
+    title.textContent = item.name;
+    sub.textContent = "Owned: x" + item.count;
+  }
+
+  heading.appendChild(title);
+  heading.appendChild(sub);
+  head.appendChild(icon);
+  head.appendChild(heading);
+  details.appendChild(head);
+
+  const description = document.createElement("div");
+  description.className = "inventory-item-description";
+
+  if (item.type === "axe") {
+    description.textContent = "A starter gathering tool. Gives +0.35x damage on trees and bushes only.";
+  } else if (item.type === "potion") {
+    description.textContent = "Restores 35 HP when used from your hotbar.";
+  } else if (item.type === "wood") {
+    description.textContent = "A building material gathered from trees and bushes.";
+  } else {
+    description.textContent = "A building material mined from rocks.";
+  }
+
+  details.appendChild(description);
+
+  if (item.type !== "axe" && item.type !== "potion") return;
+
+  const actions = document.createElement("div");
+  actions.className = "inventory-item-actions";
+
+  const equipButton = document.createElement("button");
+
+  if (item.type === "axe") {
+    const isEquipped = state.equippedAxeId === item.id;
+    equipButton.textContent = isEquipped ? "Unequip" : "Equip";
+    equipButton.addEventListener("click", () => addItemToHotbar("axe", item.id));
+  } else {
+    equipButton.textContent = state.hotbar.includes("potion") ? "In Hotbar" : "Add to Hotbar";
+    equipButton.disabled = state.hotbar.includes("potion");
+    equipButton.addEventListener("click", () => addItemToHotbar("potion"));
+  }
+
+  actions.appendChild(equipButton);
+
+  if (item.type === "axe") {
+    const dropButton = document.createElement("button");
+    dropButton.className = "drop-item-btn";
+    dropButton.textContent = "Drop";
+    dropButton.addEventListener("click", () => dropAxeItem(item.id));
+    actions.appendChild(dropButton);
+  }
+
+  details.appendChild(actions);
+}
+
+function createDroppedToolObject(drop) {
+  return {
+    x: drop.x,
+    y: drop.y,
+    w: 40,
+    h: 40,
+    kind: "droppedaxe",
+    interact: true,
+    noCollision: true,
+    label: "pick up Basic Axe",
+    action: "pickupTool",
+    toolData: { ...drop.toolData }
+  };
+}
+
+function restoreDroppedTools() {
+  if (!Array.isArray(state.droppedTools)) state.droppedTools = [];
+
+  state.droppedTools.forEach((drop) => {
+    if (drop && drop.toolData && drop.toolData.type === "axe") {
+      objects.push(createDroppedToolObject(drop));
+    }
+  });
+}
+
+function dropAxeItem(axeId) {
+  const axe = getAxeById(axeId);
+  if (!axe) return;
+
+  state.axes = state.axes.filter((ownedAxe) => ownedAxe.id !== axeId);
+  state.hotbar = state.hotbar.map((item) =>
+    hotbarAxeItem(item)?.itemId === axeId ? null : item
+  );
+
+  if (state.equippedAxeId === axeId) {
+    state.equippedAxeId = null;
+  }
+
+  const drop = {
+    x: clamp(player.x + 30, 30, map.width - 44),
+    y: clamp(player.y + 18, 30, map.height - 44),
+    toolData: { ...axe }
+  };
+
+  if (!Array.isArray(state.droppedTools)) state.droppedTools = [];
+  state.droppedTools.push(drop);
+  objects.push(createDroppedToolObject(drop));
+
+  selectedInventoryItem = null;
+  toast("Dropped Basic Axe.");
+  addFloatingText(player.x + 20, player.y - 25, "Dropped Axe");
+  save();
+  syncUI();
+}
+
+function pickupDroppedTool(obj) {
+  if (!obj.toolData || obj.toolData.type !== "axe") return;
+
+  if (!getAxeById(obj.toolData.id)) {
+    state.axes.push({ ...obj.toolData });
+  }
+
+  state.droppedTools = (state.droppedTools || []).filter(
+    (drop) => drop.toolData?.id !== obj.toolData.id
+  );
+
+  obj.hidden = true;
+  obj.interact = false;
+  selectedInventoryItem = { type: "axe", itemId: obj.toolData.id };
+
+  toast("Picked up Basic Axe.");
+  addFloatingText(obj.x, obj.y, "Basic Axe");
+}
+
 /* SHOP */
 
 function openNpcDialogue(npcName = "Rowan") {
@@ -645,442 +932,467 @@ function openBuyPanel() {
   updateBuyPanel();
   buyPanel.classList.remove("hidden");
 }
-
 function closeBuyPanel() {
-  buyPanel.classList.add("hidden");
+buyPanel.classList.add("hidden");
 }
+
 function openSellPanel() {
-  closeNpcDialogue();
-  closeAllGamePanels();
-  updateSellPanel();
-  sellPanel.classList.remove("hidden");
+closeNpcDialogue();
+closeAllGamePanels();
+updateSellPanel();
+sellPanel.classList.remove("hidden");
 }
 
 function closeSellPanel() {
-  sellPanel.classList.add("hidden");
+sellPanel.classList.add("hidden");
 }
 
 function updateBuyPanel() {
-  buyGoldText.textContent = formatNumber(state.gold);
-  buyItems.innerHTML = "";
+buyGoldText.textContent = formatNumber(state.gold);
+buyItems.innerHTML = "";
 
-  const items = [
-    {
-      id: "potion",
-      name: "Small Potion",
-      desc: "Restores 35 HP when used from your hotbar.",
-      cost: 25,
-      img: images.potion.src,
-      buy: () => {
-        state.gold -= 25;
-        state.potions += 1;
-        toast("Bought Small Potion");
-      },
-      canBuy: () => state.gold >= 25
-    },
-    {
-      id: "axe",
-      name: "Basic Axe",
-      desc: "60 durability. +0.35x damage on trees and bushes only.",
-      cost: 250,
-      img: images.axe.src,
-      buy: () => {
-        state.gold -= 250;
-        createBasicAxe();
-        toast("Basic Axe bought! Double-click it in Inventory.");
-      },
-      canBuy: () => state.gold >= 250
-    },
-    {
-      id: "manual",
-      name: "Training Manual",
-      desc: "Gives 35 XP instantly.",
-      cost: 100,
-      img: images.gold.src,
-      buy: () => {
-        state.gold -= 100;
-        addXp(35);
-        toast("+35 XP");
-      },
-      canBuy: () => state.gold >= 100
-    }
-  ];
+const items = [
+{
+id: "potion",
+name: "Small Potion",
+desc: "Restores 35 HP when used from your hotbar.",
+cost: 25,
+img: images.potion.src,
+buy: () => {
+state.gold -= 25;
+state.potions += 1;
+toast("Bought Small Potion");
+},
+canBuy: () => state.gold >= 25
+},
+{
+id: "axe",
+name: "Basic Axe",
+desc: "60 durability. +0.35x damage on trees and bushes only.",
+cost: 250,
+img: images.axe.src,
+buy: () => {
+state.gold -= 250;
+createBasicAxe();
+toast("Basic Axe bought! Select it in Inventory.");
+},
+canBuy: () => state.gold >= 250
+},
+{
+id: "manual",
+name: "Training Manual",
+desc: "Gives 35 XP instantly.",
+cost: 100,
+img: images.gold.src,
+buy: () => {
+state.gold -= 100;
+addXp(35);
+toast("+35 XP");
+},
+canBuy: () => state.gold >= 100
+}
+];
 
-  for (const item of items) {
-    buyItems.appendChild(createShopItem({
-      img: item.img,
-      name: item.name,
-      desc: item.desc,
-      price: item.cost + " gold",
-      buttonText: "Buy",
-      disabled: !item.canBuy(),
-      onClick: () => {
-        item.buy();
-        save();
-        syncUI();
-        updateBuyPanel();
-      }
-    }));
-  }
+for (const item of items) {
+buyItems.appendChild(createShopItem({
+img: item.img,
+name: item.name,
+desc: item.desc,
+price: item.cost + " gold",
+buttonText: "Buy",
+disabled: !item.canBuy(),
+onClick: () => {
+item.buy();
+save();
+syncUI();
+updateBuyPanel();
+}
+}));
+}
 }
 
 function updateSellPanel() {
-  sellGoldText.textContent = formatNumber(state.gold);
-  sellItems.innerHTML = "";
+sellGoldText.textContent = formatNumber(state.gold);
+sellItems.innerHTML = "";
 
-  const sellOptions = [
-    {
-      name: "Sell Wood Stack",
-      desc: "Sell 16 wood for gold.",
-      img: images.wood.src,
-      amountNeeded: 16,
-      reward: 20,
-      resource: "wood"
-    },
-    {
-      name: "Sell Stone Stack",
-      desc: "Sell 16 stone for gold.",
-      img: images.stone.src,
-      amountNeeded: 16,
-      reward: 25,
-      resource: "stone"
+const sellOptions = [
+{
+name: "Sell Wood Stack",
+desc: "Sell 16 wood for gold.",
+img: images.wood.src,
+amountNeeded: 16,
+reward: 20,
+resource: "wood"
+},
+{
+name: "Sell Stone Stack",
+desc: "Sell 16 stone for gold.",
+img: images.stone.src,
+amountNeeded: 16,
+reward: 25,
+resource: "stone"
+}
+];
+
+for (const option of sellOptions) {
+const canSell = state[option.resource] >= option.amountNeeded;
+
+sellItems.appendChild(createShopItem({
+  img: option.img,
+  name: option.name,
+  desc: option.desc,
+  price: "+" + option.reward + " gold",
+  buttonText: "Sell",
+  disabled: !canSell,
+  onClick: () => {
+    if (state[option.resource] < option.amountNeeded) {
+      toast("Not enough " + option.resource + ".");
+      return;
     }
-  ];
 
-  for (const option of sellOptions) {
-    const canSell = state[option.resource] >= option.amountNeeded;
+    state[option.resource] -= option.amountNeeded;
+    state.gold += option.reward;
 
-    sellItems.appendChild(createShopItem({
-      img: option.img,
-      name: option.name,
-      desc: option.desc,
-      price: "+" + option.reward + " gold",
-      buttonText: "Sell",
-      disabled: !canSell,
-      onClick: () => {
-        if (state[option.resource] < option.amountNeeded) {
-          toast("Not enough " + option.resource + ".");
-          return;
-        }
-
-        state[option.resource] -= option.amountNeeded;
-        state.gold += option.reward;
-
-        toast("Sold " + option.amountNeeded + " " + option.resource);
-        save();
-        syncUI();
-        updateSellPanel();
-      }
-    }));
+    toast("Sold " + option.amountNeeded + " " + option.resource);
+    save();
+    syncUI();
+    updateSellPanel();
   }
+}));
+
+}
 }
 
 function createShopItem({ img, name, desc, price, buttonText, disabled, onClick }) {
-  const card = document.createElement("div");
-  card.className = "shop-item";
+const card = document.createElement("div");
+card.className = "shop-item";
 
-  const icon = document.createElement("img");
-  icon.src = img;
+const icon = document.createElement("img");
+icon.src = img;
 
-  const info = document.createElement("div");
+const info = document.createElement("div");
 
-  const title = document.createElement("strong");
-  title.textContent = name;
+const title = document.createElement("strong");
+title.textContent = name;
 
-  const description = document.createElement("span");
-  description.textContent = desc + " · " + price;
+const description = document.createElement("span");
+description.textContent = desc + " · " + price;
 
-  info.appendChild(title);
-  info.appendChild(description);
+info.appendChild(title);
+info.appendChild(description);
 
-  const button = document.createElement("button");
-  button.textContent = buttonText;
-  button.disabled = disabled;
-  button.addEventListener("click", onClick);
+const button = document.createElement("button");
+button.textContent = buttonText;
+button.disabled = disabled;
+button.addEventListener("click", onClick);
 
-  card.appendChild(icon);
-  card.appendChild(info);
-  card.appendChild(button);
+card.appendChild(icon);
+card.appendChild(info);
+card.appendChild(button);
 
-  return card;
+return card;
 }
 
 /* HOTBAR / EQUIPMENT */
 
 function hotbarAxeItem(item) {
-  return item && typeof item === "object" && item.type === "axe" ? item : null;
+return item && typeof item === "object" && item.type === "axe" ? item : null;
 }
 
 function cleanHotbar() {
-  if (!Array.isArray(state.axes)) state.axes = [];
-  state.axes = state.axes.filter((axe) => axe && axe.id && axe.durability > 0);
+if (!Array.isArray(state.axes)) state.axes = [];
+state.axes = state.axes.filter((axe) => axe && axe.id && axe.durability > 0);
 
-  if (!Array.isArray(state.hotbar)) {
-    state.hotbar = [null, null, null, null, null];
-  }
+if (!Array.isArray(state.hotbar)) {
+state.hotbar = [null, null, null, null, null];
+}
 
-  state.hotbar = state.hotbar.slice(0, 5);
-  while (state.hotbar.length < 5) state.hotbar.push(null);
+state.hotbar = state.hotbar.slice(0, 5);
+while (state.hotbar.length < 5) state.hotbar.push(null);
 
-  const seenAxes = new Set();
+const seenAxes = new Set();
 
-  state.hotbar = state.hotbar.map((item) => {
-    if (item === "potion" && state.potions > 0) return item;
+state.hotbar = state.hotbar.map((item) => {
+if (item === "potion" && state.potions > 0) return item;
 
-    const axeItem = hotbarAxeItem(item);
-    if (axeItem && getAxeById(axeItem.itemId) && !seenAxes.has(axeItem.itemId)) {
-      seenAxes.add(axeItem.itemId);
-      return { type: "axe", itemId: axeItem.itemId };
-    }
+const axeItem = hotbarAxeItem(item);
+if (axeItem && getAxeById(axeItem.itemId) && !seenAxes.has(axeItem.itemId)) {
+  seenAxes.add(axeItem.itemId);
+  return { type: "axe", itemId: axeItem.itemId };
+}
 
-    return null;
-  });
+return null;
 
-  if (!equippedAxe() || !state.hotbar.some((item) => hotbarAxeItem(item)?.itemId === state.equippedAxeId)) {
-    state.equippedAxeId = null;
-  }
+});
+
+if (!equippedAxe() || !state.hotbar.some((item) => hotbarAxeItem(item)?.itemId === state.equippedAxeId)) {
+state.equippedAxeId = null;
+}
 }
 
 function addItemToHotbar(itemType, itemId = null) {
-  cleanHotbar();
+cleanHotbar();
 
-  if (itemType === "potion") {
-    if (state.potions <= 0) return;
+if (itemType === "potion") {
+if (state.potions <= 0) return;
 
-    if (state.hotbar.includes("potion")) {
-      toast("Potion is already in your hotbar.");
-      return;
-    }
+if (state.hotbar.includes("potion")) {
+  toast("Potion is already in your hotbar.");
+  return;
+}
 
-    const openSlot = state.hotbar.indexOf(null);
-    if (openSlot === -1) {
-      toast("Hotbar is full.");
-      return;
-    }
+const openSlot = state.hotbar.indexOf(null);
+if (openSlot === -1) {
+  toast("Hotbar is full.");
+  return;
+}
 
-    state.hotbar[openSlot] = "potion";
-    toast("Potion added to hotbar.");
-    save();
-    syncUI();
-    return;
-  }
+state.hotbar[openSlot] = "potion";
+toast("Potion added to hotbar.");
+save();
+syncUI();
+return;
 
-  if (itemType !== "axe") return;
+}
 
-  const axe = getAxeById(itemId);
-  if (!axe) return;
+if (itemType !== "axe") return;
 
-  const existingSlot = state.hotbar.findIndex(
-    (item) => hotbarAxeItem(item)?.itemId === axe.id
-  );
+const axe = getAxeById(itemId);
+if (!axe) return;
 
-  if (existingSlot >= 0) {
-    state.equippedAxeId = state.equippedAxeId === axe.id ? null : axe.id;
-    toast(state.equippedAxeId ? "Basic Axe equipped." : "Basic Axe unequipped.");
-    save();
-    syncUI();
-    return;
-  }
+const existingSlot = state.hotbar.findIndex(
+(item) => hotbarAxeItem(item)?.itemId === axe.id
+);
 
-  const openSlot = state.hotbar.indexOf(null);
-  if (openSlot === -1) {
-    toast("Hotbar is full.");
-    return;
-  }
+if (existingSlot >= 0) {
+state.equippedAxeId = state.equippedAxeId === axe.id ? null : axe.id;
+toast(state.equippedAxeId ? "Basic Axe equipped." : "Basic Axe unequipped.");
+save();
+syncUI();
+return;
+}
 
-  state.hotbar[openSlot] = { type: "axe", itemId: axe.id };
-  state.equippedAxeId = axe.id;
-  toast("Basic Axe added and equipped.");
-  save();
-  syncUI();
+const openSlot = state.hotbar.indexOf(null);
+if (openSlot === -1) {
+toast("Hotbar is full.");
+return;
+}
+
+state.hotbar[openSlot] = { type: "axe", itemId: axe.id };
+state.equippedAxeId = axe.id;
+toast("Basic Axe added and equipped.");
+save();
+syncUI();
 }
 
 function activateHotbarSlot(slotIndex) {
-  cleanHotbar();
+cleanHotbar();
 
-  const item = state.hotbar[slotIndex];
-  if (!item) return;
+const item = state.hotbar[slotIndex];
+if (!item) return;
 
-  const axeItem = hotbarAxeItem(item);
-  if (axeItem) {
-    state.equippedAxeId = state.equippedAxeId === axeItem.itemId ? null : axeItem.itemId;
-    toast(state.equippedAxeId ? "Basic Axe equipped." : "Basic Axe unequipped.");
-  }
+const axeItem = hotbarAxeItem(item);
+if (axeItem) {
+state.equippedAxeId = state.equippedAxeId === axeItem.itemId ? null : axeItem.itemId;
+toast(state.equippedAxeId ? "Basic Axe equipped." : "Basic Axe unequipped.");
+}
 
-  if (item === "potion") {
-    if (state.hp >= maxHp()) {
-      toast("Health is already full.");
-      return;
-    }
+if (item === "potion") {
+if (state.hp >= maxHp()) {
+toast("Health is already full.");
+return;
+}
 
-    state.potions -= 1;
-    state.hp = Math.min(maxHp(), state.hp + 35);
-    toast("Used Small Potion. +35 HP");
+state.potions -= 1;
+state.hp = Math.min(maxHp(), state.hp + 35);
+toast("Used Small Potion. +35 HP");
 
-    if (state.potions <= 0) {
-      state.hotbar[slotIndex] = null;
-    }
-  }
+if (state.potions <= 0) {
+  state.hotbar[slotIndex] = null;
+}
 
-  save();
-  syncUI();
+}
+
+save();
+syncUI();
 }
 
 function updateHotbar() {
-  if (!hotbar) return;
+if (!hotbar) return;
 
-  cleanHotbar();
-  hotbar.innerHTML = "";
+cleanHotbar();
+hotbar.innerHTML = "";
 
-  state.hotbar.forEach((item, index) => {
-    const axeItem = hotbarAxeItem(item);
-    const axe = axeItem ? getAxeById(axeItem.itemId) : null;
-    const slot = document.createElement("button");
-    slot.className = "hotbar-slot";
-    slot.type = "button";
-    slot.title = axe
-      ? "Basic Axe · " + axeDurabilityText(axe) + "/60 durability"
-      : item === "potion"
-        ? "Use Small Potion"
-        : "Empty hotbar slot";
+state.hotbar.forEach((item, index) => {
+const axeItem = hotbarAxeItem(item);
+const axe = axeItem ? getAxeById(axeItem.itemId) : null;
+const slot = document.createElement("button");
+slot.className = "hotbar-slot";
+slot.type = "button";
+slot.title = axe
+? "Basic Axe · " + axeDurabilityText(axe) + "/60 durability"
+: item === "potion"
+? "Use Small Potion"
+: "Empty hotbar slot";
 
-    if (axe && state.equippedAxeId === axe.id) {
-      slot.classList.add("equipped");
-    }
+if (axe && state.equippedAxeId === axe.id) {
+  slot.classList.add("equipped");
+}
 
-    const key = document.createElement("span");
-    key.className = "hotbar-key";
-    key.textContent = String(index + 1);
-    slot.appendChild(key);
+const key = document.createElement("span");
+key.className = "hotbar-key";
+key.textContent = String(index + 1);
+slot.appendChild(key);
 
-    if (axe || item === "potion") {
-      const icon = document.createElement("img");
-      icon.src = axe ? images.axe.src : images.potion.src;
-      icon.alt = axe ? "Basic Axe" : "Small Potion";
-      slot.appendChild(icon);
+if (axe || item === "potion") {
+  const icon = document.createElement("img");
+  icon.src = axe ? images.axe.src : images.potion.src;
+  icon.alt = axe ? "Basic Axe" : "Small Potion";
+  slot.appendChild(icon);
 
-      const count = document.createElement("span");
-      count.className = "hotbar-count";
-      count.textContent = axe ? axeDurabilityText(axe) : "x" + state.potions;
-      slot.appendChild(count);
-    }
+  const count = document.createElement("span");
+  count.className = "hotbar-count";
+  count.textContent = axe ? axeDurabilityText(axe) : "x" + state.potions;
+  slot.appendChild(count);
+}
 
-    slot.addEventListener("click", () => activateHotbarSlot(index));
-    hotbar.appendChild(slot);
-  });
+slot.addEventListener("click", () => activateHotbarSlot(index));
+hotbar.appendChild(slot);
+
+});
 }
 
 function toggleGameMenu() {
-  gameMenu.classList.toggle("hidden");
+gameMenu.classList.toggle("hidden");
 }
 
 function closeGameMenu() {
-  gameMenu.classList.add("hidden");
+gameMenu.classList.add("hidden");
 }
 
 /* SAVE / UI */
 
 function loadSave() {
-  try {
-    const raw = localStorage.getItem(saveKey);
-    if (!raw) return;
+try {
+const raw = localStorage.getItem(saveKey);
+if (!raw) return;
 
-    const data = JSON.parse(raw);
+const data = JSON.parse(raw);
 
-    state.name = data.name || state.name;
-    state.world = "World A - Main Realm";
+state.name = data.name || state.name;
+state.world = "World A - Main Realm";
 
-    state.gold = Number(data.gold || 0);
-    state.wood = Number(data.wood || 0);
-    state.stone = Number(data.stone || 0);
-    state.potions = Number(data.potions || 0);
+state.gold = Number(data.gold || 0);
+state.wood = Number(data.wood || 0);
+state.stone = Number(data.stone || 0);
+state.potions = Number(data.potions || 0);
 
-    state.nextItemId = Math.max(1, Number(data.nextItemId || 1));
-    state.axes = Array.isArray(data.axes)
-      ? data.axes
-          .filter((axe) => axe && axe.durability > 0)
-          .map((axe) => ({
-            id: String(axe.id),
-            type: "axe",
-            name: "Basic Axe",
-            durability: Math.max(0, Math.min(60, Number(axe.durability) || 0)),
-            maxDurability: 60
-          }))
-      : [];
+state.nextItemId = Math.max(1, Number(data.nextItemId || 1));
+state.axes = Array.isArray(data.axes)
+  ? data.axes
+      .filter((axe) => axe && axe.durability > 0)
+      .map((axe) => ({
+        id: String(axe.id),
+        type: "axe",
+        name: "Basic Axe",
+        durability: Math.max(0, Math.min(60, Number(axe.durability) || 0)),
+        maxDurability: 60
+      }))
+  : [];
 
-    // Migrate the old single-owned axe save into one real 60-durability item.
-    if (state.axes.length === 0 && Boolean(data.axeOwned)) {
-      createBasicAxe(60);
-    }
-
-    const highestAxeNumber = state.axes.reduce((highest, axe) => {
-      const match = axe.id.match(/^(?:axe-)(\d+)$/);
-      return match ? Math.max(highest, Number(match[1])) : highest;
-    }, 0);
-    state.nextItemId = Math.max(state.nextItemId, highestAxeNumber + 1);
-
-    state.hotbar = Array.isArray(data.hotbar)
-      ? data.hotbar.slice(0, 5).map((item) => {
-          if (item === "axe" && state.axes[0]) {
-            return { type: "axe", itemId: state.axes[0].id };
-          }
-          return item;
-        })
-      : [null, null, null, null, null];
-
-    state.equippedAxeId =
-      typeof data.equippedAxeId === "string" ? data.equippedAxeId : null;
-
-    // Keep an equipped axe from the previous Phase 3E save equipped after migration.
-    if (!state.equippedAxeId && Boolean(data.axeEquipped) && state.axes[0]) {
-      state.equippedAxeId = state.axes[0].id;
-
-      if (!state.hotbar.some((item) => hotbarAxeItem(item)?.itemId === state.axes[0].id)) {
-        const openSlot = state.hotbar.indexOf(null);
-        state.hotbar[openSlot >= 0 ? openSlot : 0] = {
-          type: "axe",
-          itemId: state.axes[0].id
-        };
-      }
-    }
-
-    state.campLevel = Number(data.campLevel || 1);
-    state.level = Number(data.level || 1);
-    state.xp = Number(data.xp || 0);
-
-    state.hp = Number(data.hp || maxHp());
-    state.statPoints = Number(data.statPoints || 0);
-
-    if (data.stats) {
-      state.stats.strength = Number(data.stats.strength || 0);
-      state.stats.defense = Number(data.stats.defense || 0);
-      state.stats.magic = Number(data.stats.magic || 0);
-      state.stats.sword = Number(data.stats.sword || 0);
-      state.stats.archery = Number(data.stats.archery || 0);
-    }
-
-    state.mailClaimed = Boolean(data.mailClaimed);
-
-    state.questStep = Number(data.questStep || 0);
-    state.questCycle = Number(data.questCycle || 1);
-    state.questBaseGold = Number(data.questBaseGold || 0);
-    state.questBaseWood = Number(data.questBaseWood || 0);
-    state.questBaseStone = Number(data.questBaseStone || 0);
-    state.questBaseCamp = Number(data.questBaseCamp || 1);
-
-    state.cycleStartedAt = Number(data.cycleStartedAt || Date.now());
-  } catch {}
-
-  state.hp = Math.min(state.hp, maxHp());
-  cleanHotbar();
-
-  nicknameInput.value = state.name;
-  worldInput.value = state.world;
-  lobbyWorld.value = state.world;
-
-  syncUI();
+if (state.axes.length === 0 && Boolean(data.axeOwned)) {
+  createBasicAxe(60);
 }
 
+const highestAxeNumber = state.axes.reduce((highest, axe) => {
+  const match = axe.id.match(/^(?:axe-)(\d+)$/);
+  return match ? Math.max(highest, Number(match[1])) : highest;
+}, 0);
+state.nextItemId = Math.max(state.nextItemId, highestAxeNumber + 1);
+
+state.hotbar = Array.isArray(data.hotbar)
+  ? data.hotbar.slice(0, 5).map((item) => {
+      if (item === "axe" && state.axes[0]) {
+        return { type: "axe", itemId: state.axes[0].id };
+      }
+      return item;
+    })
+  : [null, null, null, null, null];
+
+state.equippedAxeId =
+  typeof data.equippedAxeId === "string" ? data.equippedAxeId : null;
+
+if (!state.equippedAxeId && Boolean(data.axeEquipped) && state.axes[0]) {
+  state.equippedAxeId = state.axes[0].id;
+
+  if (!state.hotbar.some((item) => hotbarAxeItem(item)?.itemId === state.axes[0].id)) {
+    const openSlot = state.hotbar.indexOf(null);
+    state.hotbar[openSlot >= 0 ? openSlot : 0] = {
+      type: "axe",
+      itemId: state.axes[0].id
+    };
+  }
+}
+
+state.droppedTools = Array.isArray(data.droppedTools)
+  ? data.droppedTools
+      .filter((drop) => drop && drop.toolData && drop.toolData.type === "axe" && drop.toolData.durability > 0)
+      .map((drop) => ({
+        x: Number(drop.x || 0),
+        y: Number(drop.y || 0),
+        toolData: {
+          id: String(drop.toolData.id),
+          type: "axe",
+          name: "Basic Axe",
+          durability: Math.max(0, Math.min(60, Number(drop.toolData.durability) || 0)),
+          maxDurability: 60
+        }
+      }))
+  : [];
+
+const highestDroppedAxeNumber = state.droppedTools.reduce((highest, drop) => {
+  const match = drop.toolData.id.match(/^(?:axe-)(\d+)$/);
+  return match ? Math.max(highest, Number(match[1])) : highest;
+}, 0);
+state.nextItemId = Math.max(state.nextItemId, highestDroppedAxeNumber + 1);
+
+state.campLevel = Number(data.campLevel || 1);
+state.level = Number(data.level || 1);
+state.xp = Number(data.xp || 0);
+
+state.hp = Number(data.hp || maxHp());
+state.statPoints = Number(data.statPoints || 0);
+
+if (data.stats) {
+  state.stats.strength = Number(data.stats.strength || 0);
+  state.stats.defense = Number(data.stats.defense || 0);
+  state.stats.magic = Number(data.stats.magic || 0);
+  state.stats.sword = Number(data.stats.sword || 0);
+  state.stats.archery = Number(data.stats.archery || 0);
+}
+
+state.mailClaimed = Boolean(data.mailClaimed);
+
+state.questStep = Number(data.questStep || 0);
+state.questCycle = Number(data.questCycle || 1);
+state.questBaseGold = Number(data.questBaseGold || 0);
+state.questBaseWood = Number(data.questBaseWood || 0);
+state.questBaseStone = Number(data.questBaseStone || 0);
+state.questBaseCamp = Number(data.questBaseCamp || 1);
+
+state.cycleStartedAt = Number(data.cycleStartedAt || Date.now());
+
+} catch {}
+
+state.hp = Math.min(state.hp, maxHp());
+cleanHotbar();
+
+nicknameInput.value = state.name;
+worldInput.value = state.world;
+lobbyWorld.value = state.world;
+
+syncUI();
+}
 function save() {
   localStorage.setItem(saveKey, JSON.stringify(state));
 }
@@ -1334,6 +1646,12 @@ function updateInventoryPanel() {
       slot.appendChild(img);
       slot.appendChild(count);
 
+      if (inventoryItemIsSelected(item)) {
+        slot.classList.add("selected-item");
+      }
+
+      slot.addEventListener("click", () => selectInventoryItem(item));
+
       if (item.type === "axe") {
         slot.classList.add("assignable");
         slot.title = "Basic Axe · " + axeDurabilityText(item) + "/60 durability. Double-click to add/equip.";
@@ -1365,6 +1683,8 @@ function updateInventoryPanel() {
 
     inventoryGrid.appendChild(slot);
   }
+
+  updateInventoryItemDetails();
 }
 
 function updateStatsPanel() {
@@ -1568,6 +1888,7 @@ function createWorld() {
   }
 
   spawnRareChests();
+  restoreDroppedTools();
 
   player.x = 520;
   player.y = 430;
@@ -1577,7 +1898,6 @@ function createWorld() {
   camera.x = 0;
   camera.y = 0;
 }
-
 function spawnRareChests() {
   const rareCount = randomInt(4, 6);
 
@@ -1847,7 +2167,8 @@ function update() {
   }
 
   floatingTexts = floatingTexts.filter((text) => text.life > 0);
-    let inputX = 0;
+
+  let inputX = 0;
   let inputY = 0;
 
   if (keys.has("w") || keys.has("arrowup")) inputY -= 1;
@@ -1960,6 +2281,10 @@ function interact() {
     openNpcDialogue(obj.npcName || "Rowan");
   }
 
+  if (obj.action === "pickupTool") {
+    pickupDroppedTool(obj);
+  }
+
   save();
   syncUI();
 }
@@ -2019,7 +2344,6 @@ function openChest(obj) {
     obj.hidden = false;
   }, respawnTime);
 }
-
 function useEquippedAxeDurability(obj) {
   const axe = equippedAxe();
   if (!axe) return false;
@@ -2041,6 +2365,10 @@ function useEquippedAxeDurability(obj) {
     hotbarAxeItem(item)?.itemId === axe.id ? null : item
   );
   state.equippedAxeId = null;
+
+  if (selectedInventoryItem?.type === "axe" && selectedInventoryItem.itemId === axe.id) {
+    selectedInventoryItem = null;
+  }
 
   toast("Your Basic Axe broke!");
   addFloatingText(player.x, player.y - 52, "AXE BROKE!");
@@ -2193,6 +2521,11 @@ function drawObject(obj) {
   if (obj.kind === "legendarychest") drawChest(drawX, obj.y, obj.w, obj.h, obj.used, "legendary");
   if (obj.kind === "campfire") drawCampfire(drawX, obj.y, obj.w, obj.h);
   if (obj.kind === "npc") drawNpc(drawX, obj.y, obj.w, obj.h, obj.npcName || "Rowan");
+  if (obj.kind === "droppedaxe") {
+    ctx.fillStyle = "rgba(0,0,0,0.20)";
+    ctx.fillRect(drawX + 7, obj.y + 31, 28, 6);
+    drawImg(images.axe, drawX, obj.y, obj.w, obj.h, "#a86b36");
+  }
 }
 
 function drawPlayer() {
