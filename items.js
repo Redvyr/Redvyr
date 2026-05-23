@@ -85,9 +85,8 @@ function ensureItemDetailPanel() {
 function selectedItemData() {
   if (!selectedInventoryItem) return null;
 
-  if (selectedInventoryItem.type === "axe") {
-    return getAxeById(selectedInventoryItem.itemId);
-  }
+  if (selectedInventoryItem.type === "axe") return getAxeById(selectedInventoryItem.itemId);
+  if (selectedInventoryItem.type === "sword") return getSwordById(selectedInventoryItem.itemId);
 
   if (selectedInventoryItem.type === "potion" && state.potions > 0) {
     return { type: "potion", name: "Small Potion", count: state.potions };
@@ -101,13 +100,17 @@ function selectedItemData() {
     return { type: "stone", name: "Stone", count: state.stone };
   }
 
+  if (selectedInventoryItem.type === "slimegel" && state.slimeGel > 0) {
+    return { type: "slimegel", name: "Slime Gel", count: state.slimeGel };
+  }
+
   return null;
 }
 
 function selectInventoryItem(item) {
   selectedInventoryItem =
-    item.type === "axe"
-      ? { type: "axe", itemId: item.itemId }
+    item.type === "axe" || item.type === "sword"
+      ? { type: item.type, itemId: item.itemId }
       : { type: item.type };
 
   updateInventoryPanel();
@@ -116,8 +119,8 @@ function selectInventoryItem(item) {
 function inventoryItemIsSelected(item) {
   if (!selectedInventoryItem) return false;
 
-  if (item.type === "axe") {
-    return selectedInventoryItem.type === "axe" && selectedInventoryItem.itemId === item.itemId;
+  if (item.type === "axe" || item.type === "sword") {
+    return selectedInventoryItem.type === item.type && selectedInventoryItem.itemId === item.itemId;
   }
 
   return selectedInventoryItem.type === item.type;
@@ -148,12 +151,9 @@ function updateInventoryItemDetails() {
   const title = document.createElement("strong");
   const sub = document.createElement("span");
 
-  if (item.type === "axe") {
-    title.textContent = "Basic Axe";
-    sub.textContent = axeDurabilityText(item) + "/" + item.maxDurability + " durability";
-  } else if (item.type === "potion") {
-    title.textContent = "Small Potion";
-    sub.textContent = "Owned: x" + item.count;
+  if (item.type === "axe" || item.type === "sword") {
+    title.textContent = item.name;
+    sub.textContent = toolDurabilityText(item) + "/" + item.maxDurability + " durability";
   } else {
     title.textContent = item.name;
     sub.textContent = "Owned: x" + item.count;
@@ -169,18 +169,22 @@ function updateInventoryItemDetails() {
   description.className = "inventory-item-description";
 
   if (item.type === "axe") {
-    description.textContent = "A starter gathering tool. Gives +0.35x damage on trees and bushes only.";
+    description.textContent = "A gathering tool. Gives +0.35x damage on trees and bushes only.";
+  } else if (item.type === "sword") {
+    description.textContent = "A combat weapon. Base damage is higher than punching and improves with your Sword stat.";
   } else if (item.type === "potion") {
     description.textContent = "Restores 35 HP when used from your hotbar.";
   } else if (item.type === "wood") {
     description.textContent = "A building material gathered from trees and bushes.";
-  } else {
+  } else if (item.type === "stone") {
     description.textContent = "A building material mined from rocks.";
+  } else {
+    description.textContent = "A monster material dropped by slimes. Sell it to Rowan for gold.";
   }
 
   details.appendChild(description);
 
-  if (item.type !== "axe" && item.type !== "potion") return;
+  if (item.type !== "axe" && item.type !== "sword" && item.type !== "potion") return;
 
   const actions = document.createElement("div");
   actions.className = "inventory-item-actions";
@@ -188,9 +192,11 @@ function updateInventoryItemDetails() {
   const equipButton = document.createElement("button");
 
   if (item.type === "axe") {
-    const isEquipped = state.equippedAxeId === item.id;
-    equipButton.textContent = isEquipped ? "Unequip" : "Equip";
+    equipButton.textContent = state.equippedAxeId === item.id ? "Unequip" : "Equip";
     equipButton.addEventListener("click", () => addItemToHotbar("axe", item.id));
+  } else if (item.type === "sword") {
+    equipButton.textContent = state.equippedSwordId === item.id ? "Unequip" : "Equip";
+    equipButton.addEventListener("click", () => addItemToHotbar("sword", item.id));
   } else {
     equipButton.textContent = state.hotbar.includes("potion") ? "In Hotbar" : "Add to Hotbar";
     equipButton.disabled = state.hotbar.includes("potion");
@@ -199,11 +205,11 @@ function updateInventoryItemDetails() {
 
   actions.appendChild(equipButton);
 
-  if (item.type === "axe") {
+  if (item.type === "axe" || item.type === "sword") {
     const dropButton = document.createElement("button");
     dropButton.className = "drop-item-btn";
     dropButton.textContent = "Drop";
-    dropButton.addEventListener("click", () => dropAxeItem(item.id));
+    dropButton.addEventListener("click", () => dropToolItem(item.type, item.id));
     actions.appendChild(dropButton);
   }
 
@@ -211,15 +217,16 @@ function updateInventoryItemDetails() {
 }
 
 function createDroppedToolObject(drop) {
+  const isSword = drop.toolData.type === "sword";
   return {
     x: drop.x,
     y: drop.y,
     w: 40,
     h: 40,
-    kind: "droppedaxe",
+    kind: isSword ? "droppedsword" : "droppedaxe",
     interact: true,
     noCollision: true,
-    label: "pick up Basic Axe",
+    label: "pick up " + drop.toolData.name,
     action: "pickupTool",
     toolData: { ...drop.toolData }
   };
@@ -229,29 +236,32 @@ function restoreDroppedTools() {
   if (!Array.isArray(state.droppedTools)) state.droppedTools = [];
 
   state.droppedTools.forEach((drop) => {
-    if (drop && drop.toolData && drop.toolData.type === "axe") {
+    if (drop && drop.toolData && (drop.toolData.type === "axe" || drop.toolData.type === "sword")) {
       objects.push(createDroppedToolObject(drop));
     }
   });
 }
 
-function dropAxeItem(axeId) {
-  const axe = getAxeById(axeId);
-  if (!axe) return;
+function dropToolItem(toolType, toolId) {
+  const tool = toolType === "sword" ? getSwordById(toolId) : getAxeById(toolId);
+  if (!tool) return;
 
-  state.axes = state.axes.filter((ownedAxe) => ownedAxe.id !== axeId);
-  state.hotbar = state.hotbar.map((item) =>
-    hotbarAxeItem(item)?.itemId === axeId ? null : item
-  );
-
-  if (state.equippedAxeId === axeId) {
-    state.equippedAxeId = null;
+  if (toolType === "sword") {
+    state.swords = state.swords.filter((ownedTool) => ownedTool.id !== toolId);
+    if (state.equippedSwordId === toolId) state.equippedSwordId = null;
+  } else {
+    state.axes = state.axes.filter((ownedTool) => ownedTool.id !== toolId);
+    if (state.equippedAxeId === toolId) state.equippedAxeId = null;
   }
+
+  state.hotbar = state.hotbar.map((item) =>
+    hotbarToolItem(item)?.itemId === toolId ? null : item
+  );
 
   const drop = {
     x: clamp(player.x + 30, 30, map.width - 44),
     y: clamp(player.y + 18, 30, map.height - 44),
-    toolData: { ...axe }
+    toolData: { ...tool }
   };
 
   if (!Array.isArray(state.droppedTools)) state.droppedTools = [];
@@ -259,17 +269,23 @@ function dropAxeItem(axeId) {
   objects.push(createDroppedToolObject(drop));
 
   selectedInventoryItem = null;
-  toast("Dropped Basic Axe.");
-  addFloatingText(player.x + 20, player.y - 25, "Dropped Axe");
+  toast("Dropped " + tool.name + ".");
+  addFloatingText(player.x + 20, player.y - 25, "Dropped " + tool.name);
   save();
   syncUI();
 }
 
-function pickupDroppedTool(obj) {
-  if (!obj.toolData || obj.toolData.type !== "axe") return;
+function dropAxeItem(axeId) {
+  dropToolItem("axe", axeId);
+}
 
-  if (!getAxeById(obj.toolData.id)) {
-    state.axes.push({ ...obj.toolData });
+function pickupDroppedTool(obj) {
+  if (!obj.toolData || (obj.toolData.type !== "axe" && obj.toolData.type !== "sword")) return;
+
+  if (obj.toolData.type === "sword") {
+    if (!getSwordById(obj.toolData.id)) state.swords.push({ ...obj.toolData });
+  } else {
+    if (!getAxeById(obj.toolData.id)) state.axes.push({ ...obj.toolData });
   }
 
   state.droppedTools = (state.droppedTools || []).filter(
@@ -278,10 +294,10 @@ function pickupDroppedTool(obj) {
 
   obj.hidden = true;
   obj.interact = false;
-  selectedInventoryItem = { type: "axe", itemId: obj.toolData.id };
+  selectedInventoryItem = { type: obj.toolData.type, itemId: obj.toolData.id };
 
-  toast("Picked up Basic Axe.");
-  addFloatingText(obj.x, obj.y, "Basic Axe");
+  toast("Picked up " + obj.toolData.name + ".");
+  addFloatingText(obj.x, obj.y, obj.toolData.name);
 }
 
 /* SHOP */
@@ -377,14 +393,27 @@ function updateBuyPanel() {
       id: "axe",
       name: "Basic Axe",
       desc: "60 durability. +0.35x damage on trees and bushes only.",
-      cost: 250,
+      cost: 50,
       img: images.axe.src,
       buy: () => {
-        state.gold -= 250;
+        state.gold -= 50;
         createBasicAxe();
-        toast("Basic Axe bought! Double-click it in Inventory.");
+        toast("Basic Axe bought! Select it in Inventory.");
       },
-      canBuy: () => state.gold >= 250
+      canBuy: () => state.gold >= 50
+    },
+    {
+      id: "sword",
+      name: "Basic Sword",
+      desc: "80 durability. Combat weapon powered by your Sword stat.",
+      cost: 100,
+      img: images.sword.src,
+      buy: () => {
+        state.gold -= 100;
+        createBasicSword();
+        toast("Basic Sword bought! Equip it in Inventory.");
+      },
+      canBuy: () => state.gold >= 100
     },
     {
       id: "manual",
@@ -439,6 +468,14 @@ function updateSellPanel() {
       amountNeeded: 16,
       reward: 25,
       resource: "stone"
+    },
+    {
+      name: "Sell Slime Gel",
+      desc: "Sell 1 gel dropped by slimes.",
+      img: images.slimegel.src,
+      amountNeeded: 1,
+      reward: 10,
+      resource: "slimeGel"
     }
   ];
 
@@ -454,14 +491,14 @@ function updateSellPanel() {
       disabled: !canSell,
       onClick: () => {
         if (state[option.resource] < option.amountNeeded) {
-          toast("Not enough " + option.resource + ".");
+          toast("Not enough " + option.name.toLowerCase() + ".");
           return;
         }
 
         state[option.resource] -= option.amountNeeded;
         state.gold += option.reward;
 
-        toast("Sold " + option.amountNeeded + " " + option.resource);
+        toast("Sold " + option.name.replace("Sell ", "") + ".");
         save();
         syncUI();
         updateSellPanel();
@@ -502,13 +539,29 @@ function createShopItem({ img, name, desc, price, buttonText, disabled, onClick 
 
 /* HOTBAR / EQUIPMENT */
 
+function hotbarToolItem(item) {
+  return item && typeof item === "object" && (item.type === "axe" || item.type === "sword") ? item : null;
+}
+
 function hotbarAxeItem(item) {
   return item && typeof item === "object" && item.type === "axe" ? item : null;
 }
 
+function hotbarSwordItem(item) {
+  return item && typeof item === "object" && item.type === "sword" ? item : null;
+}
+
+function toolByHotbarItem(item) {
+  if (item?.type === "axe") return getAxeById(item.itemId);
+  if (item?.type === "sword") return getSwordById(item.itemId);
+  return null;
+}
+
 function cleanHotbar() {
   if (!Array.isArray(state.axes)) state.axes = [];
+  if (!Array.isArray(state.swords)) state.swords = [];
   state.axes = state.axes.filter((axe) => axe && axe.id && axe.durability > 0);
+  state.swords = state.swords.filter((sword) => sword && sword.id && sword.durability > 0);
 
   if (!Array.isArray(state.hotbar)) {
     state.hotbar = [null, null, null, null, null];
@@ -517,15 +570,15 @@ function cleanHotbar() {
   state.hotbar = state.hotbar.slice(0, 5);
   while (state.hotbar.length < 5) state.hotbar.push(null);
 
-  const seenAxes = new Set();
+  const seenTools = new Set();
 
   state.hotbar = state.hotbar.map((item) => {
     if (item === "potion" && state.potions > 0) return item;
 
-    const axeItem = hotbarAxeItem(item);
-    if (axeItem && getAxeById(axeItem.itemId) && !seenAxes.has(axeItem.itemId)) {
-      seenAxes.add(axeItem.itemId);
-      return { type: "axe", itemId: axeItem.itemId };
+    const toolItem = hotbarToolItem(item);
+    if (toolItem && toolByHotbarItem(toolItem) && !seenTools.has(toolItem.itemId)) {
+      seenTools.add(toolItem.itemId);
+      return { type: toolItem.type, itemId: toolItem.itemId };
     }
 
     return null;
@@ -533,6 +586,10 @@ function cleanHotbar() {
 
   if (!equippedAxe() || !state.hotbar.some((item) => hotbarAxeItem(item)?.itemId === state.equippedAxeId)) {
     state.equippedAxeId = null;
+  }
+
+  if (!equippedSword() || !state.hotbar.some((item) => hotbarSwordItem(item)?.itemId === state.equippedSwordId)) {
+    state.equippedSwordId = null;
   }
 }
 
@@ -560,32 +617,42 @@ function addItemToHotbar(itemType, itemId = null) {
     return;
   }
 
-  if (itemType !== "axe") return;
+  if (itemType !== "axe" && itemType !== "sword") return;
 
-  const axe = getAxeById(itemId);
-  if (!axe) return;
+  const tool = itemType === "sword" ? getSwordById(itemId) : getAxeById(itemId);
+  if (!tool) return;
 
   const existingSlot = state.hotbar.findIndex(
-    (item) => hotbarAxeItem(item)?.itemId === axe.id
+    (item) => hotbarToolItem(item)?.itemId === tool.id
   );
 
-  if (existingSlot >= 0) {
-    state.equippedAxeId = state.equippedAxeId === axe.id ? null : axe.id;
-    toast(state.equippedAxeId ? "Basic Axe equipped." : "Basic Axe unequipped.");
+  const alreadyEquipped =
+    itemType === "sword" ? state.equippedSwordId === tool.id : state.equippedAxeId === tool.id;
+
+  if (alreadyEquipped) {
+    if (itemType === "sword") state.equippedSwordId = null;
+    else state.equippedAxeId = null;
+    toast(tool.name + " unequipped.");
     save();
     syncUI();
     return;
   }
 
-  const openSlot = state.hotbar.indexOf(null);
-  if (openSlot === -1) {
-    toast("Hotbar is full.");
-    return;
+  if (existingSlot === -1) {
+    const openSlot = state.hotbar.indexOf(null);
+    if (openSlot === -1) {
+      toast("Hotbar is full.");
+      return;
+    }
+    state.hotbar[openSlot] = { type: itemType, itemId: tool.id };
   }
 
-  state.hotbar[openSlot] = { type: "axe", itemId: axe.id };
-  state.equippedAxeId = axe.id;
-  toast("Basic Axe added and equipped.");
+  state.equippedAxeId = null;
+  state.equippedSwordId = null;
+  if (itemType === "sword") state.equippedSwordId = tool.id;
+  else state.equippedAxeId = tool.id;
+
+  toast(tool.name + " equipped.");
   save();
   syncUI();
 }
@@ -596,10 +663,10 @@ function activateHotbarSlot(slotIndex) {
   const item = state.hotbar[slotIndex];
   if (!item) return;
 
-  const axeItem = hotbarAxeItem(item);
-  if (axeItem) {
-    state.equippedAxeId = state.equippedAxeId === axeItem.itemId ? null : axeItem.itemId;
-    toast(state.equippedAxeId ? "Basic Axe equipped." : "Basic Axe unequipped.");
+  const toolItem = hotbarToolItem(item);
+  if (toolItem) {
+    addItemToHotbar(toolItem.type, toolItem.itemId);
+    return;
   }
 
   if (item === "potion") {
@@ -628,35 +695,37 @@ function updateHotbar() {
   hotbar.innerHTML = "";
 
   state.hotbar.forEach((item, index) => {
-    const axeItem = hotbarAxeItem(item);
-    const axe = axeItem ? getAxeById(axeItem.itemId) : null;
+    const toolItem = hotbarToolItem(item);
+    const tool = toolItem ? toolByHotbarItem(toolItem) : null;
     const slot = document.createElement("button");
     slot.className = "hotbar-slot";
     slot.type = "button";
-    slot.title = axe
-      ? "Basic Axe · " + axeDurabilityText(axe) + "/60 durability"
+    slot.title = tool
+      ? tool.name + " · " + toolDurabilityText(tool) + "/" + tool.maxDurability + " durability"
       : item === "potion"
         ? "Use Small Potion"
         : "Empty hotbar slot";
 
-    if (axe && state.equippedAxeId === axe.id) {
-      slot.classList.add("equipped");
-    }
+    const isEquipped =
+      tool && ((tool.type === "axe" && state.equippedAxeId === tool.id) ||
+      (tool.type === "sword" && state.equippedSwordId === tool.id));
+
+    if (isEquipped) slot.classList.add("equipped");
 
     const key = document.createElement("span");
     key.className = "hotbar-key";
     key.textContent = String(index + 1);
     slot.appendChild(key);
 
-    if (axe || item === "potion") {
+    if (tool || item === "potion") {
       const icon = document.createElement("img");
-      icon.src = axe ? images.axe.src : images.potion.src;
-      icon.alt = axe ? "Basic Axe" : "Small Potion";
+      icon.src = tool ? images[tool.type].src : images.potion.src;
+      icon.alt = tool ? tool.name : "Small Potion";
       slot.appendChild(icon);
 
       const count = document.createElement("span");
       count.className = "hotbar-count";
-      count.textContent = axe ? axeDurabilityText(axe) : "x" + state.potions;
+      count.textContent = tool ? toolDurabilityText(tool) : "x" + state.potions;
       slot.appendChild(count);
     }
 

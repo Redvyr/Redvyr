@@ -92,6 +92,7 @@ function createWorld() {
 
   spawnRareChests();
   restoreDroppedTools();
+  restoreDroppedLoot();
   spawnStarterSlimes();
 
   player.x = 520;
@@ -424,6 +425,8 @@ function update() {
   camera.x += (camera.tx - camera.x) * 0.075;
   camera.y += (camera.ty - camera.y) * 0.075;
 
+  closeRowanPanelsWhenFar();
+
   const near = nearbyInteractable();
   const prompt = $("interactPrompt");
 
@@ -466,6 +469,29 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
+function closeRowanPanelsWhenFar() {
+  const anyRowanPanelOpen =
+    !npcDialogue.classList.contains("hidden") ||
+    !buyPanel.classList.contains("hidden") ||
+    !sellPanel.classList.contains("hidden");
+
+  if (!anyRowanPanelOpen) return;
+
+  const rowan = objects.find((obj) => obj.kind === "npc" && obj.npcName === "Rowan");
+  if (!rowan) return;
+
+  const dx = player.x - (rowan.x + rowan.w / 2);
+  const dy = player.y - (rowan.y + rowan.h / 2);
+  const distance = Math.hypot(dx, dy);
+
+  if (distance > 190) {
+    closeNpcDialogue();
+    closeBuyPanel();
+    closeSellPanel();
+    toast("You walked away from Rowan.");
+  }
+}
+
 function nearbyInteractable() {
   const reach = { x: player.x - 58, y: player.y - 58, w: 116, h: 116 };
 
@@ -497,6 +523,10 @@ function interact() {
 
   if (obj.action === "pickupTool") {
     pickupDroppedTool(obj);
+  }
+
+  if (obj.action === "pickupLoot") {
+    pickupDroppedLoot(obj);
   }
 
   save();
@@ -738,10 +768,23 @@ function drawObject(obj) {
   if (obj.kind === "campfire") drawCampfire(drawX, obj.y, obj.w, obj.h);
   if (obj.kind === "npc") drawNpc(drawX, obj.y, obj.w, obj.h, obj.npcName || "Rowan");
   if (obj.kind === "slime") drawSlime(obj, drawX);
+
   if (obj.kind === "droppedaxe") {
     ctx.fillStyle = "rgba(0,0,0,0.20)";
     ctx.fillRect(drawX + 7, obj.y + 31, 28, 6);
     drawImg(images.axe, drawX, obj.y, obj.w, obj.h, "#a86b36");
+  }
+
+  if (obj.kind === "droppedsword") {
+    ctx.fillStyle = "rgba(0,0,0,0.20)";
+    ctx.fillRect(drawX + 7, obj.y + 31, 28, 6);
+    drawImg(images.sword, drawX, obj.y, obj.w, obj.h, "#d7eaff");
+  }
+
+  if (obj.kind === "slimegel") {
+    ctx.fillStyle = "rgba(0,0,0,0.18)";
+    ctx.fillRect(drawX + 5, obj.y + 25, 22, 5);
+    drawImg(images.slimegel, drawX, obj.y, obj.w, obj.h, "#59cf60");
   }
 }
 
@@ -767,14 +810,25 @@ function drawPlayer() {
 }
 
 function drawEquippedTool(bob) {
-  if (!equippedAxe()) return;
-  if (!images.axe.complete || images.axe.naturalWidth <= 0) return;
+  const sword = equippedSword();
+  const axe = equippedAxe();
+  const tool = sword || axe;
+  if (!tool) return;
 
-  const swingProgress = player.axeSwing > 0 ? (11 - player.axeSwing) / 11 : 0;
-  const rotation =
-    player.axeSwing > 0
-      ? -0.55 + Math.sin(swingProgress * Math.PI) * 1.15
-      : 0.2;
+  const image = sword ? images.sword : images.axe;
+  if (!image.complete || image.naturalWidth <= 0) return;
+
+  const swingFrames = sword ? 12 : 11;
+  const swingProgress = player.attackSwing > 0 && sword
+    ? (swingFrames - player.attackSwing) / swingFrames
+    : player.axeSwing > 0 && axe
+      ? (11 - player.axeSwing) / 11
+      : 0;
+
+  const isSwinging = sword ? player.attackSwing > 0 : player.axeSwing > 0;
+  const rotation = isSwinging
+    ? -0.55 + Math.sin(swingProgress * Math.PI) * 1.15
+    : sword ? 0.5 : 0.2;
 
   const anchorX = player.x + 25;
   const anchorY = player.y - 14 + bob;
@@ -782,7 +836,7 @@ function drawEquippedTool(bob) {
   ctx.save();
   ctx.translate(anchorX, anchorY);
   ctx.rotate(rotation);
-  ctx.drawImage(images.axe, -9, -9, 40, 40);
+  ctx.drawImage(image, -9, -9, sword ? 42 : 40, sword ? 42 : 40);
   ctx.restore();
 }
 

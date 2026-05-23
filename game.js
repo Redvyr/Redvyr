@@ -116,7 +116,9 @@ const files = {
   npc: "npc.png",
   potion: "potion.png",
   axe: "axe.png",
-  slime: "slime.png"
+  sword: "sword.png",
+  slime: "slime.png",
+  slimegel: "slimegel.png"
 };
 
 for (const key in files) {
@@ -132,12 +134,16 @@ const state = {
   wood: 0,
   stone: 0,
   potions: 0,
+  slimeGel: 0,
 
   axes: [],
+  swords: [],
   equippedAxeId: null,
+  equippedSwordId: null,
   nextItemId: 1,
   hotbar: [null, null, null, null, null],
   droppedTools: [],
+  droppedLoot: [],
 
   campLevel: 1,
   level: 1,
@@ -166,10 +172,10 @@ const state = {
 };
 
 const statInfo = [
-  { key: "strength", name: "Strength", desc: "Increases gathering damage." },
+  { key: "strength", name: "Strength", desc: "Physical power: gathering and punching." },
   { key: "defense", name: "Defense", desc: "Increases max HP." },
   { key: "magic", name: "Magic", desc: "Future spell power." },
-  { key: "sword", name: "Sword", desc: "Future melee damage." },
+  { key: "sword", name: "Sword", desc: "Increases damage dealt with swords." },
   { key: "archery", name: "Archery", desc: "Future projectile damage." }
 ];
 
@@ -240,7 +246,7 @@ function maxHp() {
 }
 
 function strengthMultiplier() {
-  return Math.min(4, 1 + state.stats.strength * 0.08);
+  return Number((1 + state.stats.strength * 0.08).toFixed(2));
 }
 
 function createBasicAxe(durability = 60) {
@@ -271,13 +277,41 @@ function axeDurabilityText(axe) {
     : axe.durability.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
 }
 
+function createBasicSword(durability = 80) {
+  const sword = {
+    id: "sword-" + state.nextItemId,
+    type: "sword",
+    name: "Basic Sword",
+    durability: Math.max(0, Math.min(80, Number(durability) || 80)),
+    maxDurability: 80
+  };
+
+  state.nextItemId += 1;
+  state.swords.push(sword);
+  return sword;
+}
+
+function getSwordById(itemId) {
+  return state.swords.find((sword) => sword.id === itemId) || null;
+}
+
+function equippedSword() {
+  return state.equippedSwordId ? getSwordById(state.equippedSwordId) : null;
+}
+
+function toolDurabilityText(tool) {
+  return Number.isInteger(tool.durability)
+    ? String(tool.durability)
+    : tool.durability.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
+}
+
 function gatheringDamage(resourceType = "") {
   const axeBonus =
     equippedAxe() && (resourceType === "wood" || resourceType === "bush")
       ? 0.35
       : 0;
 
-  return Number(Math.min(4, strengthMultiplier() + axeBonus).toFixed(2));
+  return Number((strengthMultiplier() + axeBonus).toFixed(2));
 }
 
 function addXp(amount) {
@@ -612,6 +646,7 @@ function loadSave() {
     state.wood = Number(data.wood || 0);
     state.stone = Number(data.stone || 0);
     state.potions = Number(data.potions || 0);
+    state.slimeGel = Number(data.slimeGel || 0);
 
     state.nextItemId = Math.max(1, Number(data.nextItemId || 1));
     state.axes = Array.isArray(data.axes)
@@ -626,6 +661,18 @@ function loadSave() {
           }))
       : [];
 
+    state.swords = Array.isArray(data.swords)
+      ? data.swords
+          .filter((sword) => sword && sword.durability > 0)
+          .map((sword) => ({
+            id: String(sword.id),
+            type: "sword",
+            name: "Basic Sword",
+            durability: Math.max(0, Math.min(80, Number(sword.durability) || 0)),
+            maxDurability: 80
+          }))
+      : [];
+
     // Migrate the old single-owned axe save into one real 60-durability item.
     if (state.axes.length === 0 && Boolean(data.axeOwned)) {
       createBasicAxe(60);
@@ -636,6 +683,12 @@ function loadSave() {
       return match ? Math.max(highest, Number(match[1])) : highest;
     }, 0);
     state.nextItemId = Math.max(state.nextItemId, highestAxeNumber + 1);
+
+    const highestSwordNumber = state.swords.reduce((highest, sword) => {
+      const match = sword.id.match(/^(?:sword-)(\d+)$/);
+      return match ? Math.max(highest, Number(match[1])) : highest;
+    }, 0);
+    state.nextItemId = Math.max(state.nextItemId, highestSwordNumber + 1);
 
     state.hotbar = Array.isArray(data.hotbar)
       ? data.hotbar.slice(0, 5).map((item) => {
@@ -648,6 +701,8 @@ function loadSave() {
 
     state.equippedAxeId =
       typeof data.equippedAxeId === "string" ? data.equippedAxeId : null;
+    state.equippedSwordId =
+      typeof data.equippedSwordId === "string" ? data.equippedSwordId : null;
 
     // Keep an equipped axe from the previous Phase 3E save equipped after migration.
     if (!state.equippedAxeId && Boolean(data.axeEquipped) && state.axes[0]) {
@@ -664,25 +719,44 @@ function loadSave() {
 
     state.droppedTools = Array.isArray(data.droppedTools)
       ? data.droppedTools
-          .filter((drop) => drop && drop.toolData && drop.toolData.type === "axe" && drop.toolData.durability > 0)
-          .map((drop) => ({
-            x: Number(drop.x || 0),
-            y: Number(drop.y || 0),
-            toolData: {
-              id: String(drop.toolData.id),
-              type: "axe",
-              name: "Basic Axe",
-              durability: Math.max(0, Math.min(60, Number(drop.toolData.durability) || 0)),
-              maxDurability: 60
-            }
-          }))
+          .filter((drop) =>
+            drop && drop.toolData &&
+            (drop.toolData.type === "axe" || drop.toolData.type === "sword") &&
+            drop.toolData.durability > 0
+          )
+          .map((drop) => {
+            const isSword = drop.toolData.type === "sword";
+            return {
+              x: Number(drop.x || 0),
+              y: Number(drop.y || 0),
+              toolData: {
+                id: String(drop.toolData.id),
+                type: isSword ? "sword" : "axe",
+                name: isSword ? "Basic Sword" : "Basic Axe",
+                durability: Math.max(0, Math.min(isSword ? 80 : 60, Number(drop.toolData.durability) || 0)),
+                maxDurability: isSword ? 80 : 60
+              }
+            };
+          })
       : [];
 
-    const highestDroppedAxeNumber = state.droppedTools.reduce((highest, drop) => {
-      const match = drop.toolData.id.match(/^(?:axe-)(\d+)$/);
+    const highestDroppedItemNumber = state.droppedTools.reduce((highest, drop) => {
+      const match = drop.toolData.id.match(/^(?:axe|sword)-(\d+)$/);
       return match ? Math.max(highest, Number(match[1])) : highest;
     }, 0);
-    state.nextItemId = Math.max(state.nextItemId, highestDroppedAxeNumber + 1);
+    state.nextItemId = Math.max(state.nextItemId, highestDroppedItemNumber + 1);
+
+    state.droppedLoot = Array.isArray(data.droppedLoot)
+      ? data.droppedLoot
+          .filter((drop) => drop && drop.type === "slimegel" && drop.count > 0)
+          .map((drop) => ({
+            id: String(drop.id),
+            type: "slimegel",
+            x: Number(drop.x || 0),
+            y: Number(drop.y || 0),
+            count: Math.max(1, Number(drop.count || 1))
+          }))
+      : [];
 
     state.campLevel = Number(data.campLevel || 1);
     state.level = Number(data.level || 1);
@@ -949,8 +1023,16 @@ function updateInventoryPanel() {
       maxDurability: axe.maxDurability,
       src: images.axe.src
     })),
+    ...state.swords.map((sword) => ({
+      type: "sword",
+      itemId: sword.id,
+      durability: sword.durability,
+      maxDurability: sword.maxDurability,
+      src: images.sword.src
+    })),
     ...makeStacks("wood", state.wood, images.wood),
     ...makeStacks("stone", state.stone, images.stone),
+    ...makeStacks("slimegel", state.slimeGel, images.slimegel),
     ...makeStacks("potion", state.potions, images.potion)
   ];
 
@@ -967,8 +1049,8 @@ function updateInventoryPanel() {
 
       const count = document.createElement("span");
       count.textContent =
-        item.type === "axe"
-          ? axeDurabilityText(item) + "/60"
+        item.type === "axe" || item.type === "sword"
+          ? toolDurabilityText(item) + "/" + item.maxDurability
           : "x" + item.count;
 
       slot.appendChild(img);
@@ -993,6 +1075,21 @@ function updateInventoryPanel() {
         }
 
         slot.addEventListener("dblclick", () => addItemToHotbar("axe", item.itemId));
+      }
+
+      if (item.type === "sword") {
+        slot.classList.add("assignable");
+        slot.title = "Basic Sword · " + toolDurabilityText(item) + "/80 durability. Click to select.";
+
+        if (state.hotbar.some((barItem) => hotbarSwordItem(barItem)?.itemId === item.itemId)) {
+          slot.classList.add("hotbar-linked");
+        }
+
+        if (state.equippedSwordId === item.itemId) {
+          slot.classList.add("equipped-item");
+        }
+
+        slot.addEventListener("dblclick", () => addItemToHotbar("sword", item.itemId));
       }
 
       if (item.type === "potion") {
@@ -1020,9 +1117,11 @@ function updateStatsPanel() {
 
   statPoints.textContent = state.statPoints;
   const heldAxe = equippedAxe();
+  const heldSword = equippedSword();
   statGatherDamage.textContent =
     strengthMultiplier().toFixed(2) + "x" +
-    (heldAxe ? " (+0.35x trees/bushes · " + axeDurabilityText(heldAxe) + "/60 axe)" : "");
+    (heldAxe ? " (+0.35x trees/bushes · " + toolDurabilityText(heldAxe) + "/60 axe)" : "") +
+    (heldSword ? " · Sword equipped" : "");
   statMaxHp.textContent = maxHp();
 
   statsList.innerHTML = "";
