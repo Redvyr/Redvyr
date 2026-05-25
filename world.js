@@ -437,9 +437,8 @@ function overlap(a, b) {
 function canMoveTo(x, y) {
   const box = playerHitbox(x, y);
 
-  if (typeof boxTouchesWater === "function" && boxTouchesWater(box)) {
-    return false;
-  }
+  // Water is walkable while world scale and terrain proportions are being tested.
+  // Camp placement and world spawns still avoid water.
 
   if (
     box.x < 0 ||

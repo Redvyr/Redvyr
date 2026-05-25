@@ -48,7 +48,6 @@ function randomEnemySpawnPoint(w = 52, h = 52, options = {}) {
     const distanceFromPlayer = Math.hypot(x + w / 2 - player.x, y + h / 2 - player.y);
     const distanceFromCamp = Math.hypot(x + w / 2 - campX, y + h / 2 - campY);
 
-    if (typeof boxTouchesWater === "function" && boxTouchesWater(testBox)) continue;
     if (typeof isInsideHomeTerritory === "function" && isInsideHomeTerritory(x + w / 2, y + h / 2)) continue;
     if (distanceFromPlayer < minPlayerDistance || distanceFromCamp < minCampDistance) continue;
 
@@ -408,13 +407,9 @@ function updateCombat() {
     const nextSlimeY = clamp(slime.y + moveY, 20, map.height - slime.h - 20);
     const nextSlimeBox = { x: nextSlimeX, y: nextSlimeY, w: slime.w, h: slime.h };
 
-    if (!(typeof boxTouchesWater === "function" && boxTouchesWater(nextSlimeBox))) {
-      slime.x = nextSlimeX;
-      slime.y = nextSlimeY;
-    } else {
-      slime.wanderAngle += Math.PI * (0.5 + Math.random() * 0.6);
-      slime.wanderTimer = randomInt(35, 95);
-    }
+    // Water has no movement collision during this world-layout experiment.
+    slime.x = nextSlimeX;
+    slime.y = nextSlimeY;
 
     if (distanceToPlayer < 42 && player.hurtCooldown <= 0) {
       hurtPlayer(slime.damage, slime);

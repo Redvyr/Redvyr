@@ -102,9 +102,9 @@ function paintRiver(startCol, startRow, length, initialAngle, width) {
       }
     }
 
-    angle += (nextTerrainRandom() - 0.5) * 0.46;
-    col += Math.cos(angle) * 0.95;
-    row += Math.sin(angle) * 0.95;
+    angle += (nextTerrainRandom() - 0.5) * 0.20;
+    col += Math.cos(angle) * 0.98;
+    row += Math.sin(angle) * 0.98;
 
     const cols = Math.floor(map.width / map.tile);
     const rows = Math.floor(map.height / map.tile);
@@ -116,31 +116,37 @@ function createWaterBodies() {
   const cols = Math.floor(map.width / map.tile);
   const rows = Math.floor(map.height / map.tile);
 
-  // One or two memorable lakes, plus smaller ponds.
-  const lakeCount = 2;
-  for (let i = 0; i < lakeCount; i++) {
-    const cx = 12 + nextTerrainRandom() * (cols - 24);
-    const cy = 10 + nextTerrainRandom() * (rows - 20);
-    const rx = i === 0 ? 7 + nextTerrainRandom() * 4 : 5 + nextTerrainRandom() * 3;
-    const ry = i === 0 ? 5 + nextTerrainRandom() * 3 : 4 + nextTerrainRandom() * 3;
+  // A larger world can support water features that feel spaced apart.
+  for (let i = 0; i < 3; i++) {
+    const cx = 15 + nextTerrainRandom() * (cols - 30);
+    const cy = 12 + nextTerrainRandom() * (rows - 24);
+    const rx = i === 0 ? 10 + nextTerrainRandom() * 5 : 6 + nextTerrainRandom() * 4;
+    const ry = i === 0 ? 7 + nextTerrainRandom() * 4 : 5 + nextTerrainRandom() * 3;
     paintLake(cx, cy, rx, ry);
   }
 
-  for (let i = 0; i < 7; i++) {
-    const cx = 7 + nextTerrainRandom() * (cols - 14);
-    const cy = 7 + nextTerrainRandom() * (rows - 14);
-    paintLake(cx, cy, 2.2 + nextTerrainRandom() * 3.4, 1.8 + nextTerrainRandom() * 2.8);
+  for (let i = 0; i < 8; i++) {
+    const cx = 9 + nextTerrainRandom() * (cols - 18);
+    const cy = 9 + nextTerrainRandom() * (rows - 18);
+    paintLake(cx, cy, 2.8 + nextTerrainRandom() * 3.8, 2.3 + nextTerrainRandom() * 3.2);
   }
 
-  const riverCount = 2;
-  for (let i = 0; i < riverCount; i++) {
-    const startFromSide = nextTerrainRandom() < 0.5;
-    const startCol = startFromSide ? 4 + nextTerrainRandom() * 7 : 10 + nextTerrainRandom() * (cols - 20);
-    const startRow = startFromSide ? 10 + nextTerrainRandom() * (rows - 20) : 4 + nextTerrainRandom() * 7;
-    const angle = startFromSide
-      ? (nextTerrainRandom() < 0.5 ? 0.05 : Math.PI - 0.05)
+  for (let i = 0; i < 3; i++) {
+    const horizontal = nextTerrainRandom() < 0.5;
+    const startCol = horizontal ? 4 : 14 + nextTerrainRandom() * (cols - 28);
+    const startRow = horizontal ? 14 + nextTerrainRandom() * (rows - 28) : 4;
+    const angle = horizontal
+      ? (nextTerrainRandom() < 0.5 ? 0.02 : Math.PI - 0.02)
       : (nextTerrainRandom() < 0.5 ? Math.PI / 2 : -Math.PI / 2);
-    paintRiver(startCol, startRow, 38 + Math.floor(nextTerrainRandom() * 38), angle, nextTerrainRandom() < 0.75 ? 0 : 1);
+
+    // Wider rivers read as real features instead of tiny one-tile streams.
+    paintRiver(
+      startCol,
+      startRow,
+      86 + Math.floor(nextTerrainRandom() * 78),
+      angle,
+      nextTerrainRandom() < 0.72 ? 1 : 2
+    );
   }
 }
 
@@ -173,7 +179,7 @@ function growNaturalTrail(startCol, startRow, length, angle, startWidth = 1) {
     if (nextTerrainRandom() < 0.03) width += 1;
     stampPath(col, row, width);
 
-    currentAngle += (nextTerrainRandom() - 0.5) * 0.23;
+    currentAngle += (nextTerrainRandom() - 0.5) * 0.11;
     const nextCol = col + Math.cos(currentAngle);
     const nextRow = row + Math.sin(currentAngle);
 
@@ -194,20 +200,30 @@ function growNaturalTrail(startCol, startRow, length, angle, startWidth = 1) {
 function createNaturalPaths() {
   const cols = Math.floor(map.width / map.tile);
   const rows = Math.floor(map.height / map.tile);
-  const hubCol = Math.floor(cols * (0.35 + nextTerrainRandom() * 0.3));
-  const hubRow = Math.floor(rows * (0.35 + nextTerrainRandom() * 0.3));
+  const hubCol = Math.floor(cols * (0.40 + nextTerrainRandom() * 0.20));
+  const hubRow = Math.floor(rows * (0.40 + nextTerrainRandom() * 0.20));
 
-  // Connected-but-rugged main routes.
-  for (let i = 0; i < 4; i++) {
-    const angle = (Math.PI * 2 * i) / 4 + (nextTerrainRandom() - 0.5) * 0.6;
-    growNaturalTrail(hubCol, hubRow, 34 + Math.floor(nextTerrainRandom() * 38), angle, 1);
+  const routeAngles = [
+    nextTerrainRandom() * 0.38,
+    Math.PI + nextTerrainRandom() * 0.38,
+    Math.PI / 2 + (nextTerrainRandom() - 0.5) * 0.42,
+    -Math.PI / 2 + (nextTerrainRandom() - 0.5) * 0.42
+  ];
+
+  for (const angle of routeAngles) {
+    growNaturalTrail(hubCol, hubRow, 80 + Math.floor(nextTerrainRandom() * 72), angle, 1);
   }
 
-  // Dead-end branches create more believable exploration paths.
   const pathArray = Array.from(generatedPathTiles);
-  for (let i = 0; i < 8 && pathArray.length; i++) {
+  for (let i = 0; i < 7 && pathArray.length; i++) {
     const [col, row] = pathArray[Math.floor(nextTerrainRandom() * pathArray.length)].split(",").map(Number);
-    growNaturalTrail(col, row, 10 + Math.floor(nextTerrainRandom() * 23), nextTerrainRandom() * Math.PI * 2, nextTerrainRandom() < 0.8 ? 0 : 1);
+    growNaturalTrail(
+      col,
+      row,
+      22 + Math.floor(nextTerrainRandom() * 38),
+      nextTerrainRandom() * Math.PI * 2,
+      1
+    );
   }
 }
 
@@ -227,20 +243,18 @@ function generatedBaseTile(col, row, biome) {
   const variation = seededHash(col, row, state.worldSeed + 191);
 
   if (biome === "rocky") {
-    if (variation < 0.56) return "rockpath";
-    if (variation < 0.68) return "path";
-    if (variation < 0.82) return "grassrock";
-    return "grass";
+    // Solid rocky ground is calmer and more intentional than random grass holes.
+    return "rockpath";
   }
 
   if (biome === "forest") {
-    if (variation < 0.07) return "grassflower";
-    if (variation < 0.12) return "grassrock";
+    if (variation < 0.06) return "grassflower";
+    if (variation < 0.09) return "grassrock";
     return "grass";
   }
 
-  if (variation < 0.10) return "grassflower";
-  if (variation < 0.14) return "grassrock";
+  if (variation < 0.07) return "grassflower";
+  if (variation < 0.10) return "grassrock";
   return "grass";
 }
 
@@ -266,18 +280,20 @@ function generateWorldTerrain() {
     const biomes = [];
 
     for (let col = 0; col < cols; col++) {
-      const forestField = smoothNoise(col, row, 18, 17) * 0.72 + smoothNoise(col, row, 8, 33) * 0.28;
-      const rockyField = smoothNoise(col, row, 22, 67) * 0.76 + smoothNoise(col, row, 9, 85) * 0.24;
+      // Broad fields create large calm regions instead of cramped biome patches.
+      const forestField = smoothNoise(col, row, 58, 17) * 0.84 + smoothNoise(col, row, 30, 33) * 0.16;
+      const rockyField = smoothNoise(col, row, 66, 67) * 0.86 + smoothNoise(col, row, 34, 85) * 0.14;
 
       let biome = "plains";
-      if (rockyField > 0.64) biome = "rocky";
-      else if (forestField > 0.59) biome = "forest";
+      if (rockyField > 0.66 && rockyField > forestField + 0.035) biome = "rocky";
+      else if (forestField > 0.60) biome = "forest";
 
       const key = tileKey(col, row);
       let tile = generatedBaseTile(col, row, biome);
 
       if (generatedPathTiles.has(key)) {
-        tile = seededHash(col, row, state.worldSeed + 291) < 0.055 ? "rockpath" : "path";
+        // Trails are almost entirely dirt so they stay readable.
+        tile = seededHash(col, row, state.worldSeed + 291) < 0.012 ? "rockpath" : "path";
       }
 
       if (waterTiles.has(key)) {

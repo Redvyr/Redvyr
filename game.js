@@ -239,8 +239,8 @@ const camera = {
 };
 
 const map = {
-  width: 3840,
-  height: 2560,
+  width: 6400,
+  height: 4096,
   tile: 32
 };
 
