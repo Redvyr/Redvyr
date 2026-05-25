@@ -1,44 +1,101 @@
-/* REDVYR KINGDOMS — PHASE 4B COMBAT
+/* REDVYR KINGDOMS — PHASE 4C COMBAT
    This file owns combat and enemies only:
    - Punching and sword attacks with Space
-   - Slime spawning/chasing/damage
-   - Slime Gel loot pickups
+   - Day slimes plus rising night-time enemy waves
+   - Dark Slimes and Slime Gel loot
    - Combat drawing/effects
 */
 
-function spawnStarterSlimes() {
-  const spawnPoints = [
-    { x: 1180, y: 210 },
-    { x: 1420, y: 330 },
-    { x: 1220, y: 820 },
-    { x: 1560, y: 870 },
-    { x: 720, y: 970 },
-    { x: 1080, y: 1050 }
-  ];
+let combatPhase = null;
+let nightSpawnTimer = 0;
+let nightWaveNumber = 0;
 
-  for (const point of spawnPoints) {
-    objects.push(createSlime(point.x, point.y));
+const NIGHT_ENEMY_CAP = 14;
+const NIGHT_WAVE_INTERVAL = 760;
+
+function spawnStarterSlimes() {
+  const startingCount = 6;
+
+  for (let i = 0; i < startingCount; i++) {
+    const point = randomEnemySpawnPoint(52, 52, {
+      minPlayerDistance: 300,
+      minCampDistance: 280
+    });
+
+    objects.push(createSlime(point.x, point.y, "normal", false));
+  }
+
+  combatPhase = cycleInfo().phase;
+  nightSpawnTimer = 0;
+  nightWaveNumber = 0;
+
+  if (combatPhase === "Night") {
+    beginNightDanger();
   }
 }
 
-function createSlime(x, y) {
+function randomEnemySpawnPoint(w = 52, h = 52, options = {}) {
+  const minPlayerDistance = Number(options.minPlayerDistance || 300);
+  const minCampDistance = Number(options.minCampDistance || 260);
+  const camp = objects.find((obj) => obj.kind === "campfire");
+  const campX = camp ? camp.x + camp.w / 2 : map.width / 2;
+  const campY = camp ? camp.y + camp.h / 2 : map.height / 2;
+
+  for (let attempt = 0; attempt < 160; attempt++) {
+    const x = randomInt(60, map.width - w - 60);
+    const y = randomInt(70, map.height - h - 60);
+    const testBox = { x, y, w, h };
+    const distanceFromPlayer = Math.hypot(x + w / 2 - player.x, y + h / 2 - player.y);
+    const distanceFromCamp = Math.hypot(x + w / 2 - campX, y + h / 2 - campY);
+
+    if (distanceFromPlayer < minPlayerDistance || distanceFromCamp < minCampDistance) continue;
+
+    const blocked = objects.some((obj) => {
+      if (obj.hidden || obj.kind === "slimegel" || obj.kind === "droppedaxe" || obj.kind === "droppedsword") return false;
+
+      const padding = obj.kind === "slime" ? 40 : 18;
+      const obstacle = {
+        x: obj.x - padding,
+        y: obj.y - padding,
+        w: obj.w + padding * 2,
+        h: obj.h + padding * 2
+      };
+
+      return overlap(testBox, obstacle);
+    });
+
+    if (!blocked) return { x, y };
+  }
+
+  return {
+    x: randomInt(80, map.width - w - 80),
+    y: randomInt(100, map.height - h - 80)
+  };
+}
+
+function createSlime(x, y, variant = "normal", nightSpawned = false) {
+  const isDark = variant === "dark";
+
   return {
     x,
     y,
     homeX: x,
     homeY: y,
-    w: 52,
-    h: 52,
+    w: isDark ? 56 : 52,
+    h: isDark ? 56 : 52,
     kind: "slime",
+    variant,
+    enemyName: isDark ? "Dark Slime" : "Slime",
+    nightSpawned,
     noCollision: true,
     interact: false,
-    hp: 12,
-    maxHp: 12,
-    damage: 8,
-    rewardGold: 4,
-    rewardXp: 14,
-    moveSpeed: 0.72,
-    chaseRadius: 230,
+    hp: isDark ? 22 : 12,
+    maxHp: isDark ? 22 : 12,
+    damage: isDark ? 12 : 8,
+    rewardGold: isDark ? 10 : 4,
+    rewardXp: isDark ? 28 : 14,
+    moveSpeed: isDark ? 0.92 : 0.72,
+    chaseRadius: isDark ? 300 : 230,
     wanderAngle: Math.random() * Math.PI * 2,
     wanderTimer: randomInt(50, 160),
     hurtFlash: 0,
@@ -154,19 +211,36 @@ function hitSlime(slime, damage, attackType) {
   slime.hidden = true;
   slime.respawning = true;
 
-  const gelCount = Math.random() < 0.35 ? 2 : 1;
+  const gelCount = slime.variant === "dark"
+    ? randomInt(2, 3)
+    : (Math.random() < 0.35 ? 2 : 1);
+
   state.gold += slime.rewardGold;
   addXp(slime.rewardXp);
   spawnSlimeGelDrop(slime.x + 10, slime.y + 20, gelCount);
   addFloatingText(slime.x, slime.y - 18, "+" + slime.rewardGold + " Gold");
-  toast("Slime defeated! +" + slime.rewardGold + " gold · Gel dropped");
+  toast(slime.enemyName + " defeated! +" + slime.rewardGold + " gold · Gel x" + gelCount);
 
   save();
   syncUI();
 
+  if (slime.nightSpawned) {
+    setTimeout(() => {
+      objects = objects.filter((obj) => obj !== slime);
+    }, 2500);
+    return;
+  }
+
   setTimeout(() => {
-    slime.x = slime.homeX + randomInt(-45, 45);
-    slime.y = slime.homeY + randomInt(-45, 45);
+    const respawn = randomEnemySpawnPoint(slime.w, slime.h, {
+      minPlayerDistance: 300,
+      minCampDistance: 280
+    });
+
+    slime.x = respawn.x;
+    slime.y = respawn.y;
+    slime.homeX = respawn.x;
+    slime.homeY = respawn.y;
     slime.hp = slime.maxHp;
     slime.hidden = false;
     slime.respawning = false;
@@ -224,7 +298,76 @@ function pickupDroppedLoot(obj) {
   addFloatingText(obj.x, obj.y - 6, "+Gel x" + obj.lootData.count);
 }
 
+function updateNightEnemySpawning() {
+  const phase = cycleInfo().phase;
+
+  if (phase !== combatPhase) {
+    combatPhase = phase;
+
+    if (phase === "Night") {
+      beginNightDanger();
+    } else {
+      endNightDanger();
+    }
+  }
+
+  if (phase !== "Night") return;
+
+  nightSpawnTimer -= 1;
+  if (nightSpawnTimer <= 0) {
+    nightWaveNumber += 1;
+    const waveSize = nightWaveNumber >= 3 ? 2 : 1;
+    spawnNightWave(waveSize);
+    nightSpawnTimer = NIGHT_WAVE_INTERVAL;
+  }
+}
+
+function beginNightDanger() {
+  nightWaveNumber = 0;
+  nightSpawnTimer = 500;
+  toast("Night falls... slimes emerge from the dark.");
+  addFloatingText(player.x - 70, player.y - 75, "NIGHT FALLS");
+  spawnNightWave(3);
+}
+
+function endNightDanger() {
+  nightWaveNumber = 0;
+  nightSpawnTimer = 0;
+
+  const before = objects.length;
+  objects = objects.filter((obj) => !(obj.kind === "slime" && obj.nightSpawned));
+  const removed = before - objects.length;
+
+  if (removed > 0) {
+    toast("Dawn arrives. The night slimes retreat.");
+  }
+}
+
+function countNightEnemies() {
+  return objects.filter((obj) =>
+    obj.kind === "slime" && obj.nightSpawned && !obj.hidden
+  ).length;
+}
+
+function spawnNightWave(amount = 1) {
+  for (let i = 0; i < amount; i++) {
+    if (countNightEnemies() >= NIGHT_ENEMY_CAP) return;
+
+    const darkChance = Math.min(0.65, 0.28 + nightWaveNumber * 0.07);
+    const variant = Math.random() < darkChance ? "dark" : "normal";
+    const size = variant === "dark" ? 56 : 52;
+    const pos = randomEnemySpawnPoint(size, size, {
+      minPlayerDistance: 360,
+      minCampDistance: 330
+    });
+
+    objects.push(createSlime(pos.x, pos.y, variant, true));
+  }
+}
+
 function updateCombat() {
+  updateNightEnemySpawning();
+
   for (const slime of objects) {
     if (slime.kind !== "slime" || slime.hidden || slime.respawning) continue;
 
@@ -254,7 +397,7 @@ function updateCombat() {
       moveY = Math.sin(slime.wanderAngle) * 0.25;
 
       const homeDistance = Math.hypot(slime.homeX - slime.x, slime.homeY - slime.y);
-      if (homeDistance > 150) {
+      if (homeDistance > 150 && !slime.nightSpawned) {
         moveX = ((slime.homeX - slime.x) / homeDistance) * slime.moveSpeed;
         moveY = ((slime.homeY - slime.y) / homeDistance) * slime.moveSpeed;
       }
@@ -302,7 +445,7 @@ function hurtPlayer(damage, enemy) {
 
 function drawSlime(slime, x) {
   ctx.fillStyle = "rgba(0,0,0,0.20)";
-  ctx.fillRect(x + 7, slime.y + 45, 38, 6);
+  ctx.fillRect(x + 7, slime.y + slime.h - 7, slime.w - 14, 6);
 
   if (slime.hurtFlash > 0) {
     ctx.save();
@@ -312,15 +455,17 @@ function drawSlime(slime, x) {
     ctx.restore();
   }
 
-  drawImg(images.slime, x, slime.y, slime.w, slime.h, "#56b94f");
+  const slimeImage = slime.variant === "dark" ? images.darkslime : images.slime;
+  const fallback = slime.variant === "dark" ? "#623a96" : "#56b94f";
+  drawImg(slimeImage, x, slime.y, slime.w, slime.h, fallback);
 
-  const hpWidth = 45;
+  const hpWidth = slime.w - 7;
   const hpPercent = Math.max(0, slime.hp / slime.maxHp);
 
   ctx.fillStyle = "rgba(0,0,0,0.7)";
   ctx.fillRect(x + 3, slime.y - 9, hpWidth, 6);
 
-  ctx.fillStyle = "#e14335";
+  ctx.fillStyle = slime.variant === "dark" ? "#a35fe8" : "#e14335";
   ctx.fillRect(x + 3, slime.y - 9, hpWidth * hpPercent, 6);
 }
 

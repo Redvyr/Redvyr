@@ -878,6 +878,64 @@ label {
   font-weight: 900;
 }
 
+.fullscreen-prompt {
+  position: fixed;
+  inset: 0;
+  z-index: 26;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(0,0,0,0.72);
+}
+
+.fullscreen-card {
+  width: min(470px, 100%);
+  padding: 26px;
+  border-radius: 8px;
+  text-align: center;
+  background: #1d0d05;
+  border: 3px solid var(--gold);
+  box-shadow: 0 20px 70px rgba(0,0,0,0.65);
+}
+
+.fullscreen-card h2 {
+  margin-bottom: 10px;
+  font-family: Georgia, serif;
+  color: #ffe4a6;
+  font-size: 32px;
+  text-shadow: 2px 2px 0 #4a170b;
+}
+
+.fullscreen-card p {
+  color: rgba(255,240,200,0.88);
+  line-height: 1.5;
+  margin-bottom: 18px;
+}
+
+.fullscreen-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 13px;
+}
+
+.fullscreen-actions .main-btn {
+  margin-top: 0;
+}
+
+.skip-fullscreen-btn {
+  width: 42%;
+  padding: 12px 12px;
+  border-radius: 5px;
+  color: var(--cream);
+  background: rgba(0,0,0,0.28);
+  border: 2px solid rgba(242,195,95,0.5);
+}
+
+.fullscreen-card span {
+  color: rgba(255,240,200,0.65);
+  font-size: 12px;
+}
+
 .toast {
   position: fixed;
   z-index: 30;

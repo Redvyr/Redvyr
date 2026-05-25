@@ -925,9 +925,11 @@ function drawChest(x, y, w, h, opened, chestStyle) {
 function drawCampfire(x, y, w, h) {
   const radius = campLightRadius();
 
-  const gradient = ctx.createRadialGradient(x + 32, y + 32, 12, x + 32, y + 32, radius);
-  gradient.addColorStop(0, "rgba(255, 190, 60, 0.24)");
-  gradient.addColorStop(1, "rgba(255, 190, 60, 0)");
+  const gradient = ctx.createRadialGradient(x + 32, y + 32, 8, x + 32, y + 32, radius);
+  gradient.addColorStop(0, "rgba(255, 224, 112, 0.60)");
+  gradient.addColorStop(0.18, "rgba(255, 194, 70, 0.42)");
+  gradient.addColorStop(0.55, "rgba(255, 150, 38, 0.18)");
+  gradient.addColorStop(1, "rgba(255, 130, 26, 0)");
 
   ctx.fillStyle = gradient;
   ctx.beginPath();
@@ -967,10 +969,11 @@ function drawNightOverlay() {
     const sx = camp.x - camera.x + 32;
     const sy = camp.y - camera.y + 32;
 
-    const light = ctx.createRadialGradient(sx, sy, 12, sx, sy, campLightRadius());
-    light.addColorStop(0, "rgba(255, 198, 84, 0.26)");
-    light.addColorStop(0.45, "rgba(255, 198, 84, 0.12)");
-    light.addColorStop(1, "rgba(255, 198, 84, 0)");
+    const light = ctx.createRadialGradient(sx, sy, 8, sx, sy, campLightRadius());
+    light.addColorStop(0, "rgba(255, 232, 132, 0.66)");
+    light.addColorStop(0.18, "rgba(255, 203, 85, 0.48)");
+    light.addColorStop(0.55, "rgba(255, 164, 45, 0.23)");
+    light.addColorStop(1, "rgba(255, 136, 26, 0)");
 
     ctx.fillStyle = light;
     ctx.beginPath();

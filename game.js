@@ -32,6 +32,10 @@ const modal = $("modal");
 const modalTitle = $("modalTitle");
 const modalText = $("modalText");
 const toastEl = $("toast");
+const fullscreenPrompt = $("fullscreenPrompt");
+const enableFullscreenBtn = $("enableFullscreenBtn");
+const skipFullscreenBtn = $("skipFullscreenBtn");
+let fullscreenPromptShown = false;
 
 const inventoryPanel = $("inventoryPanel");
 const inventoryGrid = $("inventoryGrid");
@@ -118,6 +122,7 @@ const files = {
   axe: "axe.png",
   sword: "sword.png",
   slime: "slime.png",
+  darkslime: "darkslime.png",
   slimegel: "slimegel.png"
 };
 
@@ -539,7 +544,7 @@ function campUpgradeCost() {
 }
 
 function campLightRadius() {
-  return 90 + state.campLevel * 16;
+  return 126 + state.campLevel * 20;
 }
 
 function campHealRadius() {
@@ -874,7 +879,40 @@ $("playGameBtn").addEventListener("click", () => {
 
   syncUI();
   toast("Entering World A...");
+  setTimeout(showFullscreenPrompt, 300);
 });
+
+function showFullscreenPrompt() {
+  if (!fullscreenPrompt || fullscreenPromptShown || document.fullscreenElement) return;
+
+  fullscreenPromptShown = true;
+  fullscreenPrompt.classList.remove("hidden");
+}
+
+async function enterFullscreenMode() {
+  if (!fullscreenPrompt) return;
+
+  try {
+    if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+      await document.documentElement.requestFullscreen({ navigationUI: "hide" });
+      toast("Fullscreen enabled. Press Esc to exit.");
+    }
+  } catch {
+    toast("Fullscreen was blocked. You can still keep playing.");
+  }
+
+  fullscreenPrompt.classList.add("hidden");
+}
+
+if (enableFullscreenBtn) {
+  enableFullscreenBtn.addEventListener("click", enterFullscreenMode);
+}
+
+if (skipFullscreenBtn) {
+  skipFullscreenBtn.addEventListener("click", () => {
+    fullscreenPrompt.classList.add("hidden");
+  });
+}
 
 $("backToLobbyBtn").addEventListener("click", () => {
   gameScreen.classList.add("hidden");
