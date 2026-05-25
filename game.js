@@ -168,6 +168,9 @@ const state = {
   campPlaced: false,
   campX: null,
   campY: null,
+  playerX: null,
+  playerY: null,
+  hasWorldPosition: false,
   campLevel: 1,
   level: 1,
   xp: 0,
@@ -601,9 +604,9 @@ function campHealRate() {
 }
 
 function campTierName() {
-  if (state.campLevel >= 20) return "Kingdom Core Preview";
-  if (state.campLevel >= 10) return "Village Core Preview";
-  if (state.campLevel >= 5) return "Camp Core Preview";
+  if (state.campLevel >= 20) return "Kingdom Core";
+  if (state.campLevel >= 10) return "Village Core";
+  if (state.campLevel >= 5) return "Camp Core";
   return "Campfire";
 }
 
@@ -613,9 +616,9 @@ function campBenefitsHTML() {
     { level: 2, text: "Improved healing power" },
     { level: 3, text: "Bigger campfire light radius" },
     { level: 4, text: "Bigger healing radius" },
-    { level: 5, text: "Camp Core preview unlocked" },
-    { level: 10, text: "Village Core preview unlocked later" },
-    { level: 20, text: "Kingdom Core preview unlocked later" }
+    { level: 5, text: "Camp Core unlocked" },
+    { level: 10, text: "Village Core unlocked" },
+    { level: 20, text: "Kingdom Core unlocked" }
   ];
 
   return benefits
@@ -634,7 +637,7 @@ function updateCampPanel() {
   campBody.innerHTML = `
     <div class="camp-card">
       <strong>${campTierName()} · Level ${state.campLevel}</strong>
-      Your campfire is the heart of your future settlement. Upgrade it to improve healing, light, safety, and future kingdom systems.
+      Your home camp restores health and grows stronger through upgrades.
     </div>
 
     <div class="camp-card">
@@ -660,11 +663,7 @@ function updateCampPanel() {
       </div>
     </div>
 
-    <div class="camp-card">
-      <strong>Home Placement</strong>
-      Your campfire is your saved home and mob-death respawn point.
-      <button id="moveCampfireBtn" class="claim-btn" style="margin-top:10px; width:100%;">Move Campfire</button>
-    </div>
+    <div class="camp-card"><strong>Home</strong>Respawn point secured.</div>
   `;
 
   const canUpgrade =
@@ -675,13 +674,6 @@ function updateCampPanel() {
   campUpgradeBtn.disabled = !canUpgrade;
   campUpgradeBtn.textContent = canUpgrade ? "Upgrade Camp" : "Need More Resources";
 
-  const moveCampfireBtn = $("moveCampfireBtn");
-  if (moveCampfireBtn) {
-    moveCampfireBtn.addEventListener("click", () => {
-      closeCamp();
-      if (typeof beginCampfirePlacement === "function") beginCampfirePlacement(true);
-    });
-  }
 }
 
 function openCamp() {
@@ -850,6 +842,10 @@ function loadSave() {
     state.campPlaced = Boolean(data.campPlaced);
     state.campX = Number.isFinite(Number(data.campX)) ? Number(data.campX) : null;
     state.campY = Number.isFinite(Number(data.campY)) ? Number(data.campY) : null;
+    state.playerX = Number.isFinite(Number(data.playerX)) ? Number(data.playerX) : null;
+    state.playerY = Number.isFinite(Number(data.playerY)) ? Number(data.playerY) : null;
+    state.hasWorldPosition = Boolean(data.hasWorldPosition) &&
+      Number.isFinite(state.playerX) && Number.isFinite(state.playerY);
 
     state.campLevel = Number(data.campLevel || 1);
     state.level = Number(data.level || 1);
@@ -889,6 +885,12 @@ function loadSave() {
 }
 
 function save() {
+  if (!gameScreen.classList.contains("hidden") && Number.isFinite(player.x) && Number.isFinite(player.y)) {
+    state.playerX = Math.round(player.x);
+    state.playerY = Math.round(player.y);
+    state.hasWorldPosition = true;
+  }
+
   localStorage.setItem(saveKey, JSON.stringify(state));
 }
 
@@ -1356,13 +1358,20 @@ window.addEventListener("keydown", (event) => {
   const typingInField = ["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName);
   if (typingInField) return;
 
+  const key = event.key.toLowerCase();
+  const movementKeys = ["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright"];
+
   if (typeof isCampPlacementActive === "function" && isCampPlacementActive()) {
-    keys.clear();
-    event.preventDefault();
+    if (!movementKeys.includes(key)) {
+      event.preventDefault();
+      return;
+    }
+
+    keys.add(key);
     return;
   }
 
-  keys.add(event.key.toLowerCase());
+  keys.add(key);
 
   if (!gameScreen.classList.contains("hidden") && event.key.toLowerCase() === "e") {
     interact();
@@ -1397,9 +1406,17 @@ window.addEventListener("keyup", (event) => {
 });
 
 
+window.addEventListener("beforeunload", () => {
+  save();
+});
+
+setInterval(() => {
+  if (!gameScreen.classList.contains("hidden")) save();
+}, 5000);
+
 loadSave();
 createWorld();
 loop();
 
-// Show fullscreen invitation on the landing screen; entering fullscreen still needs a click.
+// Show fullscreen invitation on the landing screen.
 setTimeout(showFullscreenPrompt, 120);

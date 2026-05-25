@@ -30,22 +30,20 @@ function isCampPlacementActive() {
   return campPlacementState.active;
 }
 
-function beginCampfirePlacement(relocating = false) {
-  if (gameScreen.classList.contains("hidden")) return;
+function beginCampfirePlacement() {
+  if (gameScreen.classList.contains("hidden") || state.campPlaced) return;
 
   closeAllGamePanels();
   closeNpcDialogue();
   closeBuyPanel();
   closeSellPanel();
-  keys.clear();
 
-  const camp = currentCampfire();
-  const startX = camp ? camp.x : Math.round((player.x + 54) / CAMP_PLACEMENT_SNAP) * CAMP_PLACEMENT_SNAP;
-  const startY = camp ? camp.y : Math.round((player.y + 34) / CAMP_PLACEMENT_SNAP) * CAMP_PLACEMENT_SNAP;
+  const startX = Math.round((player.x + 54) / CAMP_PLACEMENT_SNAP) * CAMP_PLACEMENT_SNAP;
+  const startY = Math.round((player.y + 34) / CAMP_PLACEMENT_SNAP) * CAMP_PLACEMENT_SNAP;
 
   campPlacementState.active = true;
   campPlacementState.confirming = false;
-  campPlacementState.relocating = Boolean(relocating && camp);
+  campPlacementState.relocating = false;
   campPlacementState.targetX = clamp(startX, 32, map.width - 96);
   campPlacementState.targetY = clamp(startY, 32, map.height - 96);
   campPlacementState.previewX = campPlacementState.targetX;
@@ -55,7 +53,7 @@ function beginCampfirePlacement(relocating = false) {
   canvas.classList.add("placing-campfire");
   campPlacementGuide.classList.remove("hidden");
   campPlacementConfirm.classList.add("hidden");
-  toast(camp ? "Choose a new campfire location." : "Choose where to place your first campfire.");
+  toast("Choose where to establish your home.");
 }
 
 function endCampfirePlacement() {
@@ -72,7 +70,7 @@ function canPlaceCampfireAt(x, y) {
 
   for (const obj of objects) {
     if (obj.hidden) continue;
-    if (obj.kind === "campfire" && campPlacementState.relocating) continue;
+    if (obj.kind === "campfire") continue;
 
     const padding = obj.kind === "npc" ? 46 : 14;
     const blocked = { x: obj.x - padding, y: obj.y - padding, w: obj.w + padding * 2, h: obj.h + padding * 2 };
@@ -104,8 +102,8 @@ function confirmCampfirePlacement() {
   endCampfirePlacement();
   save();
   syncUI();
-  toast("Campfire placed! This is now your home.");
-  addFloatingText(state.campX, state.campY - 10, "HOME CAMP");
+  toast("Home established.");
+  addFloatingText(state.campX, state.campY - 10, "HOME");
 }
 
 campPlacementCanvas.addEventListener("mousemove", (event) => {
@@ -145,31 +143,6 @@ function createWorld() {
   if (state.campPlaced && Number.isFinite(state.campX) && Number.isFinite(state.campY)) {
     objects.push(makeCampfireObject(state.campX, state.campY));
   }
-
-  objects.push({
-    x: 385,
-    y: 258,
-    w: 64,
-    h: 64,
-    kind: "chest",
-    interact: true,
-    label: "open starter chest",
-    action: "chest",
-    chestType: "starter",
-    used: false
-  });
-
-  objects.push({
-    x: 505,
-    y: 224,
-    w: 92,
-    h: 116,
-    kind: "npc",
-    interact: true,
-    label: "talk to Rowan",
-    action: "npc",
-    npcName: "Rowan"
-  });
 
   for (let i = 0; i < 26; i++) {
     const pos = randomSafePosition(64, 96);
@@ -259,16 +232,29 @@ function createWorld() {
   restoreDroppedLoot();
   spawnStarterSlimes();
 
-  player.x = 520;
-  player.y = 430;
+  if (state.hasWorldPosition && Number.isFinite(state.playerX) && Number.isFinite(state.playerY)) {
+    player.x = clamp(state.playerX, 70, map.width - 70);
+    player.y = clamp(state.playerY, 90, map.height - 70);
+  } else if (state.campPlaced && Number.isFinite(state.campX) && Number.isFinite(state.campY)) {
+    player.x = state.campX + 32;
+    player.y = state.campY + 96;
+  } else {
+    const firstSpawn = randomFirstPlayerSpawn();
+    player.x = firstSpawn.x;
+    player.y = firstSpawn.y;
+    state.playerX = player.x;
+    state.playerY = player.y;
+    state.hasWorldPosition = true;
+  }
+
   player.vx = 0;
   player.vy = 0;
 
-  camera.x = 0;
-  camera.y = 0;
+  camera.x = clamp(player.x - canvas.width / 2, 0, map.width - canvas.width);
+  camera.y = clamp(player.y - canvas.height / 2, 0, map.height - canvas.height);
 
   if (!state.campPlaced) {
-    setTimeout(() => beginCampfirePlacement(false), 60);
+    setTimeout(() => beginCampfirePlacement(), 60);
   }
 }
 
@@ -346,9 +332,8 @@ function buildTileVariants() {
 function isPathTile(x, y) {
   const onMainHorizontal = y >= 352 && y <= 608;
   const onMainVertical = x >= 768 && x <= 928;
-  const onCampClearing = y >= 224 && y <= 320 && x >= 256 && x <= 448;
 
-  return onMainHorizontal || onMainVertical || onCampClearing;
+  return onMainHorizontal || onMainVertical;
 }
 
 function randomSafePosition(w, h) {
@@ -401,14 +386,15 @@ function randomInt(min, max) {
 }
 
 function isInCampArea(box) {
-  const camp = {
-    x: 240,
-    y: 190,
-    w: 360,
-    h: 210
-  };
+  const camp = currentCampfire();
+  if (!camp) return false;
 
-  return overlap(box, camp);
+  return overlap(box, {
+    x: camp.x - 105,
+    y: camp.y - 105,
+    w: camp.w + 210,
+    h: camp.h + 210
+  });
 }
 
 function isOnMainPath(box) {
@@ -430,14 +416,19 @@ function isOnMainPath(box) {
 }
 
 function isTooCloseToPlayer(box) {
-  const spawn = {
-    x: 400,
-    y: 330,
-    w: 260,
-    h: 220
-  };
+  return overlap(box, {
+    x: player.x - 115,
+    y: player.y - 95,
+    w: 230,
+    h: 190
+  });
+}
 
-  return overlap(box, spawn);
+function randomFirstPlayerSpawn() {
+  return {
+    x: Math.floor(randomRange(170, map.width - 170) / 32) * 32,
+    y: Math.floor(randomRange(180, map.height - 170) / 32) * 32
+  };
 }
 
 /* COLLISION */
@@ -515,22 +506,145 @@ function canMoveTo(x, y) {
   return true;
 }
 
+
+/* ROWAN — DAYTIME WANDERING TRADER */
+
+function findRowan() {
+  return objects.find((obj) => obj.kind === "npc" && obj.npcName === "Rowan" && !obj.hidden) || null;
+}
+
+function rowanPanelsOpen() {
+  return !npcDialogue.classList.contains("hidden") ||
+    !buyPanel.classList.contains("hidden") ||
+    !sellPanel.classList.contains("hidden");
+}
+
+function removeRowanForNight() {
+  const rowanExists = objects.some((obj) => obj.kind === "npc" && obj.npcName === "Rowan");
+  if (!rowanExists) return;
+
+  const wasTalking = rowanPanelsOpen();
+  objects = objects.filter((obj) => !(obj.kind === "npc" && obj.npcName === "Rowan"));
+
+  if (wasTalking) {
+    closeNpcDialogue();
+    closeBuyPanel();
+    closeSellPanel();
+    toast("Rowan has left for the night.");
+  }
+}
+
+function validRowanSpot(x, y) {
+  const box = { x: x + 16, y: y + 60, w: 54, h: 46 };
+  if (x < 40 || y < 40 || x + 92 > map.width - 40 || y + 116 > map.height - 40) return false;
+
+  for (const obj of objects) {
+    if (obj.hidden || obj.kind === "npc" || obj.noCollision) continue;
+    const blocked = { x: obj.x - 12, y: obj.y - 12, w: obj.w + 24, h: obj.h + 24 };
+    if (overlap(box, blocked)) return false;
+  }
+  return true;
+}
+
+function chooseRowanDestination() {
+  const camp = currentCampfire();
+  const centerX = camp ? camp.x + 32 : player.x;
+  const centerY = camp ? camp.y + 32 : player.y;
+  let nearbyPath = [];
+  let nearbyGrass = [];
+
+  for (let tries = 0; tries < 100; tries++) {
+    const x = Math.floor(randomRange(Math.max(64, centerX - 420), Math.min(map.width - 120, centerX + 420)) / 32) * 32;
+    const y = Math.floor(randomRange(Math.max(64, centerY - 330), Math.min(map.height - 140, centerY + 330)) / 32) * 32;
+    if (!validRowanSpot(x, y)) continue;
+
+    if (isPathTile(x, y + 78)) nearbyPath.push({ x, y });
+    else nearbyGrass.push({ x, y });
+  }
+
+  const choices = nearbyPath.length ? nearbyPath : nearbyGrass;
+  return choices.length ? choices[randomInt(0, choices.length - 1)] : { x: centerX + 80, y: centerY };
+}
+
+function spawnRowanForDay() {
+  if (!state.campPlaced || cycleInfo().phase === "Night" || findRowan()) return;
+
+  const spot = chooseRowanDestination();
+  objects.push({
+    x: spot.x,
+    y: spot.y,
+    w: 92,
+    h: 116,
+    kind: "npc",
+    interact: true,
+    label: "talk to Rowan",
+    action: "npc",
+    npcName: "Rowan",
+    targetX: spot.x,
+    targetY: spot.y,
+    walkPause: randomInt(45, 130),
+    retargetTimer: randomInt(180, 360),
+    walkSpeed: 0.42
+  });
+}
+
+function updateRowanTrader() {
+  if (!state.campPlaced) return;
+
+  if (cycleInfo().phase === "Night") {
+    removeRowanForNight();
+    return;
+  }
+
+  spawnRowanForDay();
+  const rowan = findRowan();
+  if (!rowan || rowanPanelsOpen()) return;
+
+  if (rowan.walkPause > 0) {
+    rowan.walkPause -= 1;
+    return;
+  }
+
+  rowan.retargetTimer -= 1;
+  const targetDistance = Math.hypot(rowan.targetX - rowan.x, rowan.targetY - rowan.y);
+
+  if (targetDistance < 10 || rowan.retargetTimer <= 0) {
+    const next = chooseRowanDestination();
+    rowan.targetX = next.x;
+    rowan.targetY = next.y;
+    rowan.retargetTimer = randomInt(220, 460);
+    rowan.walkPause = randomInt(24, 110);
+    return;
+  }
+
+  const dx = rowan.targetX - rowan.x;
+  const dy = rowan.targetY - rowan.y;
+  const length = Math.hypot(dx, dy) || 1;
+  const nextX = rowan.x + (dx / length) * rowan.walkSpeed;
+  const nextY = rowan.y + (dy / length) * rowan.walkSpeed;
+
+  if (validRowanSpot(nextX, nextY)) {
+    rowan.x = nextX;
+    rowan.y = nextY;
+  } else {
+    rowan.retargetTimer = 0;
+  }
+}
+
 /* UPDATE / INTERACT */
 
 function update() {
   if (gameScreen.classList.contains("hidden")) return;
 
   if (campPlacementState.active) {
-    keys.clear();
     updateCampfirePlacementPreview();
     updateDayNightUI();
-    syncBarsOnly();
-    return;
+  } else {
+    healNearCampfire();
+    updateDayNightUI();
+    updateCombat();
+    updateRowanTrader();
   }
-
-  healNearCampfire();
-  updateDayNightUI();
-  updateCombat();
 
   for (const obj of objects) {
     if (obj.shake && obj.shake > 0) obj.shake -= 1;
@@ -598,9 +712,11 @@ function update() {
   camera.x += (camera.tx - camera.x) * 0.075;
   camera.y += (camera.ty - camera.y) * 0.075;
 
-  closeRowanPanelsWhenFar();
+  if (!campPlacementState.active) {
+    closeRowanPanelsWhenFar();
+  }
 
-  const near = nearbyInteractable();
+  const near = campPlacementState.active ? null : nearbyInteractable();
   const prompt = $("interactPrompt");
 
   if (near) {

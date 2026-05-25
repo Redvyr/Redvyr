@@ -353,7 +353,7 @@ function openNpcDialogue(npcName = "Rowan") {
   dialogueSellBtn.style.display = "none";
   dialogueNoBtn.style.display = "none";
 
-  typeNpcText("Hi, I'm " + npcName + ". How may I help you today?", () => {
+  typeNpcText("Need supplies, " + state.name + "?", () => {
     dialogueBuyBtn.style.display = "inline-flex";
     dialogueSellBtn.style.display = "inline-flex";
     dialogueNoBtn.style.display = "inline-flex";
