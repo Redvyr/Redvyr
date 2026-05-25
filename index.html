@@ -168,6 +168,7 @@
             </button>
             <button id="statsBtn" class="menu-action">Stats</button>
             <button id="craftingBtn" class="menu-action crafting-action">Crafting</button>
+            <button id="smeltingBtn" class="menu-action smelting-action">Smelting</button>
           </div>
         </div>
       </div>
@@ -183,7 +184,7 @@
         
         Menu: M · Hotbar: 1-5<br>
         Inventory: I · Quests: Q · Stats: C<br>
-        Crafting: Menu
+        Crafting / Smelting: Menu
       </div>
 
       <div id="inventoryPanel" class="side-panel hidden">
@@ -227,6 +228,19 @@
 
           <div id="craftingRecipeDetails" class="crafting-details hidden"></div>
         </div>
+      </div>
+
+
+      <div id="smeltingPanel" class="smelting-panel hidden">
+        <div class="smelting-header">
+          <div>
+            <h2>Smelting</h2>
+            <p>Refine raw ore into materials for settlement upgrades.</p>
+          </div>
+          <button id="closeSmeltingBtn" class="smelting-close">X</button>
+        </div>
+
+        <div id="smeltingRecipes" class="smelting-recipes"></div>
       </div>
 
       <div id="questPanel" class="side-panel quest-panel hidden">
@@ -346,6 +360,7 @@
   <script src="combat.js"></script>
   <script src="world.js"></script>
   <script src="crafting.js"></script>
+  <script src="smelting.js"></script>
   <script src="game.js"></script>
 </body>
 </html>

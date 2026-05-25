@@ -1725,3 +1725,132 @@ label {
 @media (max-width: 760px) {
   .camp-placement-confirm { right: 50%; transform: translateX(50%); bottom: 150px; }
 }
+
+
+/* PHASE 6B — SMELTING FOUNDATION */
+.smelting-action {
+  color: #ffd48e;
+}
+
+.smelting-panel {
+  position: absolute;
+  z-index: 46;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(690px, calc(100% - 44px));
+  padding-bottom: 16px;
+  border-radius: 10px;
+  border: 3px solid #f2c35f;
+  background: linear-gradient(180deg, rgba(44, 24, 13, 0.98), rgba(19, 11, 7, 0.98));
+  box-shadow: 0 20px 60px rgba(0,0,0,0.58);
+  color: #fff0c8;
+}
+
+.smelting-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 17px 12px;
+  border-bottom: 2px solid rgba(242,195,95,0.35);
+  margin-bottom: 14px;
+}
+
+.smelting-header h2 {
+  margin: 0;
+  color: #ffe4a6;
+  font-size: 25px;
+}
+
+.smelting-header p {
+  margin: 3px 0 0;
+  color: rgba(255,240,200,0.72);
+  font-size: 12px;
+}
+
+.smelting-close {
+  min-width: 37px;
+  height: 37px;
+  border-radius: 5px;
+  border: 2px solid #f2c35f;
+  color: #fff;
+  background: #962a1b;
+  font-weight: 900;
+}
+
+.smelting-recipes {
+  padding: 0 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.smelt-card {
+  display: grid;
+  grid-template-columns: 96px 1fr 135px;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border: 2px solid rgba(242,195,95,0.25);
+  border-radius: 8px;
+  background: rgba(0,0,0,0.2);
+}
+
+.smelt-card.ready {
+  border-color: rgba(116, 193, 79, 0.56);
+}
+
+.smelt-title {
+  color: #ffe4a6;
+  font-size: 18px;
+}
+
+.smelt-flow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.smelt-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: rgba(255,240,200,0.76);
+}
+
+.smelt-item img {
+  width: 42px;
+  height: 42px;
+  image-rendering: pixelated;
+  object-fit: contain;
+}
+
+.smelt-arrow {
+  color: #f2c35f;
+  font-size: 24px;
+}
+
+.smelt-item.output span {
+  color: #e9ffba;
+}
+
+.smelt-button {
+  width: 100%;
+  min-height: 44px;
+  border-radius: 6px;
+  border: 2px solid #f2c35f;
+  background: linear-gradient(#e47834, #9b341c);
+  color: #fff;
+  font-weight: 900;
+}
+
+.smelt-button:disabled {
+  filter: grayscale(1);
+  opacity: .45;
+}
+
+@media (max-width: 660px) {
+  .smelt-card {
+    grid-template-columns: 1fr;
+  }
+}

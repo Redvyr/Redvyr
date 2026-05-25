@@ -130,6 +130,9 @@ const files = {
   ironore: "ironore.png",
   rawcopper: "rawcopper.png",
   rawiron: "rawiron.png",
+  copper: "copper.png",
+  iron: "iron.png",
+  steel: "steel.png",
   sword: "sword.png",
   slime: "slime.png",
   darkslime: "darkslime.png",
@@ -153,6 +156,9 @@ const state = {
   slimeGel: 0,
   copperOre: 0,
   ironOre: 0,
+  copper: 0,
+  iron: 0,
+  steel: 0,
 
   axes: [],
   pickaxes: [],
@@ -584,11 +590,21 @@ function resetQuestBaseline() {
 /* CAMP */
 
 function campUpgradeCost() {
-  return {
+  const cost = {
     gold: 25 * state.campLevel,
     wood: 8 * state.campLevel,
-    stone: 5 * state.campLevel
+    stone: 5 * state.campLevel,
+    copper: 0,
+    slimeGel: 0
   };
+
+  // The Level 5 upgrade is the first true settlement milestone.
+  if (state.campLevel === 4) {
+    cost.copper = 4;
+    cost.slimeGel = 3;
+  }
+
+  return cost;
 }
 
 function campLightRadius() {
@@ -646,6 +662,8 @@ function updateCampPanel() {
         <div>${formatNumber(cost.gold)} Gold</div>
         <div>${cost.wood} Wood</div>
         <div>${cost.stone} Stone</div>
+        ${cost.copper > 0 ? `<div>${cost.copper} Copper</div>` : ""}
+        ${cost.slimeGel > 0 ? `<div>${cost.slimeGel} Slime Gel</div>` : ""}
       </div>
     </div>
 
@@ -669,10 +687,13 @@ function updateCampPanel() {
   const canUpgrade =
     state.gold >= cost.gold &&
     state.wood >= cost.wood &&
-    state.stone >= cost.stone;
+    state.stone >= cost.stone &&
+    state.copper >= cost.copper &&
+    state.slimeGel >= cost.slimeGel;
 
   campUpgradeBtn.disabled = !canUpgrade;
-  campUpgradeBtn.textContent = canUpgrade ? "Upgrade Camp" : "Need More Resources";
+  campUpgradeBtn.textContent =
+    canUpgrade ? (state.campLevel === 4 ? "Create Camp Core" : "Upgrade Camp") : "Need More Resources";
 
 }
 
@@ -706,6 +727,9 @@ function loadSave() {
     state.slimeGel = Number(data.slimeGel || 0);
     state.copperOre = Number(data.copperOre || 0);
     state.ironOre = Number(data.ironOre || 0);
+    state.copper = Number(data.copper || 0);
+    state.iron = Number(data.iron || 0);
+    state.steel = Number(data.steel || 0);
 
     state.nextItemId = Math.max(1, Number(data.nextItemId || 1));
     state.axes = Array.isArray(data.axes)
@@ -927,6 +951,7 @@ function syncUI() {
   if (!buyPanel.classList.contains("hidden")) updateBuyPanel();
   if (!sellPanel.classList.contains("hidden")) updateSellPanel();
   if (typeof updateCraftingPanel === "function") updateCraftingPanel();
+  if (typeof updateSmeltingPanel === "function") updateSmeltingPanel();
 }
 
 /* BUTTONS / PANELS */
@@ -1116,6 +1141,7 @@ function closeAllGamePanels() {
   closeStats();
   closeCamp();
   if (typeof closeCrafting === "function") closeCrafting();
+  if (typeof closeSmelting === "function") closeSmelting();
   closeBuyPanel();
   closeSellPanel();
   closeGameMenu();
@@ -1170,6 +1196,9 @@ function updateInventoryPanel() {
     ...makeStacks("stone", state.stone, images.stone),
     ...makeStacks("rawcopper", state.copperOre, images.rawcopper),
     ...makeStacks("rawiron", state.ironOre, images.rawiron),
+    ...makeStacks("copper", state.copper, images.copper),
+    ...makeStacks("iron", state.iron, images.iron),
+    ...makeStacks("steel", state.steel, images.steel),
     ...makeStacks("slimegel", state.slimeGel, images.slimegel),
     ...makeStacks("potion", state.potions, images.potion),
     ...makeStacks("speedpotion", state.speedPotions, images.speedpotion)

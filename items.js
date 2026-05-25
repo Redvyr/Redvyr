@@ -114,6 +114,18 @@ function selectedItemData() {
     return { type: "rawiron", name: "Raw Iron", count: state.ironOre };
   }
 
+  if (selectedInventoryItem.type === "copper" && state.copper > 0) {
+    return { type: "copper", name: "Copper", count: state.copper };
+  }
+
+  if (selectedInventoryItem.type === "iron" && state.iron > 0) {
+    return { type: "iron", name: "Iron", count: state.iron };
+  }
+
+  if (selectedInventoryItem.type === "steel" && state.steel > 0) {
+    return { type: "steel", name: "Steel", count: state.steel };
+  }
+
   if (selectedInventoryItem.type === "slimegel" && state.slimeGel > 0) {
     return { type: "slimegel", name: "Slime Gel", count: state.slimeGel };
   }
@@ -199,9 +211,15 @@ function updateInventoryItemDetails() {
   } else if (item.type === "rawcopper") {
     description.textContent = "Raw copper mined from an ore node. Save it for your first crafted upgrades.";
   } else if (item.type === "rawiron") {
-    description.textContent = "Raw iron mined from a rare ore node. It will power advanced tools and camp tiers.";
+    description.textContent = "Raw iron mined from a rare ore node. Smelt it into Iron.";
+  } else if (item.type === "copper") {
+    description.textContent = "Refined copper. Needed for your first Camp Core upgrade and future crafted gear.";
+  } else if (item.type === "iron") {
+    description.textContent = "Refined iron. Save it for stronger tools, weapons, and future village progress.";
+  } else if (item.type === "steel") {
+    description.textContent = "A high-tier metal reserved for future progression.";
   } else {
-    description.textContent = "A monster material dropped by slimes. Sell it now or save it for crafting later.";
+    description.textContent = "A monster material dropped by slimes. Sell it now or save it for crafting.";
   }
 
   details.appendChild(description);

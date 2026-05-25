@@ -534,45 +534,87 @@ function removeRowanForNight() {
   }
 }
 
-function validRowanSpot(x, y) {
-  const box = { x: x + 16, y: y + 60, w: 54, h: 46 };
+function rowanSpotIsOpen(x, y, rowan = null) {
+  const box = { x: x + 18, y: y + 61, w: 52, h: 43 };
   if (x < 40 || y < 40 || x + 92 > map.width - 40 || y + 116 > map.height - 40) return false;
 
   for (const obj of objects) {
-    if (obj.hidden || obj.kind === "npc" || obj.noCollision) continue;
-    const blocked = { x: obj.x - 12, y: obj.y - 12, w: obj.w + 24, h: obj.h + 24 };
+    if (obj === rowan || obj.hidden || obj.kind === "npc" || obj.noCollision) continue;
+    const blocked = { x: obj.x - 8, y: obj.y - 8, w: obj.w + 16, h: obj.h + 16 };
     if (overlap(box, blocked)) return false;
   }
+
   return true;
 }
 
-function chooseRowanDestination() {
+function buildRowanRoute() {
   const camp = currentCampfire();
-  const centerX = camp ? camp.x + 32 : player.x;
-  const centerY = camp ? camp.y + 32 : player.y;
-  let nearbyPath = [];
-  let nearbyGrass = [];
+  if (!camp) return null;
 
-  for (let tries = 0; tries < 100; tries++) {
-    const x = Math.floor(randomRange(Math.max(64, centerX - 420), Math.min(map.width - 120, centerX + 420)) / 32) * 32;
-    const y = Math.floor(randomRange(Math.max(64, centerY - 330), Math.min(map.height - 140, centerY + 330)) / 32) * 32;
-    if (!validRowanSpot(x, y)) continue;
+  const cx = camp.x + 32;
+  const cy = camp.y + 32;
+  const horizontalDistance = Math.abs(cy - 480);
+  const verticalDistance = Math.abs(cx - 848);
 
-    if (isPathTile(x, y + 78)) nearbyPath.push({ x, y });
-    else nearbyGrass.push({ x, y });
+  // If the camp is reasonably close to a world path, Rowan travels that straight path.
+  if (horizontalDistance <= verticalDistance && horizontalDistance < 430) {
+    const laneY = clamp(Math.round(clamp(cy, 390, 540) / 32) * 32 - 70, 300, map.height - 130);
+    return {
+      axis: "x",
+      lane: laneY,
+      min: clamp(cx - 480, 70, map.width - 160),
+      max: clamp(cx + 480, 130, map.width - 100),
+      onPath: true
+    };
   }
 
-  const choices = nearbyPath.length ? nearbyPath : nearbyGrass;
-  return choices.length ? choices[randomInt(0, choices.length - 1)] : { x: centerX + 80, y: centerY };
+  if (verticalDistance < 430) {
+    const laneX = clamp(Math.round(clamp(cx, 790, 890) / 32) * 32 - 46, 60, map.width - 130);
+    return {
+      axis: "y",
+      lane: laneX,
+      min: clamp(cy - 400, 70, map.height - 160),
+      max: clamp(cy + 400, 130, map.height - 100),
+      onPath: true
+    };
+  }
+
+  // If the player's home is far from the central paths, he walks a nearby straight grass route.
+  return {
+    axis: "x",
+    lane: clamp(camp.y + 72, 65, map.height - 130),
+    min: clamp(cx - 340, 70, map.width - 160),
+    max: clamp(cx + 340, 130, map.width - 100),
+    onPath: false
+  };
+}
+
+function findOpenRowanRoutePosition(route, direction = 1, rowan = null) {
+  const start = direction > 0 ? route.min : route.max;
+  const finish = direction > 0 ? route.max : route.min;
+  const step = direction > 0 ? 32 : -32;
+
+  for (let value = start; direction > 0 ? value <= finish : value >= finish; value += step) {
+    const x = route.axis === "x" ? value : route.lane;
+    const y = route.axis === "x" ? route.lane : value;
+    if (rowanSpotIsOpen(x, y, rowan)) return { x, y };
+  }
+
+  return null;
 }
 
 function spawnRowanForDay() {
   if (!state.campPlaced || cycleInfo().phase === "Night" || findRowan()) return;
 
-  const spot = chooseRowanDestination();
+  const route = buildRowanRoute();
+  if (!route) return;
+
+  const start = findOpenRowanRoutePosition(route, 1);
+  if (!start) return;
+
   objects.push({
-    x: spot.x,
-    y: spot.y,
+    x: start.x,
+    y: start.y,
     w: 92,
     h: 116,
     kind: "npc",
@@ -580,11 +622,10 @@ function spawnRowanForDay() {
     label: "talk to Rowan",
     action: "npc",
     npcName: "Rowan",
-    targetX: spot.x,
-    targetY: spot.y,
-    walkPause: randomInt(45, 130),
-    retargetTimer: randomInt(180, 360),
-    walkSpeed: 0.42
+    route: route,
+    direction: 1,
+    walkPause: randomInt(30, 85),
+    walkSpeed: 0.85
   });
 }
 
@@ -600,34 +641,36 @@ function updateRowanTrader() {
   const rowan = findRowan();
   if (!rowan || rowanPanelsOpen()) return;
 
+  if (!rowan.route) {
+    rowan.route = buildRowanRoute();
+    if (!rowan.route) return;
+  }
+
   if (rowan.walkPause > 0) {
     rowan.walkPause -= 1;
     return;
   }
 
-  rowan.retargetTimer -= 1;
-  const targetDistance = Math.hypot(rowan.targetX - rowan.x, rowan.targetY - rowan.y);
+  const route = rowan.route;
+  const value = route.axis === "x" ? rowan.x : rowan.y;
+  const boundary = rowan.direction > 0 ? route.max : route.min;
 
-  if (targetDistance < 10 || rowan.retargetTimer <= 0) {
-    const next = chooseRowanDestination();
-    rowan.targetX = next.x;
-    rowan.targetY = next.y;
-    rowan.retargetTimer = randomInt(220, 460);
-    rowan.walkPause = randomInt(24, 110);
+  if ((rowan.direction > 0 && value >= boundary) || (rowan.direction < 0 && value <= boundary)) {
+    rowan.direction *= -1;
+    rowan.walkPause = randomInt(55, 145);
     return;
   }
 
-  const dx = rowan.targetX - rowan.x;
-  const dy = rowan.targetY - rowan.y;
-  const length = Math.hypot(dx, dy) || 1;
-  const nextX = rowan.x + (dx / length) * rowan.walkSpeed;
-  const nextY = rowan.y + (dy / length) * rowan.walkSpeed;
+  const step = rowan.walkSpeed * rowan.direction;
+  const nextX = route.axis === "x" ? rowan.x + step : route.lane;
+  const nextY = route.axis === "y" ? rowan.y + step : route.lane;
 
-  if (validRowanSpot(nextX, nextY)) {
+  if (rowanSpotIsOpen(nextX, nextY, rowan)) {
     rowan.x = nextX;
     rowan.y = nextY;
   } else {
-    rowan.retargetTimer = 0;
+    rowan.direction *= -1;
+    rowan.walkPause = randomInt(38, 95);
   }
 }
 
@@ -1035,17 +1078,34 @@ function resourceRespawnTime() {
 function upgradeCamp() {
   const cost = campUpgradeCost();
 
-  if (state.gold >= cost.gold && state.wood >= cost.wood && state.stone >= cost.stone) {
+  const canUpgrade =
+    state.gold >= cost.gold &&
+    state.wood >= cost.wood &&
+    state.stone >= cost.stone &&
+    state.copper >= cost.copper &&
+    state.slimeGel >= cost.slimeGel;
+
+  if (canUpgrade) {
     state.gold -= cost.gold;
     state.wood -= cost.wood;
     state.stone -= cost.stone;
+    state.copper -= cost.copper;
+    state.slimeGel -= cost.slimeGel;
     state.campLevel += 1;
-    addXp(20);
+    addXp(state.campLevel === 5 ? 55 : 20);
 
-    toast("Camp upgraded to level " + state.campLevel + "!");
-    addFloatingText(player.x, player.y - 50, "Camp Lv." + state.campLevel);
+    if (state.campLevel === 5) {
+      toast("Camp Core established!");
+      addFloatingText(player.x, player.y - 50, "CAMP CORE");
+    } else {
+      toast("Camp upgraded to level " + state.campLevel + "!");
+      addFloatingText(player.x, player.y - 50, "Camp Lv." + state.campLevel);
+    }
   } else {
-    toast("Need " + formatNumber(cost.gold) + " gold, " + cost.wood + " wood, " + cost.stone + " stone.");
+    let message = "Need " + formatNumber(cost.gold) + " gold, " + cost.wood + " wood, " + cost.stone + " stone";
+    if (cost.copper > 0) message += ", " + cost.copper + " copper";
+    if (cost.slimeGel > 0) message += ", " + cost.slimeGel + " slime gel";
+    toast(message + ".");
   }
 
   save();

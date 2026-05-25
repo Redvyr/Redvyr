@@ -18,6 +18,7 @@ const CRAFTING_MATERIALS = {
   stone: { name: "Stone", image: "stone", count: () => state.stone, spend: (n) => state.stone -= n },
   rawcopper: { name: "Raw Copper", image: "rawcopper", count: () => state.copperOre, spend: (n) => state.copperOre -= n },
   rawiron: { name: "Raw Iron", image: "rawiron", count: () => state.ironOre, spend: (n) => state.ironOre -= n },
+  iron: { name: "Iron", image: "iron", count: () => state.iron, spend: (n) => state.iron -= n },
   slimegel: { name: "Slime Gel", image: "slimegel", count: () => state.slimeGel, spend: (n) => state.slimeGel -= n }
 };
 
@@ -45,8 +46,8 @@ const CRAFTING_RECIPES = [
     name: "Basic Sword",
     category: "tools",
     image: "sword",
-    description: "A crafted blade for fighting slimes.",
-    ingredients: { wood: 2, rawiron: 3, slimegel: 2 },
+    description: "A refined iron blade for fighting slimes.",
+    ingredients: { wood: 2, iron: 2, slimegel: 2 },
     craft: () => createBasicSword()
   }
 ];
