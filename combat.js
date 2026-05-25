@@ -10,8 +10,8 @@ let combatPhase = null;
 let nightSpawnTimer = 0;
 let nightWaveNumber = 0;
 
-const NIGHT_ENEMY_CAP = 9;
-const NIGHT_WAVE_INTERVAL = 1050;
+const NIGHT_ENEMY_CAP = 7;
+const NIGHT_WAVE_INTERVAL = 1300;
 
 function spawnStarterSlimes() {
   const startingCount = 6;

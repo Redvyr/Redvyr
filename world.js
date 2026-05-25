@@ -138,41 +138,36 @@ function createWorld() {
   camera.y = 0;
 }
 
+function createWorldChest(chestType, label) {
+  const pos = randomSafePosition(64, 64);
+
+  objects.push({
+    x: pos.x,
+    y: pos.y,
+    w: 64,
+    h: 64,
+    kind: chestType === "legendary" ? "legendarychest" : chestType === "rare" ? "rarechest" : "chest",
+    interact: true,
+    label: label,
+    action: "chest",
+    chestType: chestType,
+    used: false
+  });
+}
+
 function spawnRareChests() {
-  const rareCount = randomInt(4, 6);
-
-  for (let i = 0; i < rareCount; i++) {
-    const pos = randomSafePosition(64, 64);
-
-    objects.push({
-      x: pos.x,
-      y: pos.y,
-      w: 64,
-      h: 64,
-      kind: "rarechest",
-      interact: true,
-      label: "open rare chest",
-      action: "chest",
-      chestType: "rare",
-      used: false
-    });
+  // Common chests now give exploration rewards; special chests stay rare.
+  for (let i = 0; i < 7; i++) {
+    createWorldChest("normal", "open chest");
   }
 
-  if (Math.random() < 0.65) {
-    const pos = randomSafePosition(64, 64);
+  const rareCount = randomInt(1, 2);
+  for (let i = 0; i < rareCount; i++) {
+    createWorldChest("rare", "open rare chest");
+  }
 
-    objects.push({
-      x: pos.x,
-      y: pos.y,
-      w: 64,
-      h: 64,
-      kind: "legendarychest",
-      interact: true,
-      label: "open legendary chest",
-      action: "chest",
-      chestType: "legendary",
-      used: false
-    });
+  if (Math.random() < 0.22) {
+    createWorldChest("legendary", "open legendary chest");
   }
 }
 
@@ -570,6 +565,12 @@ function interact() {
   syncUI();
 }
 
+function relocateChest(obj) {
+  const newPos = randomSafePosition(obj.w, obj.h);
+  obj.x = newPos.x;
+  obj.y = newPos.y;
+}
+
 function openChest(obj) {
   if (obj.used) {
     toast("Chest is empty.");
@@ -579,38 +580,42 @@ function openChest(obj) {
   obj.used = true;
   obj.hidden = true;
 
-  let goldReward = 20;
+  let goldReward = randomInt(12, 28);
   let xpReward = 8;
   let woodReward = 0;
   let stoneReward = 0;
   let healthPotionReward = 0;
   let speedPotionReward = 0;
-  let message = "+Gold";
+  let message = "Chest!";
 
   if (obj.chestType === "starter") {
     goldReward = 20;
     xpReward = 10;
-    healthPotionReward = Math.random() < 0.10 ? 1 : 0;
     message = "Starter Chest!";
   }
 
+  if (obj.chestType === "normal") {
+    goldReward = randomInt(12, 32);
+    xpReward = 9;
+    woodReward = Math.random() < 0.28 ? randomInt(1, 3) : 0;
+    stoneReward = Math.random() < 0.24 ? randomInt(1, 3) : 0;
+  }
+
   if (obj.chestType === "rare") {
-    goldReward = randomInt(60, 120);
+    goldReward = randomInt(55, 105);
     xpReward = 20;
-    woodReward = Math.random() < 0.45 ? randomInt(2, 6) : 0;
-    stoneReward = Math.random() < 0.45 ? randomInt(2, 6) : 0;
-    healthPotionReward = Math.random() < 0.22 ? 1 : 0;
-    speedPotionReward = Math.random() < 0.14 ? 1 : 0;
+    woodReward = Math.random() < 0.38 ? randomInt(2, 5) : 0;
+    stoneReward = Math.random() < 0.38 ? randomInt(2, 5) : 0;
     message = "RARE CHEST!";
   }
 
   if (obj.chestType === "legendary") {
-    goldReward = randomInt(200, 350);
+    goldReward = randomInt(180, 290);
     xpReward = 60;
-    woodReward = randomInt(8, 18);
-    stoneReward = randomInt(8, 18);
-    healthPotionReward = 1;
-    speedPotionReward = Math.random() < 0.55 ? 1 : 0;
+    woodReward = randomInt(7, 15);
+    stoneReward = randomInt(7, 15);
+    healthPotionReward = Math.random() < 0.10 ? 1 : 0;
+    speedPotionReward = Math.random() < 0.05 ? 1 : 0;
     message = "LEGENDARY!";
   }
 
@@ -629,9 +634,14 @@ function openChest(obj) {
   if (healthPotionReward > 0) addFloatingText(obj.x, obj.y + 56, "+Health Potion");
   if (speedPotionReward > 0) addFloatingText(obj.x, obj.y + 74, "+Speed Potion");
 
-  const respawnTime = obj.chestType === "legendary" ? 90000 : 45000;
+  const respawnTime =
+    obj.chestType === "legendary" ? 110000 :
+    obj.chestType === "rare" ? 70000 :
+    obj.chestType === "starter" ? 60000 :
+    42000;
 
   setTimeout(() => {
+    relocateChest(obj);
     obj.used = false;
     obj.hidden = false;
   }, respawnTime);

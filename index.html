@@ -167,6 +167,7 @@
               <span>Inventory</span>
             </button>
             <button id="statsBtn" class="menu-action">Stats</button>
+            <button id="craftingBtn" class="menu-action crafting-action">Crafting</button>
           </div>
         </div>
       </div>
@@ -181,7 +182,8 @@
         Attack: Space<br>
         Fullscreen: offered on entry<br>
         Menu: M · Hotbar: 1-5<br>
-        Inventory: I · Quests: Q · Stats: C
+        Inventory: I · Quests: Q · Stats: C<br>
+        Crafting: Menu
       </div>
 
       <div id="inventoryPanel" class="side-panel hidden">
@@ -197,6 +199,34 @@
 
         <p class="inventory-help">Select tools to equip or drop them. Potions can be placed in your hotbar. Save ores for future crafting.</p>
         <div id="inventoryGrid" class="inventory-grid"></div>
+      </div>
+
+
+      <div id="craftingPanel" class="crafting-panel hidden">
+        <div class="crafting-header">
+          <div>
+            <h2>Crafting</h2>
+            <p>Turn gathered materials into useful gear.</p>
+          </div>
+          <button id="closeCraftingBtn" class="crafting-close">X</button>
+        </div>
+
+        <div class="crafting-layout">
+          <div class="crafting-browser">
+            <input id="craftingSearch" class="crafting-search" type="text" placeholder="Search recipes..." maxlength="28" />
+            <div id="craftingCategories" class="crafting-categories">
+              <button class="craft-category active" data-craft-category="all">Everything</button>
+              <button class="craft-category" data-craft-category="tools">Armor / Tools</button>
+              <button class="craft-category" data-craft-category="potions">Potions</button>
+              <button class="craft-category" data-craft-category="building">Building</button>
+              <button class="craft-category" data-craft-category="nature">Nature / Farming</button>
+              <button class="craft-category" data-craft-category="misc">Misc</button>
+            </div>
+            <div id="craftingRecipeGrid" class="crafting-recipe-grid"></div>
+          </div>
+
+          <div id="craftingRecipeDetails" class="crafting-details hidden"></div>
+        </div>
       </div>
 
       <div id="questPanel" class="side-panel quest-panel hidden">
@@ -282,10 +312,10 @@
       </div>
     </div>
 
-    <div id="fullscreenPrompt" class="fullscreen-prompt hidden">
+    <div id="fullscreenPrompt" class="fullscreen-prompt hidden landing-fullscreen">
       <div class="fullscreen-card">
         <h2>Play Fullscreen?</h2>
-        <p>Redvyr Kingdoms feels better with a larger world view and fewer distractions.</p>
+        <p>Redvyr Kingdoms feels better fullscreen. Enter fullscreen before beginning your adventure?</p>
         <div class="fullscreen-actions">
           <button id="enableFullscreenBtn" class="main-btn">Go Fullscreen</button>
           <button id="skipFullscreenBtn" class="skip-fullscreen-btn">Not Now</button>
@@ -300,6 +330,7 @@
   <script src="items.js"></script>
   <script src="combat.js"></script>
   <script src="world.js"></script>
+  <script src="crafting.js"></script>
   <script src="game.js"></script>
 </body>
 </html>

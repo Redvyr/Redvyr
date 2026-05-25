@@ -899,6 +899,7 @@ function syncUI() {
 
   if (!buyPanel.classList.contains("hidden")) updateBuyPanel();
   if (!sellPanel.classList.contains("hidden")) updateSellPanel();
+  if (typeof updateCraftingPanel === "function") updateCraftingPanel();
 }
 
 /* BUTTONS / PANELS */
@@ -942,7 +943,6 @@ $("playGameBtn").addEventListener("click", () => {
 
   syncUI();
   toast("Entering World A...");
-  setTimeout(showFullscreenPrompt, 300);
 });
 
 function showFullscreenPrompt() {
@@ -1088,6 +1088,7 @@ function closeAllGamePanels() {
   closeQuest();
   closeStats();
   closeCamp();
+  if (typeof closeCrafting === "function") closeCrafting();
   closeBuyPanel();
   closeSellPanel();
   closeGameMenu();
@@ -1365,3 +1366,6 @@ window.addEventListener("keyup", (event) => {
 loadSave();
 createWorld();
 loop();
+
+// Show fullscreen invitation on the landing screen; entering fullscreen still needs a click.
+setTimeout(showFullscreenPrompt, 120);
