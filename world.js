@@ -67,6 +67,7 @@ function endCampfirePlacement() {
 function canPlaceCampfireAt(x, y) {
   const box = { x: x + 5, y: y + 7, w: 54, h: 49 };
   if (x < 32 || y < 32 || x + 64 > map.width - 32 || y + 64 > map.height - 32) return false;
+  if (typeof boxTouchesWater === "function" && boxTouchesWater(box)) return false;
 
   for (const obj of objects) {
     if (obj.hidden) continue;
@@ -135,117 +136,90 @@ if (campPlacementRetryButton) campPlacementRetryButton.addEventListener("click",
   campPlacementConfirm.classList.add("hidden");
 });
 
+function addWorldResource(kind, action, label, count, options = {}) {
+  const preferredBiomes = options.preferredBiomes || [];
+  const w = options.w || 52;
+  const h = options.h || 48;
+
+  for (let i = 0; i < count; i++) {
+    const pos = randomSafePosition(w, h, preferredBiomes);
+
+    objects.push(makeResource({
+      x: pos.x,
+      y: pos.y,
+      w,
+      h,
+      kind,
+      action,
+      label,
+      amount: options.amount || 1,
+      maxHp: randomInt(options.minHp || 2, options.maxHp || 4),
+      requiresPickaxe: Boolean(options.requiresPickaxe),
+      noCollision: Boolean(options.noCollision)
+    }));
+  }
+}
+
 function createWorld() {
   objects = [];
   floatingTexts = [];
-  tileVariants = buildTileVariants();
+
+  if (typeof generateWorldTerrain === "function") {
+    generateWorldTerrain();
+  } else {
+    tileVariants = buildTileVariants();
+  }
+
+  let spawn;
+  if (state.hasWorldPosition && Number.isFinite(state.playerX) && Number.isFinite(state.playerY)) {
+    spawn = typeof findNearestDryPosition === "function"
+      ? findNearestDryPosition(state.playerX, state.playerY, 36, 42)
+      : { x: state.playerX, y: state.playerY };
+  } else if (state.campPlaced && Number.isFinite(state.campX) && Number.isFinite(state.campY)) {
+    spawn = typeof findNearestDryPosition === "function"
+      ? findNearestDryPosition(state.campX + 32, state.campY + 96, 36, 42)
+      : { x: state.campX + 32, y: state.campY + 96 };
+  } else {
+    spawn = randomFirstPlayerSpawn();
+  }
+
+  player.x = spawn.x;
+  player.y = spawn.y;
+  state.playerX = player.x;
+  state.playerY = player.y;
+  state.hasWorldPosition = true;
 
   if (state.campPlaced && Number.isFinite(state.campX) && Number.isFinite(state.campY)) {
     objects.push(makeCampfireObject(state.campX, state.campY));
   }
 
-  for (let i = 0; i < 26; i++) {
-    const pos = randomSafePosition(64, 96);
-
-    objects.push(makeResource({
-      x: pos.x,
-      y: pos.y,
-      w: 64,
-      h: 96,
-      kind: "tree",
-      action: "wood",
-      label: "hit tree",
-      amount: 2,
-      maxHp: randomInt(5, 9)
-    }));
-  }
-
-  for (let i = 0; i < 16; i++) {
-    const pos = randomSafePosition(52, 44);
-
-    objects.push(makeResource({
-      x: pos.x,
-      y: pos.y,
-      w: 52,
-      h: 44,
-      kind: "rock",
-      action: "stone",
-      label: "mine rock",
-      amount: 2,
-      maxHp: randomInt(7, 12)
-    }));
-  }
-
-  for (let i = 0; i < 8; i++) {
-    const pos = randomSafePosition(52, 48);
-
-    objects.push(makeResource({
-      x: pos.x,
-      y: pos.y,
-      w: 52,
-      h: 48,
-      kind: "copperore",
-      action: "copper",
-      label: "mine copper ore",
-      amount: 1,
-      maxHp: randomInt(13, 17),
-      requiresPickaxe: true
-    }));
-  }
-
-  for (let i = 0; i < 4; i++) {
-    const pos = randomSafePosition(52, 48);
-
-    objects.push(makeResource({
-      x: pos.x,
-      y: pos.y,
-      w: 52,
-      h: 48,
-      kind: "ironore",
-      action: "iron",
-      label: "mine iron ore",
-      amount: 1,
-      maxHp: randomInt(20, 25),
-      requiresPickaxe: true
-    }));
-  }
-
-  for (let i = 0; i < 20; i++) {
-    const pos = randomSafePosition(48, 54);
-
-    objects.push(makeResource({
-      x: pos.x,
-      y: pos.y,
-      w: 48,
-      h: 54,
-      kind: Math.random() < 0.5 ? "bush1" : "bush2",
-      action: "bush",
-      label: "shake bush",
-      amount: 1,
-      maxHp: randomInt(2, 3),
-      noCollision: true
-    }));
-  }
+  // Broad region spawning: forests are resource-rich, plains stay open, rocky ground holds mining.
+  addWorldResource("tree", "wood", "hit tree", 62, {
+    preferredBiomes: ["forest"], w: 64, h: 96, amount: 2, minHp: 5, maxHp: 9
+  });
+  addWorldResource("tree", "wood", "hit tree", 10, {
+    preferredBiomes: ["plains"], w: 64, h: 96, amount: 2, minHp: 5, maxHp: 9
+  });
+  addWorldResource("bush1", "bush", "shake bush", 25, {
+    preferredBiomes: ["plains"], w: 48, h: 54, amount: 1, minHp: 2, maxHp: 3, noCollision: true
+  });
+  addWorldResource("bush2", "bush", "shake bush", 23, {
+    preferredBiomes: ["forest", "plains"], w: 48, h: 54, amount: 1, minHp: 2, maxHp: 3, noCollision: true
+  });
+  addWorldResource("rock", "stone", "mine rock", 34, {
+    preferredBiomes: ["rocky"], w: 52, h: 44, amount: 2, minHp: 7, maxHp: 12
+  });
+  addWorldResource("copperore", "copper", "mine copper ore", 13, {
+    preferredBiomes: ["rocky"], w: 52, h: 48, amount: 1, minHp: 13, maxHp: 17, requiresPickaxe: true
+  });
+  addWorldResource("ironore", "iron", "mine iron ore", 7, {
+    preferredBiomes: ["rocky"], w: 52, h: 48, amount: 1, minHp: 20, maxHp: 25, requiresPickaxe: true
+  });
 
   spawnRareChests();
   restoreDroppedTools();
   restoreDroppedLoot();
   spawnStarterSlimes();
-
-  if (state.hasWorldPosition && Number.isFinite(state.playerX) && Number.isFinite(state.playerY)) {
-    player.x = clamp(state.playerX, 70, map.width - 70);
-    player.y = clamp(state.playerY, 90, map.height - 70);
-  } else if (state.campPlaced && Number.isFinite(state.campX) && Number.isFinite(state.campY)) {
-    player.x = state.campX + 32;
-    player.y = state.campY + 96;
-  } else {
-    const firstSpawn = randomFirstPlayerSpawn();
-    player.x = firstSpawn.x;
-    player.y = firstSpawn.y;
-    state.playerX = player.x;
-    state.playerY = player.y;
-    state.hasWorldPosition = true;
-  }
 
   player.vx = 0;
   player.vy = 0;
@@ -256,6 +230,8 @@ function createWorld() {
   if (!state.campPlaced) {
     setTimeout(() => beginCampfirePlacement(), 60);
   }
+
+  save();
 }
 
 function createWorldChest(chestType, label) {
@@ -301,52 +277,38 @@ function makeResource(data) {
 }
 
 function buildTileVariants() {
-  const variants = [];
-
-  for (let y = 0; y < map.height; y += map.tile) {
-    const row = [];
-
-    for (let x = 0; x < map.width; x += map.tile) {
-      const path = isPathTile(x, y);
-      const r = Math.random();
-
-      let tile = "grass";
-
-      if (path) {
-        tile = r < 0.14 ? "rockpath" : "path";
-      } else {
-        if (r < 0.08) tile = "grassflower";
-        else if (r < 0.15) tile = "grassrock";
-        else tile = "grass";
-      }
-
-      row.push(tile);
-    }
-
-    variants.push(row);
+  if (typeof generateWorldTerrain === "function") {
+    generateWorldTerrain();
+    return tileVariants;
   }
 
-  return variants;
+  return [];
 }
 
 function isPathTile(x, y) {
-  const onMainHorizontal = y >= 352 && y <= 608;
-  const onMainVertical = x >= 768 && x <= 928;
+  if (typeof isGeneratedPathBox === "function") {
+    return isGeneratedPathBox({ x, y, w: map.tile, h: map.tile });
+  }
 
-  return onMainHorizontal || onMainVertical;
+  return false;
 }
 
-function randomSafePosition(w, h) {
+function randomSafePosition(w, h, preferredBiomes = []) {
   let tries = 0;
 
-  while (tries < 200) {
+  while (tries < 360) {
     tries++;
 
-    const x = Math.floor(randomRange(80, map.width - 140) / 32) * 32;
-    const y = Math.floor(randomRange(100, map.height - 140) / 32) * 32;
+    const pos = typeof generatedLandPosition === "function"
+      ? generatedLandPosition(w, h, preferredBiomes)
+      : {
+          x: Math.floor(randomRange(80, map.width - 140) / 32) * 32,
+          y: Math.floor(randomRange(100, map.height - 140) / 32) * 32
+        };
 
-    const test = { x, y, w, h };
+    const test = { x: pos.x, y: pos.y, w, h };
 
+    if (typeof boxTouchesWater === "function" && boxTouchesWater(test)) continue;
     if (isInCampArea(test)) continue;
     if (isOnMainPath(test)) continue;
     if (isTooCloseToPlayer(test)) continue;
@@ -355,7 +317,6 @@ function randomSafePosition(w, h) {
 
     for (const obj of objects) {
       const padding = 28;
-
       const padded = {
         x: obj.x - padding,
         y: obj.y - padding,
@@ -370,11 +331,13 @@ function randomSafePosition(w, h) {
     }
 
     if (!overlapsOther) {
-      return { x, y };
+      return { x: pos.x, y: pos.y };
     }
   }
 
-  return { x: 900, y: 700 };
+  return typeof generatedLandPosition === "function"
+    ? generatedLandPosition(w, h, [])
+    : { x: 900, y: 700 };
 }
 
 function randomRange(min, max) {
@@ -398,21 +361,7 @@ function isInCampArea(box) {
 }
 
 function isOnMainPath(box) {
-  const horizontalPath = {
-    x: 0,
-    y: 330,
-    w: map.width,
-    h: 310
-  };
-
-  const verticalPath = {
-    x: 735,
-    y: 0,
-    w: 230,
-    h: map.height
-  };
-
-  return overlap(box, horizontalPath) || overlap(box, verticalPath);
+  return typeof isGeneratedPathBox === "function" && isGeneratedPathBox(box);
 }
 
 function isTooCloseToPlayer(box) {
@@ -425,10 +374,12 @@ function isTooCloseToPlayer(box) {
 }
 
 function randomFirstPlayerSpawn() {
-  return {
-    x: Math.floor(randomRange(170, map.width - 170) / 32) * 32,
-    y: Math.floor(randomRange(180, map.height - 170) / 32) * 32
-  };
+  return typeof generatedLandPosition === "function"
+    ? generatedLandPosition(36, 42, ["plains"])
+    : {
+        x: Math.floor(randomRange(170, map.width - 170) / 32) * 32,
+        y: Math.floor(randomRange(180, map.height - 170) / 32) * 32
+      };
 }
 
 /* COLLISION */
@@ -486,6 +437,10 @@ function overlap(a, b) {
 function canMoveTo(x, y) {
   const box = playerHitbox(x, y);
 
+  if (typeof boxTouchesWater === "function" && boxTouchesWater(box)) {
+    return false;
+  }
+
   if (
     box.x < 0 ||
     box.y < 0 ||
@@ -507,7 +462,7 @@ function canMoveTo(x, y) {
 }
 
 
-/* ROWAN — DAYTIME WANDERING TRADER */
+/* ROWAN — TEMPORARY CAMP TRADER */
 
 function findRowan() {
   return objects.find((obj) => obj.kind === "npc" && obj.npcName === "Rowan" && !obj.hidden) || null;
@@ -520,13 +475,10 @@ function rowanPanelsOpen() {
 }
 
 function removeRowanForNight() {
-  const rowanExists = objects.some((obj) => obj.kind === "npc" && obj.npcName === "Rowan");
-  if (!rowanExists) return;
-
-  const wasTalking = rowanPanelsOpen();
+  const existed = Boolean(findRowan());
   objects = objects.filter((obj) => !(obj.kind === "npc" && obj.npcName === "Rowan"));
 
-  if (wasTalking) {
+  if (existed && rowanPanelsOpen()) {
     closeNpcDialogue();
     closeBuyPanel();
     closeSellPanel();
@@ -535,68 +487,32 @@ function removeRowanForNight() {
 }
 
 function rowanSpotIsOpen(x, y, rowan = null) {
-  const box = { x: x + 18, y: y + 61, w: 52, h: 43 };
-  if (x < 40 || y < 40 || x + 92 > map.width - 40 || y + 116 > map.height - 40) return false;
+  const box = { x: x + 18, y: y + 60, w: 52, h: 44 };
+  if (x < 48 || y < 48 || x + 92 > map.width - 48 || y + 116 > map.height - 48) return false;
+  if (typeof boxTouchesWater === "function" && boxTouchesWater(box)) return false;
 
   for (const obj of objects) {
     if (obj === rowan || obj.hidden || obj.kind === "npc" || obj.noCollision) continue;
-    const blocked = { x: obj.x - 8, y: obj.y - 8, w: obj.w + 16, h: obj.h + 16 };
+    const blocked = { x: obj.x - 10, y: obj.y - 10, w: obj.w + 20, h: obj.h + 20 };
     if (overlap(box, blocked)) return false;
   }
 
   return true;
 }
 
-function buildRowanRoute() {
+function chooseRowanSpotNearCamp(rowan = null, radiusMin = 88, radiusMax = 190) {
   const camp = currentCampfire();
   if (!camp) return null;
 
-  const cx = camp.x + 32;
-  const cy = camp.y + 32;
-  const horizontalDistance = Math.abs(cy - 480);
-  const verticalDistance = Math.abs(cx - 848);
+  const cx = camp.x + camp.w / 2;
+  const cy = camp.y + camp.h / 2;
 
-  // If the camp is reasonably close to a world path, Rowan travels that straight path.
-  if (horizontalDistance <= verticalDistance && horizontalDistance < 430) {
-    const laneY = clamp(Math.round(clamp(cy, 390, 540) / 32) * 32 - 70, 300, map.height - 130);
-    return {
-      axis: "x",
-      lane: laneY,
-      min: clamp(cx - 480, 70, map.width - 160),
-      max: clamp(cx + 480, 130, map.width - 100),
-      onPath: true
-    };
-  }
+  for (let attempt = 0; attempt < 80; attempt++) {
+    const angle = Math.random() * Math.PI * 2;
+    const distance = randomRange(radiusMin, radiusMax);
+    const x = Math.round((cx + Math.cos(angle) * distance - 46) / 16) * 16;
+    const y = Math.round((cy + Math.sin(angle) * distance - 58) / 16) * 16;
 
-  if (verticalDistance < 430) {
-    const laneX = clamp(Math.round(clamp(cx, 790, 890) / 32) * 32 - 46, 60, map.width - 130);
-    return {
-      axis: "y",
-      lane: laneX,
-      min: clamp(cy - 400, 70, map.height - 160),
-      max: clamp(cy + 400, 130, map.height - 100),
-      onPath: true
-    };
-  }
-
-  // If the player's home is far from the central paths, he walks a nearby straight grass route.
-  return {
-    axis: "x",
-    lane: clamp(camp.y + 72, 65, map.height - 130),
-    min: clamp(cx - 340, 70, map.width - 160),
-    max: clamp(cx + 340, 130, map.width - 100),
-    onPath: false
-  };
-}
-
-function findOpenRowanRoutePosition(route, direction = 1, rowan = null) {
-  const start = direction > 0 ? route.min : route.max;
-  const finish = direction > 0 ? route.max : route.min;
-  const step = direction > 0 ? 32 : -32;
-
-  for (let value = start; direction > 0 ? value <= finish : value >= finish; value += step) {
-    const x = route.axis === "x" ? value : route.lane;
-    const y = route.axis === "x" ? route.lane : value;
     if (rowanSpotIsOpen(x, y, rowan)) return { x, y };
   }
 
@@ -606,15 +522,12 @@ function findOpenRowanRoutePosition(route, direction = 1, rowan = null) {
 function spawnRowanForDay() {
   if (!state.campPlaced || cycleInfo().phase === "Night" || findRowan()) return;
 
-  const route = buildRowanRoute();
-  if (!route) return;
-
-  const start = findOpenRowanRoutePosition(route, 1);
-  if (!start) return;
+  const spot = chooseRowanSpotNearCamp(null, 92, 170);
+  if (!spot) return;
 
   objects.push({
-    x: start.x,
-    y: start.y,
+    x: spot.x,
+    y: spot.y,
     w: 92,
     h: 116,
     kind: "npc",
@@ -622,10 +535,10 @@ function spawnRowanForDay() {
     label: "talk to Rowan",
     action: "npc",
     npcName: "Rowan",
-    route: route,
-    direction: 1,
-    walkPause: randomInt(30, 85),
-    walkSpeed: 0.85
+    targetX: spot.x,
+    targetY: spot.y,
+    walkPause: randomInt(110, 250),
+    walkSpeed: 0.42
   });
 }
 
@@ -638,39 +551,42 @@ function updateRowanTrader() {
   }
 
   spawnRowanForDay();
+
   const rowan = findRowan();
   if (!rowan || rowanPanelsOpen()) return;
-
-  if (!rowan.route) {
-    rowan.route = buildRowanRoute();
-    if (!rowan.route) return;
-  }
 
   if (rowan.walkPause > 0) {
     rowan.walkPause -= 1;
     return;
   }
 
-  const route = rowan.route;
-  const value = route.axis === "x" ? rowan.x : rowan.y;
-  const boundary = rowan.direction > 0 ? route.max : route.min;
-
-  if ((rowan.direction > 0 && value >= boundary) || (rowan.direction < 0 && value <= boundary)) {
-    rowan.direction *= -1;
-    rowan.walkPause = randomInt(55, 145);
+  const distance = Math.hypot(rowan.targetX - rowan.x, rowan.targetY - rowan.y);
+  if (distance < 5) {
+    const target = chooseRowanSpotNearCamp(rowan, 82, 205);
+    if (target) {
+      rowan.targetX = target.x;
+      rowan.targetY = target.y;
+    }
+    rowan.walkPause = randomInt(90, 230);
     return;
   }
 
-  const step = rowan.walkSpeed * rowan.direction;
-  const nextX = route.axis === "x" ? rowan.x + step : route.lane;
-  const nextY = route.axis === "y" ? rowan.y + step : route.lane;
+  const dx = rowan.targetX - rowan.x;
+  const dy = rowan.targetY - rowan.y;
+  const length = Math.hypot(dx, dy) || 1;
+  const nextX = rowan.x + (dx / length) * rowan.walkSpeed;
+  const nextY = rowan.y + (dy / length) * rowan.walkSpeed;
 
   if (rowanSpotIsOpen(nextX, nextY, rowan)) {
     rowan.x = nextX;
     rowan.y = nextY;
   } else {
-    rowan.direction *= -1;
-    rowan.walkPause = randomInt(38, 95);
+    rowan.walkPause = randomInt(50, 120);
+    const target = chooseRowanSpotNearCamp(rowan, 70, 180);
+    if (target) {
+      rowan.targetX = target.x;
+      rowan.targetY = target.y;
+    }
   }
 }
 
@@ -1130,7 +1046,14 @@ function respawnResourceElsewhere(obj, ms) {
   obj.hp = obj.maxHp;
 
   setTimeout(() => {
-    const newPos = randomSafePosition(obj.w, obj.h);
+    const preferredBiomes =
+      obj.kind === "copperore" || obj.kind === "ironore" || obj.kind === "rock"
+        ? ["rocky"]
+        : obj.kind === "tree"
+          ? ["forest"]
+          : ["plains", "forest"];
+
+    const newPos = randomSafePosition(obj.w, obj.h, preferredBiomes);
     obj.x = newPos.x;
     obj.y = newPos.y;
     obj.hidden = false;
@@ -1166,14 +1089,22 @@ function draw() {
 
 function drawMap() {
   const tile = map.tile;
+  const startCol = Math.max(0, Math.floor(camera.x / tile) - 2);
+  const endCol = Math.min(Math.floor(map.width / tile) - 1, Math.ceil((camera.x + canvas.width) / tile) + 2);
+  const startRow = Math.max(0, Math.floor(camera.y / tile) - 2);
+  const endRow = Math.min(Math.floor(map.height / tile) - 1, Math.ceil((camera.y + canvas.height) / tile) + 2);
 
-  for (let y = 0; y < map.height; y += tile) {
-    for (let x = 0; x < map.width; x += tile) {
-      const row = Math.floor(y / tile);
-      const col = Math.floor(x / tile);
+  for (let row = startRow; row <= endRow; row++) {
+    for (let col = startCol; col <= endCol; col++) {
+      const x = col * tile;
+      const y = row * tile;
       const key = tileVariants[row]?.[col] || "grass";
+      const fallback =
+        key === "water" ? "#3e92ca" :
+        key === "path" || key === "rockpath" ? "#c98b55" :
+        "#55b943";
 
-      drawImg(images[key], x, y, tile, tile, key === "path" || key === "rockpath" ? "#c98b55" : "#55b943");
+      drawImg(images[key], x, y, tile, tile, fallback);
     }
   }
 }

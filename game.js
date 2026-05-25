@@ -104,6 +104,7 @@ const FULL_CYCLE_MS = DAY_MS + NIGHT_MS;
 const images = {};
 const files = {
   grass: "grass.png",
+  water: "water.png",
   grassflower: "grassflower.png",
   grassrock: "grassrock.png",
   path: "path.png",
@@ -147,6 +148,7 @@ for (const key in files) {
 const state = {
   name: "Guest Hero",
   world: "World A - Main Realm",
+  worldSeed: 0,
 
   gold: 0,
   wood: 0,
@@ -237,8 +239,8 @@ const camera = {
 };
 
 const map = {
-  width: 2560,
-  height: 1792,
+  width: 3840,
+  height: 2560,
   tile: 32
 };
 
@@ -718,6 +720,7 @@ function loadSave() {
 
     state.name = data.name || state.name;
     state.world = "World A - Main Realm";
+    state.worldSeed = Number(data.worldSeed || 0);
 
     state.gold = Number(data.gold || 0);
     state.wood = Number(data.wood || 0);
