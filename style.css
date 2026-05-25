@@ -1676,3 +1676,52 @@ label {
 .crafting-panel.no-selection .crafting-details {
   display: none !important;
 }
+
+
+/* PHASE 6A — CAMPFIRE PLACEMENT */
+.game-canvas.placing-campfire {
+  cursor: crosshair;
+}
+
+.camp-placement-guide {
+  position: absolute;
+  left: 50%;
+  bottom: 104px;
+  transform: translateX(-50%);
+  z-index: 90;
+  width: min(420px, calc(100% - 28px));
+  padding: 10px 14px;
+  border: 2px solid #f2c35f;
+  border-radius: 7px;
+  background: rgba(29, 17, 10, 0.94);
+  color: #ffe4a6;
+  text-align: center;
+  pointer-events: none;
+}
+
+.camp-placement-guide strong { display: block; font-size: 16px; margin-bottom: 4px; }
+.camp-placement-guide span { display: block; color: rgba(255,240,200,0.9); font-size: 13px; }
+.camp-placement-guide small { display: block; margin-top: 5px; color: rgba(255,240,200,0.65); }
+
+.camp-placement-confirm {
+  position: absolute;
+  right: 18px;
+  bottom: 105px;
+  z-index: 100;
+  width: 270px;
+  padding: 13px;
+  border: 2px solid #f2c35f;
+  border-radius: 8px;
+  background: rgba(27, 15, 9, 0.97);
+  color: #ffe4a6;
+  box-shadow: 0 7px 18px rgba(0,0,0,0.42);
+}
+
+.camp-placement-confirm strong { display: block; font-size: 16px; margin-bottom: 6px; }
+.camp-placement-confirm p { margin: 0 0 11px; color: rgba(255,240,200,0.84); font-size: 12px; line-height: 1.42; }
+.camp-placement-confirm div { display: flex; gap: 7px; }
+.camp-placement-confirm button { flex: 1; padding: 8px 6px; font-size: 12px; }
+
+@media (max-width: 760px) {
+  .camp-placement-confirm { right: 50%; transform: translateX(50%); bottom: 150px; }
+}

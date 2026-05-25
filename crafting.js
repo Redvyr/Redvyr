@@ -48,24 +48,6 @@ const CRAFTING_RECIPES = [
     description: "A crafted blade for fighting slimes.",
     ingredients: { wood: 2, rawiron: 3, slimegel: 2 },
     craft: () => createBasicSword()
-  },
-  {
-    id: "health-potion",
-    name: "Health Potion",
-    category: "potions",
-    image: "potion",
-    description: "Restores 35 HP when used from the hotbar.",
-    ingredients: { slimegel: 2, rawcopper: 1 },
-    craft: () => { state.potions += 1; }
-  },
-  {
-    id: "speed-potion",
-    name: "Speed Potion",
-    category: "potions",
-    image: "speedpotion",
-    description: "Gives 1.5x movement speed for 15 seconds.",
-    ingredients: { slimegel: 3, rawcopper: 2 },
-    craft: () => { state.speedPotions += 1; }
   }
 ];
 
@@ -248,6 +230,14 @@ if (closeCraftingBtn) closeCraftingBtn.addEventListener("click", closeCrafting);
 
 if (craftingSearch) {
   craftingSearch.addEventListener("input", updateCraftingPanel);
+  craftingSearch.addEventListener("focus", () => {
+    if (typeof keys !== "undefined") keys.clear();
+  });
+  craftingSearch.addEventListener("keydown", (event) => {
+    // Typing in search should never trigger movement, panels, hotbar, or combat.
+    event.stopPropagation();
+  });
+  craftingSearch.addEventListener("keyup", (event) => event.stopPropagation());
 }
 
 if (craftingCategories) {

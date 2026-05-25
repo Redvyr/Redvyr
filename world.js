@@ -1,20 +1,150 @@
 /* WORLD */
 
+/* PHASE 6A — PLACEABLE HOME CAMPFIRE */
+const CAMP_PLACEMENT_SNAP = 16;
+const campPlacementCanvas = document.getElementById("game");
+const campPlacementConfirmButton = document.getElementById("confirmCampPlacementBtn");
+const campPlacementRetryButton = document.getElementById("retryCampPlacementBtn");
+const campPlacementState = {
+  active: false,
+  confirming: false,
+  relocating: false,
+  targetX: 400,
+  targetY: 320,
+  previewX: 400,
+  previewY: 320,
+  valid: false
+};
+
+function makeCampfireObject(x, y) {
+  return {
+    x, y, w: 64, h: 64, kind: "campfire", interact: true, label: "open camp", action: "camp"
+  };
+}
+
+function currentCampfire() {
+  return objects.find((obj) => obj.kind === "campfire" && !obj.hidden) || null;
+}
+
+function isCampPlacementActive() {
+  return campPlacementState.active;
+}
+
+function beginCampfirePlacement(relocating = false) {
+  if (gameScreen.classList.contains("hidden")) return;
+
+  closeAllGamePanels();
+  closeNpcDialogue();
+  closeBuyPanel();
+  closeSellPanel();
+  keys.clear();
+
+  const camp = currentCampfire();
+  const startX = camp ? camp.x : Math.round((player.x + 54) / CAMP_PLACEMENT_SNAP) * CAMP_PLACEMENT_SNAP;
+  const startY = camp ? camp.y : Math.round((player.y + 34) / CAMP_PLACEMENT_SNAP) * CAMP_PLACEMENT_SNAP;
+
+  campPlacementState.active = true;
+  campPlacementState.confirming = false;
+  campPlacementState.relocating = Boolean(relocating && camp);
+  campPlacementState.targetX = clamp(startX, 32, map.width - 96);
+  campPlacementState.targetY = clamp(startY, 32, map.height - 96);
+  campPlacementState.previewX = campPlacementState.targetX;
+  campPlacementState.previewY = campPlacementState.targetY;
+  campPlacementState.valid = canPlaceCampfireAt(campPlacementState.previewX, campPlacementState.previewY);
+
+  canvas.classList.add("placing-campfire");
+  campPlacementGuide.classList.remove("hidden");
+  campPlacementConfirm.classList.add("hidden");
+  toast(camp ? "Choose a new campfire location." : "Choose where to place your first campfire.");
+}
+
+function endCampfirePlacement() {
+  campPlacementState.active = false;
+  campPlacementState.confirming = false;
+  canvas.classList.remove("placing-campfire");
+  campPlacementGuide.classList.add("hidden");
+  campPlacementConfirm.classList.add("hidden");
+}
+
+function canPlaceCampfireAt(x, y) {
+  const box = { x: x + 5, y: y + 7, w: 54, h: 49 };
+  if (x < 32 || y < 32 || x + 64 > map.width - 32 || y + 64 > map.height - 32) return false;
+
+  for (const obj of objects) {
+    if (obj.hidden) continue;
+    if (obj.kind === "campfire" && campPlacementState.relocating) continue;
+
+    const padding = obj.kind === "npc" ? 46 : 14;
+    const blocked = { x: obj.x - padding, y: obj.y - padding, w: obj.w + padding * 2, h: obj.h + padding * 2 };
+    if (overlap(box, blocked)) return false;
+  }
+
+  return true;
+}
+
+function updateCampfirePlacementPreview() {
+  if (!campPlacementState.active || campPlacementState.confirming) return;
+
+  const stepX = clamp(campPlacementState.targetX - campPlacementState.previewX, -CAMP_PLACEMENT_SNAP, CAMP_PLACEMENT_SNAP);
+  const stepY = clamp(campPlacementState.targetY - campPlacementState.previewY, -CAMP_PLACEMENT_SNAP, CAMP_PLACEMENT_SNAP);
+  campPlacementState.previewX += stepX;
+  campPlacementState.previewY += stepY;
+  campPlacementState.valid = canPlaceCampfireAt(campPlacementState.previewX, campPlacementState.previewY);
+}
+
+function confirmCampfirePlacement() {
+  if (!campPlacementState.active || !campPlacementState.valid) return;
+
+  objects = objects.filter((obj) => obj.kind !== "campfire");
+  state.campPlaced = true;
+  state.campX = campPlacementState.previewX;
+  state.campY = campPlacementState.previewY;
+  objects.push(makeCampfireObject(state.campX, state.campY));
+
+  endCampfirePlacement();
+  save();
+  syncUI();
+  toast("Campfire placed! This is now your home.");
+  addFloatingText(state.campX, state.campY - 10, "HOME CAMP");
+}
+
+campPlacementCanvas.addEventListener("mousemove", (event) => {
+  if (!campPlacementState.active || campPlacementState.confirming) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const worldX = (event.clientX - rect.left) * scaleX + camera.x - 32;
+  const worldY = (event.clientY - rect.top) * scaleY + camera.y - 32;
+
+  campPlacementState.targetX = clamp(Math.round(worldX / CAMP_PLACEMENT_SNAP) * CAMP_PLACEMENT_SNAP, 32, map.width - 96);
+  campPlacementState.targetY = clamp(Math.round(worldY / CAMP_PLACEMENT_SNAP) * CAMP_PLACEMENT_SNAP, 32, map.height - 96);
+});
+
+campPlacementCanvas.addEventListener("click", () => {
+  if (!campPlacementState.active || campPlacementState.confirming) return;
+  if (!campPlacementState.valid) {
+    toast("That spot is blocked. Choose a clear tile.");
+    return;
+  }
+  campPlacementState.confirming = true;
+  campPlacementConfirm.classList.remove("hidden");
+});
+
+if (campPlacementConfirmButton) campPlacementConfirmButton.addEventListener("click", confirmCampfirePlacement);
+if (campPlacementRetryButton) campPlacementRetryButton.addEventListener("click", () => {
+  campPlacementState.confirming = false;
+  campPlacementConfirm.classList.add("hidden");
+});
+
 function createWorld() {
   objects = [];
   floatingTexts = [];
   tileVariants = buildTileVariants();
 
-  objects.push({
-    x: 300,
-    y: 245,
-    w: 64,
-    h: 64,
-    kind: "campfire",
-    interact: true,
-    label: "open camp",
-    action: "camp"
-  });
+  if (state.campPlaced && Number.isFinite(state.campX) && Number.isFinite(state.campY)) {
+    objects.push(makeCampfireObject(state.campX, state.campY));
+  }
 
   objects.push({
     x: 385,
@@ -136,6 +266,10 @@ function createWorld() {
 
   camera.x = 0;
   camera.y = 0;
+
+  if (!state.campPlaced) {
+    setTimeout(() => beginCampfirePlacement(false), 60);
+  }
 }
 
 function createWorldChest(chestType, label) {
@@ -156,17 +290,16 @@ function createWorldChest(chestType, label) {
 }
 
 function spawnRareChests() {
-  // Common chests now give exploration rewards; special chests stay rare.
-  for (let i = 0; i < 7; i++) {
+  // Common treasure supports exploration; special treasure stays genuinely rare.
+  for (let i = 0; i < 10; i++) {
     createWorldChest("normal", "open chest");
   }
 
-  const rareCount = randomInt(1, 2);
-  for (let i = 0; i < rareCount; i++) {
+  if (Math.random() < 0.65) {
     createWorldChest("rare", "open rare chest");
   }
 
-  if (Math.random() < 0.22) {
+  if (Math.random() < 0.08) {
     createWorldChest("legendary", "open legendary chest");
   }
 }
@@ -386,6 +519,14 @@ function canMoveTo(x, y) {
 
 function update() {
   if (gameScreen.classList.contains("hidden")) return;
+
+  if (campPlacementState.active) {
+    keys.clear();
+    updateCampfirePlacementPreview();
+    updateDayNightUI();
+    syncBarsOnly();
+    return;
+  }
 
   healNearCampfire();
   updateDayNightUI();
@@ -614,8 +755,8 @@ function openChest(obj) {
     xpReward = 60;
     woodReward = randomInt(7, 15);
     stoneReward = randomInt(7, 15);
-    healthPotionReward = Math.random() < 0.10 ? 1 : 0;
-    speedPotionReward = Math.random() < 0.05 ? 1 : 0;
+    healthPotionReward = Math.random() < 0.025 ? 1 : 0;
+    speedPotionReward = Math.random() < 0.01 ? 1 : 0;
     message = "LEGENDARY!";
   }
 
@@ -835,6 +976,7 @@ function draw() {
   drawEntitiesLayered();
   drawCombatEffects();
   drawFloatingTexts();
+  drawCampfirePlacementGhost();
 
   ctx.restore();
 
@@ -1052,13 +1194,28 @@ function drawChest(x, y, w, h, opened, chestStyle) {
   ctx.strokeRect(x + 8, y + 10, w - 16, h - 18);
 }
 
+function drawCampfirePlacementGhost() {
+  if (!campPlacementState.active) return;
+
+  const x = campPlacementState.previewX;
+  const y = campPlacementState.previewY;
+  ctx.save();
+  ctx.globalAlpha = campPlacementState.valid ? 0.68 : 0.42;
+  drawImg(images.campfire, x, y, 64, 64, campPlacementState.valid ? "#ffb23e" : "#df3d32");
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = campPlacementState.valid ? "#80ef78" : "#ff6055";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(x, y, 64, 64);
+  ctx.restore();
+}
+
 function drawCampfire(x, y, w, h) {
   const radius = campLightRadius();
 
   const gradient = ctx.createRadialGradient(x + 32, y + 32, 8, x + 32, y + 32, radius);
-  gradient.addColorStop(0, "rgba(255, 224, 112, 0.36)");
-  gradient.addColorStop(0.18, "rgba(255, 194, 70, 0.26)");
-  gradient.addColorStop(0.55, "rgba(255, 150, 38, 0.11)");
+  gradient.addColorStop(0, "rgba(255, 224, 112, 0.22)");
+  gradient.addColorStop(0.18, "rgba(255, 194, 70, 0.16)");
+  gradient.addColorStop(0.55, "rgba(255, 150, 38, 0.07)");
   gradient.addColorStop(1, "rgba(255, 130, 26, 0)");
 
   ctx.fillStyle = gradient;
@@ -1100,9 +1257,9 @@ function drawNightOverlay() {
     const sy = camp.y - camera.y + 32;
 
     const light = ctx.createRadialGradient(sx, sy, 8, sx, sy, campLightRadius());
-    light.addColorStop(0, "rgba(255, 232, 132, 0.40)");
-    light.addColorStop(0.18, "rgba(255, 203, 85, 0.30)");
-    light.addColorStop(0.55, "rgba(255, 164, 45, 0.14)");
+    light.addColorStop(0, "rgba(255, 232, 132, 0.26)");
+    light.addColorStop(0.18, "rgba(255, 203, 85, 0.19)");
+    light.addColorStop(0.55, "rgba(255, 164, 45, 0.09)");
     light.addColorStop(1, "rgba(255, 136, 26, 0)");
 
     ctx.fillStyle = light;

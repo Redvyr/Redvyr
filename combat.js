@@ -430,8 +430,9 @@ function hurtPlayer(damage, enemy) {
     const loss = Math.ceil(state.gold * 0.05);
     state.gold = Math.max(0, state.gold - loss);
     state.hp = maxHp();
-    player.x = 350;
-    player.y = 360;
+    const homeCamp = typeof currentCampfire === "function" ? currentCampfire() : null;
+    player.x = homeCamp ? homeCamp.x + 32 : 520;
+    player.y = homeCamp ? homeCamp.y + 94 : 430;
     closeNpcDialogue();
     closeBuyPanel();
     closeSellPanel();
@@ -503,6 +504,10 @@ function drawCombatEffects() {
 }
 
 window.addEventListener("keydown", (event) => {
+  const typingInField = ["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName);
+  const placingCamp = typeof isCampPlacementActive === "function" && isCampPlacementActive();
+  if (typingInField || placingCamp) return;
+
   if (event.code === "Space" && !gameScreen.classList.contains("hidden")) {
     event.preventDefault();
     performPlayerAttack();

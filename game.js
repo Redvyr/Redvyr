@@ -35,6 +35,10 @@ const toastEl = $("toast");
 const fullscreenPrompt = $("fullscreenPrompt");
 const enableFullscreenBtn = $("enableFullscreenBtn");
 const skipFullscreenBtn = $("skipFullscreenBtn");
+const campPlacementGuide = $("campPlacementGuide");
+const campPlacementConfirm = $("campPlacementConfirm");
+const confirmCampPlacementBtn = $("confirmCampPlacementBtn");
+const retryCampPlacementBtn = $("retryCampPlacementBtn");
 let fullscreenPromptShown = false;
 
 const inventoryPanel = $("inventoryPanel");
@@ -161,6 +165,9 @@ const state = {
   droppedTools: [],
   droppedLoot: [],
 
+  campPlaced: false,
+  campX: null,
+  campY: null,
   campLevel: 1,
   level: 1,
   xp: 0,
@@ -582,7 +589,7 @@ function campUpgradeCost() {
 }
 
 function campLightRadius() {
-  return 104 + state.campLevel * 14;
+  return 92 + state.campLevel * 12;
 }
 
 function campHealRadius() {
@@ -652,6 +659,12 @@ function updateCampPanel() {
         ${campBenefitsHTML()}
       </div>
     </div>
+
+    <div class="camp-card">
+      <strong>Home Placement</strong>
+      Your campfire is your saved home and mob-death respawn point.
+      <button id="moveCampfireBtn" class="claim-btn" style="margin-top:10px; width:100%;">Move Campfire</button>
+    </div>
   `;
 
   const canUpgrade =
@@ -661,6 +674,14 @@ function updateCampPanel() {
 
   campUpgradeBtn.disabled = !canUpgrade;
   campUpgradeBtn.textContent = canUpgrade ? "Upgrade Camp" : "Need More Resources";
+
+  const moveCampfireBtn = $("moveCampfireBtn");
+  if (moveCampfireBtn) {
+    moveCampfireBtn.addEventListener("click", () => {
+      closeCamp();
+      if (typeof beginCampfirePlacement === "function") beginCampfirePlacement(true);
+    });
+  }
 }
 
 function openCamp() {
@@ -825,6 +846,10 @@ function loadSave() {
             count: Math.max(1, Number(drop.count || 1))
           }))
       : [];
+
+    state.campPlaced = Boolean(data.campPlaced);
+    state.campX = Number.isFinite(Number(data.campX)) ? Number(data.campX) : null;
+    state.campY = Number.isFinite(Number(data.campY)) ? Number(data.campY) : null;
 
     state.campLevel = Number(data.campLevel || 1);
     state.level = Number(data.level || 1);
@@ -1328,6 +1353,15 @@ function toast(message) {
 /* INPUT */
 
 window.addEventListener("keydown", (event) => {
+  const typingInField = ["INPUT", "TEXTAREA"].includes(document.activeElement?.tagName);
+  if (typingInField) return;
+
+  if (typeof isCampPlacementActive === "function" && isCampPlacementActive()) {
+    keys.clear();
+    event.preventDefault();
+    return;
+  }
+
   keys.add(event.key.toLowerCase());
 
   if (!gameScreen.classList.contains("hidden") && event.key.toLowerCase() === "e") {
