@@ -10,8 +10,8 @@ let combatPhase = null;
 let nightSpawnTimer = 0;
 let nightWaveNumber = 0;
 
-const NIGHT_ENEMY_CAP = 14;
-const NIGHT_WAVE_INTERVAL = 760;
+const NIGHT_ENEMY_CAP = 9;
+const NIGHT_WAVE_INTERVAL = 1050;
 
 function spawnStarterSlimes() {
   const startingCount = 6;
@@ -51,7 +51,7 @@ function randomEnemySpawnPoint(w = 52, h = 52, options = {}) {
     if (distanceFromPlayer < minPlayerDistance || distanceFromCamp < minCampDistance) continue;
 
     const blocked = objects.some((obj) => {
-      if (obj.hidden || obj.kind === "slimegel" || obj.kind === "droppedaxe" || obj.kind === "droppedsword") return false;
+      if (obj.hidden || obj.kind === "slimegel" || obj.kind === "droppedaxe" || obj.kind === "droppedpickaxe" || obj.kind === "droppedsword") return false;
 
       const padding = obj.kind === "slime" ? 40 : 18;
       const obstacle = {
@@ -127,8 +127,8 @@ function performPlayerAttack() {
   if (gameScreen.classList.contains("hidden")) return;
   if (player.attackCooldown > 0) return;
 
-  if (equippedAxe()) {
-    toast("Equip a sword or unequip your axe to fight.");
+  if (equippedAxe() || equippedPickaxe()) {
+    toast("Equip a sword or unequip your gathering tool to fight.");
     return;
   }
 
@@ -316,8 +316,7 @@ function updateNightEnemySpawning() {
   nightSpawnTimer -= 1;
   if (nightSpawnTimer <= 0) {
     nightWaveNumber += 1;
-    const waveSize = nightWaveNumber >= 3 ? 2 : 1;
-    spawnNightWave(waveSize);
+    spawnNightWave(1);
     nightSpawnTimer = NIGHT_WAVE_INTERVAL;
   }
 }
@@ -327,7 +326,7 @@ function beginNightDanger() {
   nightSpawnTimer = 500;
   toast("Night falls... slimes emerge from the dark.");
   addFloatingText(player.x - 70, player.y - 75, "NIGHT FALLS");
-  spawnNightWave(3);
+  spawnNightWave(2);
 }
 
 function endNightDanger() {

@@ -86,10 +86,15 @@ function selectedItemData() {
   if (!selectedInventoryItem) return null;
 
   if (selectedInventoryItem.type === "axe") return getAxeById(selectedInventoryItem.itemId);
+  if (selectedInventoryItem.type === "pickaxe") return getPickaxeById(selectedInventoryItem.itemId);
   if (selectedInventoryItem.type === "sword") return getSwordById(selectedInventoryItem.itemId);
 
   if (selectedInventoryItem.type === "potion" && state.potions > 0) {
-    return { type: "potion", name: "Small Potion", count: state.potions };
+    return { type: "potion", name: "Health Potion", count: state.potions };
+  }
+
+  if (selectedInventoryItem.type === "speedpotion" && state.speedPotions > 0) {
+    return { type: "speedpotion", name: "Speed Potion", count: state.speedPotions };
   }
 
   if (selectedInventoryItem.type === "wood" && state.wood > 0) {
@@ -98,6 +103,14 @@ function selectedItemData() {
 
   if (selectedInventoryItem.type === "stone" && state.stone > 0) {
     return { type: "stone", name: "Stone", count: state.stone };
+  }
+
+  if (selectedInventoryItem.type === "copperore" && state.copperOre > 0) {
+    return { type: "copperore", name: "Copper Ore", count: state.copperOre };
+  }
+
+  if (selectedInventoryItem.type === "ironore" && state.ironOre > 0) {
+    return { type: "ironore", name: "Iron Ore", count: state.ironOre };
   }
 
   if (selectedInventoryItem.type === "slimegel" && state.slimeGel > 0) {
@@ -109,7 +122,7 @@ function selectedItemData() {
 
 function selectInventoryItem(item) {
   selectedInventoryItem =
-    item.type === "axe" || item.type === "sword"
+    item.type === "axe" || item.type === "pickaxe" || item.type === "sword"
       ? { type: item.type, itemId: item.itemId }
       : { type: item.type };
 
@@ -119,7 +132,7 @@ function selectInventoryItem(item) {
 function inventoryItemIsSelected(item) {
   if (!selectedInventoryItem) return false;
 
-  if (item.type === "axe" || item.type === "sword") {
+  if (item.type === "axe" || item.type === "pickaxe" || item.type === "sword") {
     return selectedInventoryItem.type === item.type && selectedInventoryItem.itemId === item.itemId;
   }
 
@@ -151,7 +164,7 @@ function updateInventoryItemDetails() {
   const title = document.createElement("strong");
   const sub = document.createElement("span");
 
-  if (item.type === "axe" || item.type === "sword") {
+  if (item.type === "axe" || item.type === "pickaxe" || item.type === "sword") {
     title.textContent = item.name;
     sub.textContent = toolDurabilityText(item) + "/" + item.maxDurability + " durability";
   } else {
@@ -170,21 +183,29 @@ function updateInventoryItemDetails() {
 
   if (item.type === "axe") {
     description.textContent = "A gathering tool. Gives +0.35x damage on trees and bushes only.";
+  } else if (item.type === "pickaxe") {
+    description.textContent = "A mining tool. Gives +0.45x damage to stone, copper, and iron nodes.";
   } else if (item.type === "sword") {
     description.textContent = "A combat weapon. Base damage is higher than punching and improves with your Sword stat.";
   } else if (item.type === "potion") {
     description.textContent = "Restores 35 HP when used from your hotbar.";
+  } else if (item.type === "speedpotion") {
+    description.textContent = "Boosts movement speed by 1.5x for 15 seconds.";
   } else if (item.type === "wood") {
     description.textContent = "A building material gathered from trees and bushes.";
   } else if (item.type === "stone") {
-    description.textContent = "A building material mined from rocks.";
+    description.textContent = "A basic building material mined from rocks.";
+  } else if (item.type === "copperore") {
+    description.textContent = "An uncommon crafting ore. Save it for better tools in the next phase.";
+  } else if (item.type === "ironore") {
+    description.textContent = "A rare crafting ore. Save it for advanced tools and camp upgrades.";
   } else {
-    description.textContent = "A monster material dropped by slimes. Sell it to Rowan for gold.";
+    description.textContent = "A monster material dropped by slimes. Sell it now or save it for crafting later.";
   }
 
   details.appendChild(description);
 
-  if (item.type !== "axe" && item.type !== "sword" && item.type !== "potion") return;
+  if (item.type !== "axe" && item.type !== "pickaxe" && item.type !== "sword" && item.type !== "potion" && item.type !== "speedpotion") return;
 
   const actions = document.createElement("div");
   actions.className = "inventory-item-actions";
@@ -194,18 +215,25 @@ function updateInventoryItemDetails() {
   if (item.type === "axe") {
     equipButton.textContent = state.equippedAxeId === item.id ? "Unequip" : "Equip";
     equipButton.addEventListener("click", () => addItemToHotbar("axe", item.id));
+  } else if (item.type === "pickaxe") {
+    equipButton.textContent = state.equippedPickaxeId === item.id ? "Unequip" : "Equip";
+    equipButton.addEventListener("click", () => addItemToHotbar("pickaxe", item.id));
   } else if (item.type === "sword") {
     equipButton.textContent = state.equippedSwordId === item.id ? "Unequip" : "Equip";
     equipButton.addEventListener("click", () => addItemToHotbar("sword", item.id));
-  } else {
+  } else if (item.type === "potion") {
     equipButton.textContent = state.hotbar.includes("potion") ? "In Hotbar" : "Add to Hotbar";
     equipButton.disabled = state.hotbar.includes("potion");
     equipButton.addEventListener("click", () => addItemToHotbar("potion"));
+  } else {
+    equipButton.textContent = state.hotbar.includes("speedpotion") ? "In Hotbar" : "Add to Hotbar";
+    equipButton.disabled = state.hotbar.includes("speedpotion");
+    equipButton.addEventListener("click", () => addItemToHotbar("speedpotion"));
   }
 
   actions.appendChild(equipButton);
 
-  if (item.type === "axe" || item.type === "sword") {
+  if (item.type === "axe" || item.type === "pickaxe" || item.type === "sword") {
     const dropButton = document.createElement("button");
     dropButton.className = "drop-item-btn";
     dropButton.textContent = "Drop";
@@ -218,12 +246,13 @@ function updateInventoryItemDetails() {
 
 function createDroppedToolObject(drop) {
   const isSword = drop.toolData.type === "sword";
+  const isPickaxe = drop.toolData.type === "pickaxe";
   return {
     x: drop.x,
     y: drop.y,
     w: 40,
     h: 40,
-    kind: isSword ? "droppedsword" : "droppedaxe",
+    kind: isSword ? "droppedsword" : isPickaxe ? "droppedpickaxe" : "droppedaxe",
     interact: true,
     noCollision: true,
     label: "pick up " + drop.toolData.name,
@@ -236,19 +265,22 @@ function restoreDroppedTools() {
   if (!Array.isArray(state.droppedTools)) state.droppedTools = [];
 
   state.droppedTools.forEach((drop) => {
-    if (drop && drop.toolData && (drop.toolData.type === "axe" || drop.toolData.type === "sword")) {
+    if (drop && drop.toolData && (drop.toolData.type === "axe" || drop.toolData.type === "pickaxe" || drop.toolData.type === "sword")) {
       objects.push(createDroppedToolObject(drop));
     }
   });
 }
 
 function dropToolItem(toolType, toolId) {
-  const tool = toolType === "sword" ? getSwordById(toolId) : getAxeById(toolId);
+  const tool = toolType === "sword" ? getSwordById(toolId) : toolType === "pickaxe" ? getPickaxeById(toolId) : getAxeById(toolId);
   if (!tool) return;
 
   if (toolType === "sword") {
     state.swords = state.swords.filter((ownedTool) => ownedTool.id !== toolId);
     if (state.equippedSwordId === toolId) state.equippedSwordId = null;
+  } else if (toolType === "pickaxe") {
+    state.pickaxes = state.pickaxes.filter((ownedTool) => ownedTool.id !== toolId);
+    if (state.equippedPickaxeId === toolId) state.equippedPickaxeId = null;
   } else {
     state.axes = state.axes.filter((ownedTool) => ownedTool.id !== toolId);
     if (state.equippedAxeId === toolId) state.equippedAxeId = null;
@@ -280,10 +312,12 @@ function dropAxeItem(axeId) {
 }
 
 function pickupDroppedTool(obj) {
-  if (!obj.toolData || (obj.toolData.type !== "axe" && obj.toolData.type !== "sword")) return;
+  if (!obj.toolData || (obj.toolData.type !== "axe" && obj.toolData.type !== "pickaxe" && obj.toolData.type !== "sword")) return;
 
   if (obj.toolData.type === "sword") {
     if (!getSwordById(obj.toolData.id)) state.swords.push({ ...obj.toolData });
+  } else if (obj.toolData.type === "pickaxe") {
+    if (!getPickaxeById(obj.toolData.id)) state.pickaxes.push({ ...obj.toolData });
   } else {
     if (!getAxeById(obj.toolData.id)) state.axes.push({ ...obj.toolData });
   }
@@ -378,14 +412,14 @@ function updateBuyPanel() {
   const items = [
     {
       id: "potion",
-      name: "Small Potion",
+      name: "Health Potion",
       desc: "Restores 35 HP when used from your hotbar.",
       cost: 25,
       img: images.potion.src,
       buy: () => {
         state.gold -= 25;
         state.potions += 1;
-        toast("Bought Small Potion");
+        toast("Bought Health Potion");
       },
       canBuy: () => state.gold >= 25
     },
@@ -403,6 +437,19 @@ function updateBuyPanel() {
       canBuy: () => state.gold >= 50
     },
     {
+      id: "pickaxe",
+      name: "Basic Pickaxe",
+      desc: "60 durability. +0.45x damage on stone, copper, and iron.",
+      cost: 50,
+      img: images.pickaxe.src,
+      buy: () => {
+        state.gold -= 50;
+        createBasicPickaxe();
+        toast("Basic Pickaxe bought! Time to mine ores.");
+      },
+      canBuy: () => state.gold >= 50
+    },
+    {
       id: "sword",
       name: "Basic Sword",
       desc: "80 durability. Combat weapon powered by your Sword stat.",
@@ -416,17 +463,17 @@ function updateBuyPanel() {
       canBuy: () => state.gold >= 100
     },
     {
-      id: "manual",
-      name: "Training Manual",
-      desc: "Gives 35 XP instantly.",
-      cost: 100,
-      img: images.gold.src,
+      id: "speedpotion",
+      name: "Speed Potion",
+      desc: "Boosts movement speed by 1.5x for 15 seconds.",
+      cost: 40,
+      img: images.speedpotion.src,
       buy: () => {
-        state.gold -= 100;
-        addXp(35);
-        toast("+35 XP");
+        state.gold -= 40;
+        state.speedPotions += 1;
+        toast("Bought Speed Potion");
       },
-      canBuy: () => state.gold >= 100
+      canBuy: () => state.gold >= 40
     }
   ];
 
@@ -540,7 +587,7 @@ function createShopItem({ img, name, desc, price, buttonText, disabled, onClick 
 /* HOTBAR / EQUIPMENT */
 
 function hotbarToolItem(item) {
-  return item && typeof item === "object" && (item.type === "axe" || item.type === "sword") ? item : null;
+  return item && typeof item === "object" && (item.type === "axe" || item.type === "pickaxe" || item.type === "sword") ? item : null;
 }
 
 function hotbarAxeItem(item) {
@@ -551,16 +598,23 @@ function hotbarSwordItem(item) {
   return item && typeof item === "object" && item.type === "sword" ? item : null;
 }
 
+function hotbarPickaxeItem(item) {
+  return item && typeof item === "object" && item.type === "pickaxe" ? item : null;
+}
+
 function toolByHotbarItem(item) {
   if (item?.type === "axe") return getAxeById(item.itemId);
+  if (item?.type === "pickaxe") return getPickaxeById(item.itemId);
   if (item?.type === "sword") return getSwordById(item.itemId);
   return null;
 }
 
 function cleanHotbar() {
   if (!Array.isArray(state.axes)) state.axes = [];
+  if (!Array.isArray(state.pickaxes)) state.pickaxes = [];
   if (!Array.isArray(state.swords)) state.swords = [];
   state.axes = state.axes.filter((axe) => axe && axe.id && axe.durability > 0);
+  state.pickaxes = state.pickaxes.filter((pickaxe) => pickaxe && pickaxe.id && pickaxe.durability > 0);
   state.swords = state.swords.filter((sword) => sword && sword.id && sword.durability > 0);
 
   if (!Array.isArray(state.hotbar)) {
@@ -574,6 +628,7 @@ function cleanHotbar() {
 
   state.hotbar = state.hotbar.map((item) => {
     if (item === "potion" && state.potions > 0) return item;
+    if (item === "speedpotion" && state.speedPotions > 0) return item;
 
     const toolItem = hotbarToolItem(item);
     if (toolItem && toolByHotbarItem(toolItem) && !seenTools.has(toolItem.itemId)) {
@@ -588,6 +643,10 @@ function cleanHotbar() {
     state.equippedAxeId = null;
   }
 
+  if (!equippedPickaxe() || !state.hotbar.some((item) => hotbarPickaxeItem(item)?.itemId === state.equippedPickaxeId)) {
+    state.equippedPickaxeId = null;
+  }
+
   if (!equippedSword() || !state.hotbar.some((item) => hotbarSwordItem(item)?.itemId === state.equippedSwordId)) {
     state.equippedSwordId = null;
   }
@@ -596,11 +655,13 @@ function cleanHotbar() {
 function addItemToHotbar(itemType, itemId = null) {
   cleanHotbar();
 
-  if (itemType === "potion") {
-    if (state.potions <= 0) return;
+  if (itemType === "potion" || itemType === "speedpotion") {
+    const isSpeed = itemType === "speedpotion";
+    const count = isSpeed ? state.speedPotions : state.potions;
+    if (count <= 0) return;
 
-    if (state.hotbar.includes("potion")) {
-      toast("Potion is already in your hotbar.");
+    if (state.hotbar.includes(itemType)) {
+      toast((isSpeed ? "Speed Potion" : "Health Potion") + " is already in your hotbar.");
       return;
     }
 
@@ -610,16 +671,16 @@ function addItemToHotbar(itemType, itemId = null) {
       return;
     }
 
-    state.hotbar[openSlot] = "potion";
-    toast("Potion added to hotbar.");
+    state.hotbar[openSlot] = itemType;
+    toast((isSpeed ? "Speed Potion" : "Health Potion") + " added to hotbar.");
     save();
     syncUI();
     return;
   }
 
-  if (itemType !== "axe" && itemType !== "sword") return;
+  if (itemType !== "axe" && itemType !== "pickaxe" && itemType !== "sword") return;
 
-  const tool = itemType === "sword" ? getSwordById(itemId) : getAxeById(itemId);
+  const tool = itemType === "sword" ? getSwordById(itemId) : itemType === "pickaxe" ? getPickaxeById(itemId) : getAxeById(itemId);
   if (!tool) return;
 
   const existingSlot = state.hotbar.findIndex(
@@ -627,10 +688,13 @@ function addItemToHotbar(itemType, itemId = null) {
   );
 
   const alreadyEquipped =
-    itemType === "sword" ? state.equippedSwordId === tool.id : state.equippedAxeId === tool.id;
+    itemType === "sword" ? state.equippedSwordId === tool.id :
+    itemType === "pickaxe" ? state.equippedPickaxeId === tool.id :
+    state.equippedAxeId === tool.id;
 
   if (alreadyEquipped) {
     if (itemType === "sword") state.equippedSwordId = null;
+    else if (itemType === "pickaxe") state.equippedPickaxeId = null;
     else state.equippedAxeId = null;
     toast(tool.name + " unequipped.");
     save();
@@ -648,8 +712,10 @@ function addItemToHotbar(itemType, itemId = null) {
   }
 
   state.equippedAxeId = null;
+  state.equippedPickaxeId = null;
   state.equippedSwordId = null;
   if (itemType === "sword") state.equippedSwordId = tool.id;
+  else if (itemType === "pickaxe") state.equippedPickaxeId = tool.id;
   else state.equippedAxeId = tool.id;
 
   toast(tool.name + " equipped.");
@@ -677,9 +743,20 @@ function activateHotbarSlot(slotIndex) {
 
     state.potions -= 1;
     state.hp = Math.min(maxHp(), state.hp + 35);
-    toast("Used Small Potion. +35 HP");
+    toast("Used Health Potion. +35 HP");
 
     if (state.potions <= 0) {
+      state.hotbar[slotIndex] = null;
+    }
+  }
+
+  if (item === "speedpotion") {
+    state.speedPotions -= 1;
+    player.speedBoostUntil = Date.now() + 15000;
+    toast("Used Speed Potion! 1.5x speed for 15 seconds.");
+    addFloatingText(player.x, player.y - 56, "SPEED BOOST!");
+
+    if (state.speedPotions <= 0) {
       state.hotbar[slotIndex] = null;
     }
   }
@@ -703,11 +780,14 @@ function updateHotbar() {
     slot.title = tool
       ? tool.name + " · " + toolDurabilityText(tool) + "/" + tool.maxDurability + " durability"
       : item === "potion"
-        ? "Use Small Potion"
-        : "Empty hotbar slot";
+        ? "Use Health Potion"
+        : item === "speedpotion"
+          ? "Use Speed Potion · 1.5x speed for 15 seconds"
+          : "Empty hotbar slot";
 
     const isEquipped =
       tool && ((tool.type === "axe" && state.equippedAxeId === tool.id) ||
+      (tool.type === "pickaxe" && state.equippedPickaxeId === tool.id) ||
       (tool.type === "sword" && state.equippedSwordId === tool.id));
 
     if (isEquipped) slot.classList.add("equipped");
@@ -717,15 +797,15 @@ function updateHotbar() {
     key.textContent = String(index + 1);
     slot.appendChild(key);
 
-    if (tool || item === "potion") {
+    if (tool || item === "potion" || item === "speedpotion") {
       const icon = document.createElement("img");
-      icon.src = tool ? images[tool.type].src : images.potion.src;
-      icon.alt = tool ? tool.name : "Small Potion";
+      icon.src = tool ? images[tool.type].src : item === "speedpotion" ? images.speedpotion.src : images.potion.src;
+      icon.alt = tool ? tool.name : item === "speedpotion" ? "Speed Potion" : "Health Potion";
       slot.appendChild(icon);
 
       const count = document.createElement("span");
       count.className = "hotbar-count";
-      count.textContent = tool ? toolDurabilityText(tool) : "x" + state.potions;
+      count.textContent = tool ? toolDurabilityText(tool) : "x" + (item === "speedpotion" ? state.speedPotions : state.potions);
       slot.appendChild(count);
     }
 

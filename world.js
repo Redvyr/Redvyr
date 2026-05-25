@@ -41,7 +41,7 @@ function createWorld() {
     npcName: "Rowan"
   });
 
-  for (let i = 0; i < 18; i++) {
+  for (let i = 0; i < 26; i++) {
     const pos = randomSafePosition(64, 96);
 
     objects.push(makeResource({
@@ -57,7 +57,7 @@ function createWorld() {
     }));
   }
 
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 16; i++) {
     const pos = randomSafePosition(52, 44);
 
     objects.push(makeResource({
@@ -73,7 +73,41 @@ function createWorld() {
     }));
   }
 
-  for (let i = 0; i < 16; i++) {
+  for (let i = 0; i < 8; i++) {
+    const pos = randomSafePosition(52, 48);
+
+    objects.push(makeResource({
+      x: pos.x,
+      y: pos.y,
+      w: 52,
+      h: 48,
+      kind: "copperore",
+      action: "copper",
+      label: "mine copper ore",
+      amount: 1,
+      maxHp: randomInt(10, 13),
+      requiresPickaxe: true
+    }));
+  }
+
+  for (let i = 0; i < 4; i++) {
+    const pos = randomSafePosition(52, 48);
+
+    objects.push(makeResource({
+      x: pos.x,
+      y: pos.y,
+      w: 52,
+      h: 48,
+      kind: "ironore",
+      action: "iron",
+      label: "mine iron ore",
+      amount: 1,
+      maxHp: randomInt(15, 18),
+      requiresPickaxe: true
+    }));
+  }
+
+  for (let i = 0; i < 20; i++) {
     const pos = randomSafePosition(48, 54);
 
     objects.push(makeResource({
@@ -396,17 +430,20 @@ function update() {
     player.facing = inputY > 0 ? "down" : "up";
   }
 
-  player.vx += inputX * player.acceleration;
-  player.vy += inputY * player.acceleration;
+  const speedBoosted = Date.now() < player.speedBoostUntil;
+  const currentMaxSpeed = player.speed * (speedBoosted ? 1.5 : 1);
+
+  player.vx += inputX * player.acceleration * (speedBoosted ? 1.18 : 1);
+  player.vy += inputY * player.acceleration * (speedBoosted ? 1.18 : 1);
 
   player.vx *= player.friction;
   player.vy *= player.friction;
 
   const currentSpeed = Math.hypot(player.vx, player.vy);
 
-  if (currentSpeed > player.speed) {
-    player.vx = (player.vx / currentSpeed) * player.speed;
-    player.vy = (player.vy / currentSpeed) * player.speed;
+  if (currentSpeed > currentMaxSpeed) {
+    player.vx = (player.vx / currentSpeed) * currentMaxSpeed;
+    player.vy = (player.vy / currentSpeed) * currentMaxSpeed;
   }
 
   player.moving = Math.abs(player.vx) > 0.08 || Math.abs(player.vy) > 0.08;
@@ -431,7 +468,7 @@ function update() {
   const prompt = $("interactPrompt");
 
   if (near) {
-    if (near.action === "wood" || near.action === "stone" || near.action === "bush") {
+    if (near.action === "wood" || near.action === "stone" || near.action === "copper" || near.action === "iron" || near.action === "bush") {
       prompt.textContent = "Press E to " + near.label + " (" + Math.max(0, Math.ceil(near.hp)) + " HP)";
     } else {
       prompt.textContent = "Press E to " + near.label;
@@ -505,7 +542,7 @@ function interact() {
 
   if (!obj) return;
 
-  if (obj.action === "wood" || obj.action === "stone" || obj.action === "bush") {
+  if (obj.action === "wood" || obj.action === "stone" || obj.action === "copper" || obj.action === "iron" || obj.action === "bush") {
     hitResource(obj);
   }
 
@@ -620,15 +657,48 @@ function useEquippedAxeDurability(obj) {
   return true;
 }
 
+function useEquippedPickaxeDurability(obj) {
+  const pickaxe = equippedPickaxe();
+  if (!pickaxe) return false;
+
+  const isMineable = obj.kind === "rock" || obj.kind === "copperore" || obj.kind === "ironore";
+  if (!isMineable) return false;
+
+  player.axeSwing = 11;
+  pickaxe.durability = Number(Math.max(0, pickaxe.durability - 1).toFixed(2));
+
+  if (pickaxe.durability > 0) return false;
+
+  state.pickaxes = state.pickaxes.filter((ownedPickaxe) => ownedPickaxe.id !== pickaxe.id);
+  state.hotbar = state.hotbar.map((item) =>
+    hotbarPickaxeItem(item)?.itemId === pickaxe.id ? null : item
+  );
+  state.equippedPickaxeId = null;
+
+  if (selectedInventoryItem?.type === "pickaxe" && selectedInventoryItem.itemId === pickaxe.id) {
+    selectedInventoryItem = null;
+  }
+
+  toast("Your Basic Pickaxe broke!");
+  addFloatingText(player.x, player.y - 52, "PICKAXE BROKE!");
+  return true;
+}
+
 function hitResource(obj) {
+  if ((obj.action === "copper" || obj.action === "iron") && !equippedPickaxe()) {
+    toast("You need a pickaxe to mine ore.");
+    return;
+  }
+
   const damage = gatheringDamage(obj.action);
   const axeBroke = useEquippedAxeDurability(obj);
+  const pickaxeBroke = useEquippedPickaxeDurability(obj);
 
   obj.hp -= damage;
   obj.shake = 8;
 
   if (obj.hp > 0) {
-    if (!axeBroke) toast("Hit! -" + damage.toFixed(2));
+    if (!axeBroke && !pickaxeBroke) toast("Hit! -" + damage.toFixed(2));
     return;
   }
 
@@ -648,6 +718,22 @@ function hitResource(obj) {
     toast("+" + (obj.amount || 1) + " stone");
     addFloatingText(obj.x, obj.y, "+" + (obj.amount || 1) + " Stone");
     temporarilyHide(obj, resourceRespawnTime() + 2000);
+  }
+
+  if (obj.action === "copper") {
+    state.copperOre += obj.amount || 1;
+    addXp(8);
+    toast("+" + (obj.amount || 1) + " copper ore");
+    addFloatingText(obj.x, obj.y, "+" + (obj.amount || 1) + " Copper");
+    respawnResourceElsewhere(obj, resourceRespawnTime() + 5000);
+  }
+
+  if (obj.action === "iron") {
+    state.ironOre += obj.amount || 1;
+    addXp(14);
+    toast("+" + (obj.amount || 1) + " iron ore");
+    addFloatingText(obj.x, obj.y, "+" + (obj.amount || 1) + " Iron");
+    respawnResourceElsewhere(obj, resourceRespawnTime() + 9000);
   }
 
   if (obj.action === "bush") {
@@ -693,6 +779,18 @@ function temporarilyHide(obj, ms) {
   obj.hp = obj.maxHp;
 
   setTimeout(() => {
+    obj.hidden = false;
+  }, ms);
+}
+
+function respawnResourceElsewhere(obj, ms) {
+  obj.hidden = true;
+  obj.hp = obj.maxHp;
+
+  setTimeout(() => {
+    const newPos = randomSafePosition(obj.w, obj.h);
+    obj.x = newPos.x;
+    obj.y = newPos.y;
     obj.hidden = false;
   }, ms);
 }
@@ -760,6 +858,8 @@ function drawObject(obj) {
 
   if (obj.kind === "tree") drawImg(images.tree, drawX, obj.y, obj.w, obj.h, "#2f7832");
   if (obj.kind === "rock") drawImg(images.rock, drawX, obj.y, obj.w, obj.h, "#89939e");
+  if (obj.kind === "copperore") drawImg(images.copperore, drawX, obj.y, obj.w, obj.h, "#b87333");
+  if (obj.kind === "ironore") drawImg(images.ironore, drawX, obj.y, obj.w, obj.h, "#707983");
   if (obj.kind === "bush1") drawImg(images.bush1, drawX, obj.y, obj.w, obj.h, "#3a9136");
   if (obj.kind === "bush2") drawImg(images.bush2, drawX, obj.y, obj.w, obj.h, "#3a9136");
   if (obj.kind === "chest") drawChest(drawX, obj.y, obj.w, obj.h, obj.used, "normal");
@@ -779,6 +879,12 @@ function drawObject(obj) {
     ctx.fillStyle = "rgba(0,0,0,0.20)";
     ctx.fillRect(drawX + 7, obj.y + 31, 28, 6);
     drawImg(images.sword, drawX, obj.y, obj.w, obj.h, "#d7eaff");
+  }
+
+  if (obj.kind === "droppedpickaxe") {
+    ctx.fillStyle = "rgba(0,0,0,0.20)";
+    ctx.fillRect(drawX + 7, obj.y + 31, 28, 6);
+    drawImg(images.pickaxe, drawX, obj.y, obj.w, obj.h, "#9b7451");
   }
 
   if (obj.kind === "slimegel") {
@@ -812,23 +918,26 @@ function drawPlayer() {
 function drawEquippedTool(bob) {
   const sword = equippedSword();
   const axe = equippedAxe();
-  const tool = sword || axe;
+  const pickaxe = equippedPickaxe();
+  const tool = sword || axe || pickaxe;
   if (!tool) return;
 
-  const image = sword ? images.sword : images.axe;
+  const image = images[tool.type];
   if (!image.complete || image.naturalWidth <= 0) return;
 
-  const swingFrames = sword ? 12 : 11;
-  const swingProgress = player.attackSwing > 0 && sword
+  const isSword = tool.type === "sword";
+  const isGatherTool = tool.type === "axe" || tool.type === "pickaxe";
+  const swingFrames = isSword ? 12 : 11;
+  const swingProgress = player.attackSwing > 0 && isSword
     ? (swingFrames - player.attackSwing) / swingFrames
-    : player.axeSwing > 0 && axe
+    : player.axeSwing > 0 && isGatherTool
       ? (11 - player.axeSwing) / 11
       : 0;
 
-  const isSwinging = sword ? player.attackSwing > 0 : player.axeSwing > 0;
+  const isSwinging = isSword ? player.attackSwing > 0 : player.axeSwing > 0;
   const rotation = isSwinging
     ? -0.55 + Math.sin(swingProgress * Math.PI) * 1.15
-    : sword ? 0.5 : 0.2;
+    : isSword ? 0.5 : tool.type === "pickaxe" ? 0.3 : 0.2;
 
   const anchorX = player.x + 25;
   const anchorY = player.y - 14 + bob;
@@ -836,7 +945,7 @@ function drawEquippedTool(bob) {
   ctx.save();
   ctx.translate(anchorX, anchorY);
   ctx.rotate(rotation);
-  ctx.drawImage(image, -9, -9, sword ? 42 : 40, sword ? 42 : 40);
+  ctx.drawImage(image, -9, -9, isSword ? 42 : 40, isSword ? 42 : 40);
   ctx.restore();
 }
 
@@ -926,9 +1035,9 @@ function drawCampfire(x, y, w, h) {
   const radius = campLightRadius();
 
   const gradient = ctx.createRadialGradient(x + 32, y + 32, 8, x + 32, y + 32, radius);
-  gradient.addColorStop(0, "rgba(255, 224, 112, 0.60)");
-  gradient.addColorStop(0.18, "rgba(255, 194, 70, 0.42)");
-  gradient.addColorStop(0.55, "rgba(255, 150, 38, 0.18)");
+  gradient.addColorStop(0, "rgba(255, 224, 112, 0.36)");
+  gradient.addColorStop(0.18, "rgba(255, 194, 70, 0.26)");
+  gradient.addColorStop(0.55, "rgba(255, 150, 38, 0.11)");
   gradient.addColorStop(1, "rgba(255, 130, 26, 0)");
 
   ctx.fillStyle = gradient;
@@ -970,9 +1079,9 @@ function drawNightOverlay() {
     const sy = camp.y - camera.y + 32;
 
     const light = ctx.createRadialGradient(sx, sy, 8, sx, sy, campLightRadius());
-    light.addColorStop(0, "rgba(255, 232, 132, 0.66)");
-    light.addColorStop(0.18, "rgba(255, 203, 85, 0.48)");
-    light.addColorStop(0.55, "rgba(255, 164, 45, 0.23)");
+    light.addColorStop(0, "rgba(255, 232, 132, 0.40)");
+    light.addColorStop(0.18, "rgba(255, 203, 85, 0.30)");
+    light.addColorStop(0.55, "rgba(255, 164, 45, 0.14)");
     light.addColorStop(1, "rgba(255, 136, 26, 0)");
 
     ctx.fillStyle = light;

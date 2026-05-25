@@ -118,8 +118,12 @@ const files = {
   rarechest: "rarechest.png",
   legendarychest: "legendarychest.png",
   npc: "npc.png",
-  potion: "potion.png",
+  potion: "HealthPotion.png",
+  speedpotion: "SpeedPotion.png",
   axe: "axe.png",
+  pickaxe: "pickaxe.png",
+  copperore: "copperore.png",
+  ironore: "ironore.png",
   sword: "sword.png",
   slime: "slime.png",
   darkslime: "darkslime.png",
@@ -139,11 +143,16 @@ const state = {
   wood: 0,
   stone: 0,
   potions: 0,
+  speedPotions: 0,
   slimeGel: 0,
+  copperOre: 0,
+  ironOre: 0,
 
   axes: [],
+  pickaxes: [],
   swords: [],
   equippedAxeId: null,
+  equippedPickaxeId: null,
   equippedSwordId: null,
   nextItemId: 1,
   hotbar: [null, null, null, null, null],
@@ -198,7 +207,8 @@ const player = {
   attackSwing: 0,
   attackCooldown: 0,
   hurtCooldown: 0,
-  facing: "down"
+  facing: "down",
+  speedBoostUntil: 0
 };
 
 const camera = {
@@ -209,8 +219,8 @@ const camera = {
 };
 
 const map = {
-  width: 1920,
-  height: 1280,
+  width: 2560,
+  height: 1792,
   tile: 32
 };
 
@@ -282,6 +292,28 @@ function axeDurabilityText(axe) {
     : axe.durability.toFixed(2).replace(/0+$/, "").replace(/\.$/, "");
 }
 
+function createBasicPickaxe(durability = 60) {
+  const pickaxe = {
+    id: "pickaxe-" + state.nextItemId,
+    type: "pickaxe",
+    name: "Basic Pickaxe",
+    durability: Math.max(0, Math.min(60, Number(durability) || 60)),
+    maxDurability: 60
+  };
+
+  state.nextItemId += 1;
+  state.pickaxes.push(pickaxe);
+  return pickaxe;
+}
+
+function getPickaxeById(itemId) {
+  return state.pickaxes.find((pickaxe) => pickaxe.id === itemId) || null;
+}
+
+function equippedPickaxe() {
+  return state.equippedPickaxeId ? getPickaxeById(state.equippedPickaxeId) : null;
+}
+
 function createBasicSword(durability = 80) {
   const sword = {
     id: "sword-" + state.nextItemId,
@@ -315,8 +347,12 @@ function gatheringDamage(resourceType = "") {
     equippedAxe() && (resourceType === "wood" || resourceType === "bush")
       ? 0.35
       : 0;
+  const pickaxeBonus =
+    equippedPickaxe() && (resourceType === "stone" || resourceType === "copper" || resourceType === "iron")
+      ? 0.45
+      : 0;
 
-  return Number((strengthMultiplier() + axeBonus).toFixed(2));
+  return Number((strengthMultiplier() + axeBonus + pickaxeBonus).toFixed(2));
 }
 
 function addXp(amount) {
@@ -544,7 +580,7 @@ function campUpgradeCost() {
 }
 
 function campLightRadius() {
-  return 126 + state.campLevel * 20;
+  return 104 + state.campLevel * 14;
 }
 
 function campHealRadius() {
@@ -651,7 +687,10 @@ function loadSave() {
     state.wood = Number(data.wood || 0);
     state.stone = Number(data.stone || 0);
     state.potions = Number(data.potions || 0);
+    state.speedPotions = Number(data.speedPotions || 0);
     state.slimeGel = Number(data.slimeGel || 0);
+    state.copperOre = Number(data.copperOre || 0);
+    state.ironOre = Number(data.ironOre || 0);
 
     state.nextItemId = Math.max(1, Number(data.nextItemId || 1));
     state.axes = Array.isArray(data.axes)
@@ -662,6 +701,18 @@ function loadSave() {
             type: "axe",
             name: "Basic Axe",
             durability: Math.max(0, Math.min(60, Number(axe.durability) || 0)),
+            maxDurability: 60
+          }))
+      : [];
+
+    state.pickaxes = Array.isArray(data.pickaxes)
+      ? data.pickaxes
+          .filter((pickaxe) => pickaxe && pickaxe.durability > 0)
+          .map((pickaxe) => ({
+            id: String(pickaxe.id),
+            type: "pickaxe",
+            name: "Basic Pickaxe",
+            durability: Math.max(0, Math.min(60, Number(pickaxe.durability) || 0)),
             maxDurability: 60
           }))
       : [];
@@ -689,6 +740,12 @@ function loadSave() {
     }, 0);
     state.nextItemId = Math.max(state.nextItemId, highestAxeNumber + 1);
 
+    const highestPickaxeNumber = state.pickaxes.reduce((highest, pickaxe) => {
+      const match = pickaxe.id.match(/^(?:pickaxe-)(\d+)$/);
+      return match ? Math.max(highest, Number(match[1])) : highest;
+    }, 0);
+    state.nextItemId = Math.max(state.nextItemId, highestPickaxeNumber + 1);
+
     const highestSwordNumber = state.swords.reduce((highest, sword) => {
       const match = sword.id.match(/^(?:sword-)(\d+)$/);
       return match ? Math.max(highest, Number(match[1])) : highest;
@@ -706,6 +763,8 @@ function loadSave() {
 
     state.equippedAxeId =
       typeof data.equippedAxeId === "string" ? data.equippedAxeId : null;
+    state.equippedPickaxeId =
+      typeof data.equippedPickaxeId === "string" ? data.equippedPickaxeId : null;
     state.equippedSwordId =
       typeof data.equippedSwordId === "string" ? data.equippedSwordId : null;
 
@@ -726,27 +785,29 @@ function loadSave() {
       ? data.droppedTools
           .filter((drop) =>
             drop && drop.toolData &&
-            (drop.toolData.type === "axe" || drop.toolData.type === "sword") &&
+            (drop.toolData.type === "axe" || drop.toolData.type === "pickaxe" || drop.toolData.type === "sword") &&
             drop.toolData.durability > 0
           )
           .map((drop) => {
             const isSword = drop.toolData.type === "sword";
+            const isPickaxe = drop.toolData.type === "pickaxe";
+            const maxDurability = isSword ? 80 : 60;
             return {
               x: Number(drop.x || 0),
               y: Number(drop.y || 0),
               toolData: {
                 id: String(drop.toolData.id),
-                type: isSword ? "sword" : "axe",
-                name: isSword ? "Basic Sword" : "Basic Axe",
-                durability: Math.max(0, Math.min(isSword ? 80 : 60, Number(drop.toolData.durability) || 0)),
-                maxDurability: isSword ? 80 : 60
+                type: isSword ? "sword" : isPickaxe ? "pickaxe" : "axe",
+                name: isSword ? "Basic Sword" : isPickaxe ? "Basic Pickaxe" : "Basic Axe",
+                durability: Math.max(0, Math.min(maxDurability, Number(drop.toolData.durability) || 0)),
+                maxDurability
               }
             };
           })
       : [];
 
     const highestDroppedItemNumber = state.droppedTools.reduce((highest, drop) => {
-      const match = drop.toolData.id.match(/^(?:axe|sword)-(\d+)$/);
+      const match = drop.toolData.id.match(/^(?:axe|pickaxe|sword)-(\d+)$/);
       return match ? Math.max(highest, Number(match[1])) : highest;
     }, 0);
     state.nextItemId = Math.max(state.nextItemId, highestDroppedItemNumber + 1);
@@ -1061,6 +1122,13 @@ function updateInventoryPanel() {
       maxDurability: axe.maxDurability,
       src: images.axe.src
     })),
+    ...state.pickaxes.map((pickaxe) => ({
+      type: "pickaxe",
+      itemId: pickaxe.id,
+      durability: pickaxe.durability,
+      maxDurability: pickaxe.maxDurability,
+      src: images.pickaxe.src
+    })),
     ...state.swords.map((sword) => ({
       type: "sword",
       itemId: sword.id,
@@ -1070,8 +1138,11 @@ function updateInventoryPanel() {
     })),
     ...makeStacks("wood", state.wood, images.wood),
     ...makeStacks("stone", state.stone, images.stone),
+    ...makeStacks("copperore", state.copperOre, images.copperore),
+    ...makeStacks("ironore", state.ironOre, images.ironore),
     ...makeStacks("slimegel", state.slimeGel, images.slimegel),
-    ...makeStacks("potion", state.potions, images.potion)
+    ...makeStacks("potion", state.potions, images.potion),
+    ...makeStacks("speedpotion", state.speedPotions, images.speedpotion)
   ];
 
   const totalSlots = 25;
@@ -1087,7 +1158,7 @@ function updateInventoryPanel() {
 
       const count = document.createElement("span");
       count.textContent =
-        item.type === "axe" || item.type === "sword"
+        item.type === "axe" || item.type === "pickaxe" || item.type === "sword"
           ? toolDurabilityText(item) + "/" + item.maxDurability
           : "x" + item.count;
 
@@ -1115,6 +1186,21 @@ function updateInventoryPanel() {
         slot.addEventListener("dblclick", () => addItemToHotbar("axe", item.itemId));
       }
 
+      if (item.type === "pickaxe") {
+        slot.classList.add("assignable");
+        slot.title = "Basic Pickaxe · " + toolDurabilityText(item) + "/60 durability. Double-click to add/equip.";
+
+        if (state.hotbar.some((barItem) => hotbarPickaxeItem(barItem)?.itemId === item.itemId)) {
+          slot.classList.add("hotbar-linked");
+        }
+
+        if (state.equippedPickaxeId === item.itemId) {
+          slot.classList.add("equipped-item");
+        }
+
+        slot.addEventListener("dblclick", () => addItemToHotbar("pickaxe", item.itemId));
+      }
+
       if (item.type === "sword") {
         slot.classList.add("assignable");
         slot.title = "Basic Sword · " + toolDurabilityText(item) + "/80 durability. Click to select.";
@@ -1132,13 +1218,24 @@ function updateInventoryPanel() {
 
       if (item.type === "potion") {
         slot.classList.add("assignable");
-        slot.title = "Double-click to add potion to hotbar.";
+        slot.title = "Double-click to add Health Potion to hotbar.";
 
         if (state.hotbar.includes("potion")) {
           slot.classList.add("hotbar-linked");
         }
 
         slot.addEventListener("dblclick", () => addItemToHotbar("potion"));
+      }
+
+      if (item.type === "speedpotion") {
+        slot.classList.add("assignable");
+        slot.title = "Double-click to add Speed Potion to hotbar.";
+
+        if (state.hotbar.includes("speedpotion")) {
+          slot.classList.add("hotbar-linked");
+        }
+
+        slot.addEventListener("dblclick", () => addItemToHotbar("speedpotion"));
       }
     } else {
       slot.classList.add("empty");
@@ -1155,10 +1252,12 @@ function updateStatsPanel() {
 
   statPoints.textContent = state.statPoints;
   const heldAxe = equippedAxe();
+  const heldPickaxe = equippedPickaxe();
   const heldSword = equippedSword();
   statGatherDamage.textContent =
     strengthMultiplier().toFixed(2) + "x" +
     (heldAxe ? " (+0.35x trees/bushes · " + toolDurabilityText(heldAxe) + "/60 axe)" : "") +
+    (heldPickaxe ? " (+0.45x stone/ores · " + toolDurabilityText(heldPickaxe) + "/60 pickaxe)" : "") +
     (heldSword ? " · Sword equipped" : "");
   statMaxHp.textContent = maxHp();
 
