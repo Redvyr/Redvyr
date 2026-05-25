@@ -947,6 +947,8 @@ function syncUI() {
   updateStatsPanel();
   updateCampPanel();
   updateHotbar();
+  if (typeof updateTerritoryPanel === "function") updateTerritoryPanel();
+  if (typeof updateTerritoryLocationBanner === "function") updateTerritoryLocationBanner();
 
   if (!buyPanel.classList.contains("hidden")) updateBuyPanel();
   if (!sellPanel.classList.contains("hidden")) updateSellPanel();
@@ -1142,6 +1144,7 @@ function closeAllGamePanels() {
   closeCamp();
   if (typeof closeCrafting === "function") closeCrafting();
   if (typeof closeSmelting === "function") closeSmelting();
+  if (typeof closeTerritory === "function") closeTerritory();
   closeBuyPanel();
   closeSellPanel();
   closeGameMenu();

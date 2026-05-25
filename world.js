@@ -759,6 +759,10 @@ function update() {
     closeRowanPanelsWhenFar();
   }
 
+  if (typeof updateTerritoryLocationBanner === "function") {
+    updateTerritoryLocationBanner();
+  }
+
   const near = campPlacementState.active ? null : nearbyInteractable();
   const prompt = $("interactPrompt");
 
@@ -1149,6 +1153,7 @@ function draw() {
   ctx.translate(-Math.round(camera.x), -Math.round(camera.y));
 
   drawMap();
+  if (typeof drawHomeTerritoryBoundary === "function") drawHomeTerritoryBoundary();
   drawEntitiesLayered();
   drawCombatEffects();
   drawFloatingTexts();

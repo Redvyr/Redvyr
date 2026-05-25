@@ -118,6 +118,8 @@
     <section id="gameScreen" class="game-screen hidden">
       <canvas id="game" width="960" height="540"></canvas>
 
+      <div id="locationBanner" class="location-banner">- Wilderness -</div>
+
       <div class="game-hud">
         <strong id="hudName">Guest Hero</strong>
         <span id="hudWorld">World A - Main Realm</span>
@@ -169,6 +171,7 @@
             <button id="statsBtn" class="menu-action">Stats</button>
             <button id="craftingBtn" class="menu-action crafting-action">Crafting</button>
             <button id="smeltingBtn" class="menu-action smelting-action">Smelting</button>
+            <button id="territoryBtn" class="menu-action territory-action">Territory</button>
           </div>
         </div>
       </div>
@@ -268,6 +271,19 @@
         <div id="statsList" class="stats-list"></div>
       </div>
 
+
+      <div id="territoryPanel" class="territory-panel hidden">
+        <div class="territory-header">
+          <div>
+            <h2>Territory</h2>
+            <p>Your protected home land.</p>
+          </div>
+          <button id="closeTerritoryBtn" class="territory-close">X</button>
+        </div>
+
+        <div id="territoryBody" class="territory-body"></div>
+      </div>
+
       <div id="campPanel" class="side-panel camp-panel hidden">
         <div class="panel-header">
           <h2>Campfire</h2>
@@ -361,6 +377,7 @@
   <script src="world.js"></script>
   <script src="crafting.js"></script>
   <script src="smelting.js"></script>
+  <script src="territory.js"></script>
   <script src="game.js"></script>
 </body>
 </html>

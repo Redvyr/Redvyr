@@ -48,6 +48,7 @@ function randomEnemySpawnPoint(w = 52, h = 52, options = {}) {
     const distanceFromPlayer = Math.hypot(x + w / 2 - player.x, y + h / 2 - player.y);
     const distanceFromCamp = Math.hypot(x + w / 2 - campX, y + h / 2 - campY);
 
+    if (typeof isInsideHomeTerritory === "function" && isInsideHomeTerritory(x + w / 2, y + h / 2)) continue;
     if (distanceFromPlayer < minPlayerDistance || distanceFromCamp < minCampDistance) continue;
 
     const blocked = objects.some((obj) => {

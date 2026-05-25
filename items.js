@@ -451,45 +451,6 @@ function updateBuyPanel() {
       canBuy: () => state.gold >= 25
     },
     {
-      id: "axe",
-      name: "Basic Axe",
-      desc: "60 durability. +0.35x damage on trees and bushes only.",
-      cost: 50,
-      img: images.axe.src,
-      buy: () => {
-        state.gold -= 50;
-        createBasicAxe();
-        toast("Basic Axe bought! Select it in Inventory.");
-      },
-      canBuy: () => state.gold >= 50
-    },
-    {
-      id: "pickaxe",
-      name: "Basic Pickaxe",
-      desc: "60 durability. +0.45x damage on stone, copper, and iron.",
-      cost: 50,
-      img: images.pickaxe.src,
-      buy: () => {
-        state.gold -= 50;
-        createBasicPickaxe();
-        toast("Basic Pickaxe bought! Time to mine ores.");
-      },
-      canBuy: () => state.gold >= 50
-    },
-    {
-      id: "sword",
-      name: "Basic Sword",
-      desc: "80 durability. Combat weapon powered by your Sword stat.",
-      cost: 100,
-      img: images.sword.src,
-      buy: () => {
-        state.gold -= 100;
-        createBasicSword();
-        toast("Basic Sword bought! Equip it in Inventory.");
-      },
-      canBuy: () => state.gold >= 100
-    },
-    {
       id: "speedpotion",
       name: "Speed Potion",
       desc: "Boosts movement speed by 1.5x for 15 seconds.",

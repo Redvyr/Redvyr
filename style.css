@@ -1854,3 +1854,110 @@ label {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* PHASE 6C — HOME TERRITORY FOUNDATION */
+
+.location-banner {
+  position: absolute;
+  top: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 8;
+  min-width: 178px;
+  padding: 7px 18px;
+  text-align: center;
+  color: rgba(255, 237, 194, 0.94);
+  background: rgba(13, 7, 4, 0.58);
+  border: 1px solid rgba(242, 195, 95, 0.38);
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.07em;
+  pointer-events: none;
+  transition: opacity 0.2s ease, border-color 0.2s ease;
+}
+
+.location-banner.home-land {
+  color: #ffe4a6;
+  border-color: rgba(242, 195, 95, 0.8);
+  background: rgba(38, 18, 7, 0.82);
+}
+
+.territory-panel {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 28;
+  width: min(500px, calc(100% - 34px));
+  transform: translate(-50%, -50%);
+  padding: 18px;
+  border-radius: 9px;
+  color: var(--cream);
+  background: rgba(18, 8, 3, 0.97);
+  border: 2px solid rgba(242, 195, 95, 0.68);
+  box-shadow: 0 16px 32px rgba(0,0,0,0.44);
+}
+
+.territory-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.territory-header h2 {
+  margin: 0 0 3px;
+  color: #ffe4a6;
+  font-size: 22px;
+}
+
+.territory-header p {
+  margin: 0;
+  color: rgba(255, 238, 200, 0.7);
+  font-size: 12px;
+}
+
+.territory-close {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+}
+
+.territory-status,
+.territory-rule {
+  margin-top: 10px;
+  padding: 12px;
+  border-radius: 6px;
+  background: rgba(0,0,0,0.26);
+  border: 1px solid rgba(242,195,95,0.28);
+  line-height: 1.45;
+  font-size: 13px;
+}
+
+.territory-status strong {
+  display: block;
+  margin-bottom: 5px;
+  color: #ffe4a6;
+  font-size: 16px;
+}
+
+.territory-rule {
+  color: rgba(255, 238, 200, 0.8);
+}
+
+.territory-rule.locked {
+  opacity: 0.7;
+}
+
+.territory-map-tag {
+  margin-top: 12px;
+  padding: 9px;
+  text-align: center;
+  color: #ffe4a6;
+  background: rgba(160, 92, 28, 0.18);
+  border: 1px dashed rgba(242,195,95,0.56);
+  border-radius: 5px;
+  font-weight: 800;
+}
