@@ -85,7 +85,7 @@ function createWorld() {
       action: "copper",
       label: "mine copper ore",
       amount: 1,
-      maxHp: randomInt(10, 13),
+      maxHp: randomInt(13, 17),
       requiresPickaxe: true
     }));
   }
@@ -102,7 +102,7 @@ function createWorld() {
       action: "iron",
       label: "mine iron ore",
       amount: 1,
-      maxHp: randomInt(15, 18),
+      maxHp: randomInt(20, 25),
       requiresPickaxe: true
     }));
   }
@@ -583,11 +583,14 @@ function openChest(obj) {
   let xpReward = 8;
   let woodReward = 0;
   let stoneReward = 0;
+  let healthPotionReward = 0;
+  let speedPotionReward = 0;
   let message = "+Gold";
 
   if (obj.chestType === "starter") {
     goldReward = 20;
     xpReward = 10;
+    healthPotionReward = Math.random() < 0.10 ? 1 : 0;
     message = "Starter Chest!";
   }
 
@@ -596,6 +599,8 @@ function openChest(obj) {
     xpReward = 20;
     woodReward = Math.random() < 0.45 ? randomInt(2, 6) : 0;
     stoneReward = Math.random() < 0.45 ? randomInt(2, 6) : 0;
+    healthPotionReward = Math.random() < 0.22 ? 1 : 0;
+    speedPotionReward = Math.random() < 0.14 ? 1 : 0;
     message = "RARE CHEST!";
   }
 
@@ -604,12 +609,16 @@ function openChest(obj) {
     xpReward = 60;
     woodReward = randomInt(8, 18);
     stoneReward = randomInt(8, 18);
+    healthPotionReward = 1;
+    speedPotionReward = Math.random() < 0.55 ? 1 : 0;
     message = "LEGENDARY!";
   }
 
   state.gold += goldReward;
   state.wood += woodReward;
   state.stone += stoneReward;
+  state.potions += healthPotionReward;
+  state.speedPotions += speedPotionReward;
   addXp(xpReward);
 
   toast(message + " +" + formatNumber(goldReward) + " gold");
@@ -617,6 +626,8 @@ function openChest(obj) {
 
   if (woodReward > 0) addFloatingText(obj.x, obj.y + 20, "+" + woodReward + " Wood");
   if (stoneReward > 0) addFloatingText(obj.x, obj.y + 38, "+" + stoneReward + " Stone");
+  if (healthPotionReward > 0) addFloatingText(obj.x, obj.y + 56, "+Health Potion");
+  if (speedPotionReward > 0) addFloatingText(obj.x, obj.y + 74, "+Speed Potion");
 
   const respawnTime = obj.chestType === "legendary" ? 90000 : 45000;
 
@@ -723,16 +734,16 @@ function hitResource(obj) {
   if (obj.action === "copper") {
     state.copperOre += obj.amount || 1;
     addXp(8);
-    toast("+" + (obj.amount || 1) + " copper ore");
-    addFloatingText(obj.x, obj.y, "+" + (obj.amount || 1) + " Copper");
+    toast("+" + (obj.amount || 1) + " raw copper");
+    addFloatingText(obj.x, obj.y, "+" + (obj.amount || 1) + " Raw Copper");
     respawnResourceElsewhere(obj, resourceRespawnTime() + 5000);
   }
 
   if (obj.action === "iron") {
     state.ironOre += obj.amount || 1;
     addXp(14);
-    toast("+" + (obj.amount || 1) + " iron ore");
-    addFloatingText(obj.x, obj.y, "+" + (obj.amount || 1) + " Iron");
+    toast("+" + (obj.amount || 1) + " raw iron");
+    addFloatingText(obj.x, obj.y, "+" + (obj.amount || 1) + " Raw Iron");
     respawnResourceElsewhere(obj, resourceRespawnTime() + 9000);
   }
 

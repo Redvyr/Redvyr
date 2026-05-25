@@ -477,12 +477,28 @@ function drawCombatEffects() {
   const progress = 1 - player.attackSwing / totalFrames;
   const radius = (sword ? 25 : 18) + progress * (sword ? 30 : 22);
 
+  const facingRotation = {
+    right: 0,
+    down: Math.PI / 2,
+    left: Math.PI,
+    up: -Math.PI / 2
+  }[player.facing] || 0;
+
   ctx.save();
+  ctx.translate(origin.x, origin.y);
+  ctx.rotate(facingRotation);
   ctx.strokeStyle = sword ? "rgba(215,235,255,0.95)" : "rgba(255,240,200,0.82)";
   ctx.lineWidth = sword ? 5 : 4;
   ctx.beginPath();
-  ctx.arc(origin.x, origin.y, radius, -0.55, 1.4);
+  ctx.arc(0, 0, radius, -0.72, 1.24);
   ctx.stroke();
+
+  if (!sword) {
+    ctx.globalAlpha = 0.45;
+    ctx.beginPath();
+    ctx.arc(0, 0, radius * 0.70, -0.60, 1.10);
+    ctx.stroke();
+  }
   ctx.restore();
 }
 

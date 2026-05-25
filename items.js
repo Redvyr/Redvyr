@@ -60,11 +60,12 @@ function ensureItemDetailPanel() {
 
       .inventory-item-actions {
         display: flex;
+        flex-wrap: wrap;
         gap: 8px;
       }
 
       .inventory-item-actions button {
-        flex: 1;
+        flex: 1 1 125px;
         padding: 9px 8px;
         border-radius: 4px;
         color: white;
@@ -105,12 +106,12 @@ function selectedItemData() {
     return { type: "stone", name: "Stone", count: state.stone };
   }
 
-  if (selectedInventoryItem.type === "copperore" && state.copperOre > 0) {
-    return { type: "copperore", name: "Copper Ore", count: state.copperOre };
+  if (selectedInventoryItem.type === "rawcopper" && state.copperOre > 0) {
+    return { type: "rawcopper", name: "Raw Copper", count: state.copperOre };
   }
 
-  if (selectedInventoryItem.type === "ironore" && state.ironOre > 0) {
-    return { type: "ironore", name: "Iron Ore", count: state.ironOre };
+  if (selectedInventoryItem.type === "rawiron" && state.ironOre > 0) {
+    return { type: "rawiron", name: "Raw Iron", count: state.ironOre };
   }
 
   if (selectedInventoryItem.type === "slimegel" && state.slimeGel > 0) {
@@ -195,10 +196,10 @@ function updateInventoryItemDetails() {
     description.textContent = "A building material gathered from trees and bushes.";
   } else if (item.type === "stone") {
     description.textContent = "A basic building material mined from rocks.";
-  } else if (item.type === "copperore") {
-    description.textContent = "An uncommon crafting ore. Save it for better tools in the next phase.";
-  } else if (item.type === "ironore") {
-    description.textContent = "A rare crafting ore. Save it for advanced tools and camp upgrades.";
+  } else if (item.type === "rawcopper") {
+    description.textContent = "Raw copper mined from an ore node. Save it for your first crafted upgrades.";
+  } else if (item.type === "rawiron") {
+    description.textContent = "Raw iron mined from a rare ore node. It will power advanced tools and camp tiers.";
   } else {
     description.textContent = "A monster material dropped by slimes. Sell it now or save it for crafting later.";
   }
@@ -234,6 +235,14 @@ function updateInventoryItemDetails() {
   actions.appendChild(equipButton);
 
   if (item.type === "axe" || item.type === "pickaxe" || item.type === "sword") {
+    if (isToolAssignedToHotbar(item.id)) {
+      const removeButton = document.createElement("button");
+      removeButton.className = "drop-item-btn";
+      removeButton.textContent = "Remove from Hotbar";
+      removeButton.addEventListener("click", () => removeToolFromHotbar(item.type, item.id));
+      actions.appendChild(removeButton);
+    }
+
     const dropButton = document.createElement("button");
     dropButton.className = "drop-item-btn";
     dropButton.textContent = "Drop";
@@ -609,6 +618,30 @@ function toolByHotbarItem(item) {
   return null;
 }
 
+function isToolAssignedToHotbar(toolId) {
+  return state.hotbar.some((item) => hotbarToolItem(item)?.itemId === toolId);
+}
+
+function removeToolFromHotbar(toolType, toolId) {
+  state.hotbar = state.hotbar.map((item) =>
+    hotbarToolItem(item)?.itemId === toolId ? null : item
+  );
+
+  if (toolType === "axe" && state.equippedAxeId === toolId) state.equippedAxeId = null;
+  if (toolType === "pickaxe" && state.equippedPickaxeId === toolId) state.equippedPickaxeId = null;
+  if (toolType === "sword" && state.equippedSwordId === toolId) state.equippedSwordId = null;
+
+  const tool = toolType === "sword"
+    ? getSwordById(toolId)
+    : toolType === "pickaxe"
+      ? getPickaxeById(toolId)
+      : getAxeById(toolId);
+
+  toast((tool?.name || "Tool") + " removed from hotbar.");
+  save();
+  syncUI();
+}
+
 function cleanHotbar() {
   if (!Array.isArray(state.axes)) state.axes = [];
   if (!Array.isArray(state.pickaxes)) state.pickaxes = [];
@@ -667,7 +700,7 @@ function addItemToHotbar(itemType, itemId = null) {
 
     const openSlot = state.hotbar.indexOf(null);
     if (openSlot === -1) {
-      toast("Hotbar is full.");
+      toast("Hotbar is full. Remove a tool first.");
       return;
     }
 
@@ -680,7 +713,11 @@ function addItemToHotbar(itemType, itemId = null) {
 
   if (itemType !== "axe" && itemType !== "pickaxe" && itemType !== "sword") return;
 
-  const tool = itemType === "sword" ? getSwordById(itemId) : itemType === "pickaxe" ? getPickaxeById(itemId) : getAxeById(itemId);
+  const tool = itemType === "sword"
+    ? getSwordById(itemId)
+    : itemType === "pickaxe"
+      ? getPickaxeById(itemId)
+      : getAxeById(itemId);
   if (!tool) return;
 
   const existingSlot = state.hotbar.findIndex(
@@ -696,24 +733,34 @@ function addItemToHotbar(itemType, itemId = null) {
     if (itemType === "sword") state.equippedSwordId = null;
     else if (itemType === "pickaxe") state.equippedPickaxeId = null;
     else state.equippedAxeId = null;
-    toast(tool.name + " unequipped.");
+    toast(tool.name + " unequipped. It remains assigned to your hotbar.");
     save();
     syncUI();
     return;
   }
 
   if (existingSlot === -1) {
-    const openSlot = state.hotbar.indexOf(null);
-    if (openSlot === -1) {
-      toast("Hotbar is full.");
+    let targetSlot = state.hotbar.indexOf(null);
+
+    if (targetSlot === -1) {
+      const currentlyEquippedId = state.equippedSwordId || state.equippedPickaxeId || state.equippedAxeId;
+      targetSlot = state.hotbar.findIndex(
+        (item) => hotbarToolItem(item)?.itemId === currentlyEquippedId
+      );
+    }
+
+    if (targetSlot === -1) {
+      toast("Hotbar is full. Select a tool and use Remove from Hotbar.");
       return;
     }
-    state.hotbar[openSlot] = { type: itemType, itemId: tool.id };
+
+    state.hotbar[targetSlot] = { type: itemType, itemId: tool.id };
   }
 
   state.equippedAxeId = null;
   state.equippedPickaxeId = null;
   state.equippedSwordId = null;
+
   if (itemType === "sword") state.equippedSwordId = tool.id;
   else if (itemType === "pickaxe") state.equippedPickaxeId = tool.id;
   else state.equippedAxeId = tool.id;
