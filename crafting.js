@@ -2,13 +2,13 @@
    Future upgrade path: move this menu behind a placeable Crafting Bench.
 */
 
-const craftingBtn = $("craftingBtn");
-const craftingPanel = $("craftingPanel");
-const closeCraftingBtn = $("closeCraftingBtn");
-const craftingSearch = $("craftingSearch");
-const craftingCategories = $("craftingCategories");
-const craftingRecipeGrid = $("craftingRecipeGrid");
-const craftingRecipeDetails = $("craftingRecipeDetails");
+const craftingBtn = document.getElementById("craftingBtn");
+const craftingPanel = document.getElementById("craftingPanel");
+const closeCraftingBtn = document.getElementById("closeCraftingBtn");
+const craftingSearch = document.getElementById("craftingSearch");
+const craftingCategories = document.getElementById("craftingCategories");
+const craftingRecipeGrid = document.getElementById("craftingRecipeGrid");
+const craftingRecipeDetails = document.getElementById("craftingRecipeDetails");
 
 let selectedCraftCategory = "all";
 let selectedRecipeId = null;
