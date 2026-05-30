@@ -32,6 +32,7 @@ const modal = $("modal");
 const modalTitle = $("modalTitle");
 const modalText = $("modalText");
 const toastEl = $("toast");
+const testCampTeleportBtn = $("testCampTeleportBtn");
 const fullscreenPrompt = $("fullscreenPrompt");
 const enableFullscreenBtn = $("enableFullscreenBtn");
 const skipFullscreenBtn = $("skipFullscreenBtn");
@@ -166,6 +167,8 @@ const state = {
   copper: 0,
   iron: 0,
   steel: 0,
+  craftingBenches: 0,
+  furnaces: 0,
 
   axes: [],
   pickaxes: [],
@@ -177,6 +180,7 @@ const state = {
   hotbar: [null, null, null, null, null],
   droppedTools: [],
   droppedLoot: [],
+  structures: [],
 
   campPlaced: false,
   campX: null,
@@ -739,6 +743,8 @@ function loadSave() {
     state.copper = Number(data.copper || 0);
     state.iron = Number(data.iron || 0);
     state.steel = Number(data.steel || 0);
+    state.craftingBenches = Number(data.craftingBenches || 0);
+    state.furnaces = Number(data.furnaces || 0);
 
     state.nextItemId = Math.max(1, Number(data.nextItemId || 1));
     state.axes = Array.isArray(data.axes)
@@ -805,6 +811,9 @@ function loadSave() {
           if (item === "axe" && state.axes[0]) {
             return { type: "axe", itemId: state.axes[0].id };
           }
+          if (item === "craftingbench" || item === "furnace" || item === "potion" || item === "speedpotion") {
+            return item;
+          }
           return item;
         })
       : [null, null, null, null, null];
@@ -869,6 +878,23 @@ function loadSave() {
             x: Number(drop.x || 0),
             y: Number(drop.y || 0),
             count: Math.max(1, Number(drop.count || 1))
+          }))
+      : [];
+
+    state.structures = Array.isArray(data.structures)
+      ? data.structures
+          .filter((structure) => structure && (structure.type === "craftingbench" || structure.type === "furnace"))
+          .map((structure) => ({
+            id: String(structure.id || (structure.type + "-" + Math.random().toString(16).slice(2))),
+            type: structure.type,
+            x: Number(structure.x || 0),
+            y: Number(structure.y || 0),
+            smeltJob: structure.type === "furnace" && structure.smeltJob ? {
+              recipeId: String(structure.smeltJob.recipeId || ""),
+              startedAt: Number(structure.smeltJob.startedAt || Date.now()),
+              durationMs: Number(structure.smeltJob.durationMs || 7000),
+              ready: Boolean(structure.smeltJob.ready)
+            } : null
           }))
       : [];
 
@@ -1146,6 +1172,29 @@ closeBuyBtn.addEventListener("click", closeBuyPanel);
 closeSellBtn.addEventListener("click", closeSellPanel);
 gameMenuBtn.addEventListener("click", toggleGameMenu);
 
+if (testCampTeleportBtn) {
+  testCampTeleportBtn.addEventListener("click", () => {
+    const camp = typeof currentCampfire === "function" ? currentCampfire() : null;
+    if (!camp) {
+      toast("Place a camp first.");
+      return;
+    }
+
+    const spot = typeof findNearestDryPosition === "function"
+      ? findNearestDryPosition(camp.x + 32, camp.y + 96, 36, 42)
+      : { x: camp.x + 32, y: camp.y + 96 };
+
+    player.x = spot.x;
+    player.y = spot.y;
+    player.vx = 0;
+    player.vy = 0;
+    camera.x = clamp(player.x - canvas.width / 2, 0, map.width - canvas.width);
+    camera.y = clamp(player.y - canvas.height / 2, 0, map.height - canvas.height);
+    toast("Teleported to camp. TEST");
+    save();
+  });
+}
+
 function closeAllGamePanels() {
   closeInventory();
   closeQuest();
@@ -1213,11 +1262,13 @@ function updateInventoryPanel() {
     ...makeStacks("steel", state.steel, images.steel),
     ...makeStacks("slimegel", state.slimeGel, images.slimegel),
     ...makeStacks("mushling", state.mushlings, images.mushling),
+    ...makeStacks("craftingbench", state.craftingBenches, images.craftingbench),
+    ...makeStacks("furnace", state.furnaces, images.furnace),
     ...makeStacks("potion", state.potions, images.potion),
     ...makeStacks("speedpotion", state.speedPotions, images.speedpotion)
   ];
 
-  const totalSlots = 30;
+  const totalSlots = 60;
 
   for (let i = 0; i < totalSlots; i++) {
     const slot = document.createElement("div");
@@ -1308,6 +1359,20 @@ function updateInventoryPanel() {
         }
 
         slot.addEventListener("dblclick", () => addItemToHotbar("speedpotion"));
+      }
+
+      if (item.type === "craftingbench") {
+        slot.classList.add("assignable");
+        slot.title = "Double-click to add Crafting Bench to hotbar for placement.";
+        if (state.hotbar.includes("craftingbench")) slot.classList.add("hotbar-linked");
+        slot.addEventListener("dblclick", () => addItemToHotbar("craftingbench"));
+      }
+
+      if (item.type === "furnace") {
+        slot.classList.add("assignable");
+        slot.title = "Double-click to add Furnace to hotbar for placement.";
+        if (state.hotbar.includes("furnace")) slot.classList.add("hotbar-linked");
+        slot.addEventListener("dblclick", () => addItemToHotbar("furnace"));
       }
     } else {
       slot.classList.add("empty");
@@ -1403,7 +1468,7 @@ window.addEventListener("keydown", (event) => {
   const key = event.key.toLowerCase();
   const movementKeys = ["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright"];
 
-  if (typeof isCampPlacementActive === "function" && isCampPlacementActive()) {
+  if ((typeof isCampPlacementActive === "function" && isCampPlacementActive()) || (typeof isStructurePlacementActive === "function" && isStructurePlacementActive())) {
     if (!movementKeys.includes(key)) {
       event.preventDefault();
       return;

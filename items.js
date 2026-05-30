@@ -98,6 +98,14 @@ function selectedItemData() {
     return { type: "speedpotion", name: "Speed Potion", count: state.speedPotions };
   }
 
+  if (selectedInventoryItem.type === "craftingbench" && state.craftingBenches > 0) {
+    return { type: "craftingbench", name: "Crafting Bench", count: state.craftingBenches };
+  }
+
+  if (selectedInventoryItem.type === "furnace" && state.furnaces > 0) {
+    return { type: "furnace", name: "Furnace", count: state.furnaces };
+  }
+
   if (selectedInventoryItem.type === "wood" && state.wood > 0) {
     return { type: "wood", name: "Wood", count: state.wood };
   }
@@ -208,6 +216,10 @@ function updateInventoryItemDetails() {
     description.textContent = "Restores 35 HP when used from your hotbar.";
   } else if (item.type === "speedpotion") {
     description.textContent = "Boosts movement speed by 1.5x for 15 seconds.";
+  } else if (item.type === "craftingbench") {
+    description.textContent = "Place this near your camp to open crafting from a real world object.";
+  } else if (item.type === "furnace") {
+    description.textContent = "Place this near your camp to smelt raw ore over time and collect it later.";
   } else if (item.type === "wood") {
     description.textContent = "A building material gathered from trees and bushes.";
   } else if (item.type === "stone") {
@@ -230,7 +242,7 @@ function updateInventoryItemDetails() {
 
   details.appendChild(description);
 
-  if (item.type !== "axe" && item.type !== "pickaxe" && item.type !== "sword" && item.type !== "potion" && item.type !== "speedpotion") return;
+  if (item.type !== "axe" && item.type !== "pickaxe" && item.type !== "sword" && item.type !== "potion" && item.type !== "speedpotion" && item.type !== "craftingbench" && item.type !== "furnace") return;
 
   const actions = document.createElement("div");
   actions.className = "inventory-item-actions";
@@ -250,10 +262,18 @@ function updateInventoryItemDetails() {
     equipButton.textContent = state.hotbar.includes("potion") ? "In Hotbar" : "Add to Hotbar";
     equipButton.disabled = state.hotbar.includes("potion");
     equipButton.addEventListener("click", () => addItemToHotbar("potion"));
-  } else {
+  } else if (item.type === "speedpotion") {
     equipButton.textContent = state.hotbar.includes("speedpotion") ? "In Hotbar" : "Add to Hotbar";
     equipButton.disabled = state.hotbar.includes("speedpotion");
     equipButton.addEventListener("click", () => addItemToHotbar("speedpotion"));
+  } else if (item.type === "craftingbench") {
+    equipButton.textContent = state.hotbar.includes("craftingbench") ? "In Hotbar" : "Add to Hotbar";
+    equipButton.disabled = state.hotbar.includes("craftingbench");
+    equipButton.addEventListener("click", () => addItemToHotbar("craftingbench"));
+  } else if (item.type === "furnace") {
+    equipButton.textContent = state.hotbar.includes("furnace") ? "In Hotbar" : "Add to Hotbar";
+    equipButton.disabled = state.hotbar.includes("furnace");
+    equipButton.addEventListener("click", () => addItemToHotbar("furnace"));
   }
 
   actions.appendChild(equipButton);
@@ -647,6 +667,8 @@ function cleanHotbar() {
   state.hotbar = state.hotbar.map((item) => {
     if (item === "potion" && state.potions > 0) return item;
     if (item === "speedpotion" && state.speedPotions > 0) return item;
+    if (item === "craftingbench" && state.craftingBenches > 0) return item;
+    if (item === "furnace" && state.furnaces > 0) return item;
 
     const toolItem = hotbarToolItem(item);
     if (toolItem && toolByHotbarItem(toolItem) && !seenTools.has(toolItem.itemId)) {
@@ -673,24 +695,35 @@ function cleanHotbar() {
 function addItemToHotbar(itemType, itemId = null) {
   cleanHotbar();
 
-  if (itemType === "potion" || itemType === "speedpotion") {
-    const isSpeed = itemType === "speedpotion";
-    const count = isSpeed ? state.speedPotions : state.potions;
+  if (itemType === "potion" || itemType === "speedpotion" || itemType === "craftingbench" || itemType === "furnace") {
+    const counts = {
+      potion: state.potions,
+      speedpotion: state.speedPotions,
+      craftingbench: state.craftingBenches,
+      furnace: state.furnaces
+    };
+    const names = {
+      potion: "Health Potion",
+      speedpotion: "Speed Potion",
+      craftingbench: "Crafting Bench",
+      furnace: "Furnace"
+    };
+    const count = counts[itemType] || 0;
     if (count <= 0) return;
 
     if (state.hotbar.includes(itemType)) {
-      toast((isSpeed ? "Speed Potion" : "Health Potion") + " is already in your hotbar.");
+      toast(names[itemType] + " is already in your hotbar.");
       return;
     }
 
     const openSlot = state.hotbar.indexOf(null);
     if (openSlot === -1) {
-      toast("Hotbar is full. Remove a tool first.");
+      toast("Hotbar is full. Remove something first.");
       return;
     }
 
     state.hotbar[openSlot] = itemType;
-    toast((isSpeed ? "Speed Potion" : "Health Potion") + " added to hotbar.");
+    toast(names[itemType] + " added to hotbar.");
     save();
     syncUI();
     return;
@@ -767,6 +800,15 @@ function activateHotbarSlot(slotIndex) {
     return;
   }
 
+  if (item === "craftingbench" || item === "furnace") {
+    if (typeof beginStructurePlacement === "function") {
+      beginStructurePlacement(item, slotIndex);
+    } else {
+      toast("Placement system is not ready yet.");
+    }
+    return;
+  }
+
   if (item === "potion") {
     if (state.hp >= maxHp()) {
       toast("Health is already full.");
@@ -815,7 +857,11 @@ function updateHotbar() {
         ? "Use Health Potion"
         : item === "speedpotion"
           ? "Use Speed Potion · 1.5x speed for 15 seconds"
-          : "Empty hotbar slot";
+          : item === "craftingbench"
+            ? "Place Crafting Bench"
+            : item === "furnace"
+              ? "Place Furnace"
+              : "Empty hotbar slot";
 
     const isEquipped =
       tool && ((tool.type === "axe" && state.equippedAxeId === tool.id) ||
@@ -829,15 +875,33 @@ function updateHotbar() {
     key.textContent = String(index + 1);
     slot.appendChild(key);
 
-    if (tool || item === "potion" || item === "speedpotion") {
+    if (tool || item === "potion" || item === "speedpotion" || item === "craftingbench" || item === "furnace") {
       const icon = document.createElement("img");
-      icon.src = tool ? images[tool.type].src : item === "speedpotion" ? images.speedpotion.src : images.potion.src;
-      icon.alt = tool ? tool.name : item === "speedpotion" ? "Speed Potion" : "Health Potion";
+      icon.src = tool
+        ? images[tool.type].src
+        : item === "speedpotion"
+          ? images.speedpotion.src
+          : item === "craftingbench"
+            ? images.craftingbench.src
+            : item === "furnace"
+              ? images.furnace.src
+              : images.potion.src;
+      icon.alt = tool
+        ? tool.name
+        : item === "speedpotion"
+          ? "Speed Potion"
+          : item === "craftingbench"
+            ? "Crafting Bench"
+            : item === "furnace"
+              ? "Furnace"
+              : "Health Potion";
       slot.appendChild(icon);
 
       const count = document.createElement("span");
       count.className = "hotbar-count";
-      count.textContent = tool ? toolDurabilityText(tool) : "x" + (item === "speedpotion" ? state.speedPotions : state.potions);
+      count.textContent = tool
+        ? toolDurabilityText(tool)
+        : "x" + (item === "speedpotion" ? state.speedPotions : item === "craftingbench" ? state.craftingBenches : item === "furnace" ? state.furnaces : state.potions);
       slot.appendChild(count);
     }
 

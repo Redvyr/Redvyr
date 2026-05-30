@@ -18,6 +18,7 @@ const CRAFTING_MATERIALS = {
   stone: { name: "Stone", image: "stone", count: () => state.stone, spend: (n) => state.stone -= n },
   rawcopper: { name: "Raw Copper", image: "rawcopper", count: () => state.copperOre, spend: (n) => state.copperOre -= n },
   rawiron: { name: "Raw Iron", image: "rawiron", count: () => state.ironOre, spend: (n) => state.ironOre -= n },
+  copper: { name: "Copper", image: "copper", count: () => state.copper, spend: (n) => state.copper -= n },
   iron: { name: "Iron", image: "iron", count: () => state.iron, spend: (n) => state.iron -= n },
   slimegel: { name: "Slime Gel", image: "slimegel", count: () => state.slimeGel, spend: (n) => state.slimeGel -= n },
   mushling: { name: "Mushling", image: "mushling", count: () => state.mushlings, spend: (n) => state.mushlings -= n }
@@ -50,10 +51,28 @@ const CRAFTING_RECIPES = [
     description: "A refined iron blade for fighting slimes.",
     ingredients: { wood: 2, iron: 2, slimegel: 2 },
     craft: () => createBasicSword()
+  },
+  {
+    id: "crafting-bench",
+    name: "Crafting Bench",
+    category: "building",
+    image: "craftingbench",
+    description: "Place it in the world to open crafting from a real workstation.",
+    ingredients: { wood: 10, stone: 4 },
+    craft: () => { state.craftingBenches += 1; }
+  },
+  {
+    id: "furnace",
+    name: "Furnace",
+    category: "building",
+    image: "furnace",
+    description: "Place it in the world to smelt raw ore over time and collect it later.",
+    ingredients: { stone: 16, copper: 3 },
+    craft: () => { state.furnaces += 1; }
   }
 ];
 
-function openCrafting() {
+function openCrafting(sourceObject = null) {
   closeAllGamePanels();
   selectedRecipeId = null;
   craftingPanel.classList.add("no-selection");
@@ -227,7 +246,24 @@ function craftSelectedRecipe(recipeId) {
   updateCraftingPanel();
 }
 
-if (craftingBtn) craftingBtn.addEventListener("click", openCrafting);
+function nearestCraftingBench(maxDistance = 140) {
+  const bench = objects
+    .filter((obj) => obj.kind === "craftingbench" && !obj.hidden)
+    .map((obj) => ({ obj, distance: Math.hypot((obj.x + obj.w / 2) - player.x, (obj.y + obj.h / 2) - player.y) }))
+    .sort((a, b) => a.distance - b.distance)[0];
+
+  return bench && bench.distance <= maxDistance ? bench.obj : null;
+}
+
+if (craftingBtn) craftingBtn.addEventListener("click", () => {
+  const bench = nearestCraftingBench();
+  if (!bench) {
+    toast("Place and stand near a Crafting Bench to craft.");
+    closeGameMenu();
+    return;
+  }
+  openCrafting(bench);
+});
 if (closeCraftingBtn) closeCraftingBtn.addEventListener("click", closeCrafting);
 
 if (craftingSearch) {

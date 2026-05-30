@@ -450,7 +450,7 @@ label {
   margin-top: 10px;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  gap: 6px;
 }
 
 .resource-row b {
@@ -593,7 +593,7 @@ label {
   z-index: 15;
   right: 24px;
   top: 92px;
-  width: 390px;
+  width: 460px;
   max-height: calc(100vh - 140px);
   overflow: auto;
   padding: 16px;
@@ -657,7 +657,7 @@ label {
 
 .inventory-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(10, 1fr);
   gap: 8px;
 }
 
@@ -676,10 +676,10 @@ label {
 }
 
 .inventory-slot img {
-  width: 44px;
-  height: 44px;
-  max-width: 44px;
-  max-height: 44px;
+  width: 34px;
+  height: 34px;
+  max-width: 34px;
+  max-height: 34px;
   object-fit: contain;
   image-rendering: pixelated;
 }
@@ -1952,4 +1952,88 @@ label {
   font-size: 17px;
   font-weight: 900;
   letter-spacing: 0.08em;
+}
+
+
+/* PHASE 8A.1 — TEST BUTTON + FURNACE POLISH */
+.test-camp-teleport {
+  position: absolute;
+  z-index: 8;
+  right: 18px;
+  top: 66px;
+  min-width: 92px;
+  height: 34px;
+  border-radius: 5px;
+  color: #fff0c8;
+  background: rgba(18, 8, 3, 0.88);
+  border: 2px solid rgba(242,195,95,0.62);
+  box-shadow: 0 4px 0 rgba(0,0,0,0.28);
+  font-size: 12px;
+}
+
+.furnace-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  border: 2px solid rgba(242,195,95,0.28);
+  border-radius: 7px;
+  background: rgba(0,0,0,0.18);
+  color: #ffe4a6;
+}
+
+.furnace-title-row span {
+  color: rgba(255,240,200,0.72);
+  font-size: 12px;
+}
+
+.smelt-empty {
+  padding: 22px;
+  border: 2px dashed rgba(242,195,95,0.35);
+  border-radius: 8px;
+  text-align: center;
+  color: rgba(255,240,200,0.76);
+}
+
+.smelt-card.active-job {
+  grid-template-columns: 1fr 1.1fr 130px;
+}
+
+.furnace-flow {
+  justify-content: center;
+}
+
+.furnace-progress-wrap {
+  display: grid;
+  gap: 7px;
+}
+
+.furnace-progress-text {
+  color: #ffe4a6;
+  font-size: 12px;
+  text-align: center;
+}
+
+.furnace-progress {
+  height: 18px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 2px solid rgba(242,195,95,0.45);
+  background: rgba(0,0,0,0.38);
+}
+
+.furnace-progress i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #8b2d1b, #e47834, #ffe4a6);
+  transition: width 0.18s linear;
+}
+
+@media (max-width: 760px) {
+  .inventory-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+  .test-camp-teleport {
+    top: 108px;
+  }
 }

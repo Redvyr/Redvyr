@@ -16,6 +16,179 @@ const campPlacementState = {
   valid: false
 };
 
+/* PHASE 8A.1 — PLACEABLE CRAFTING BENCH + FURNACE */
+const STRUCTURE_PLACEMENT_SNAP = 16;
+const structurePlacementState = {
+  active: false,
+  type: null,
+  slotIndex: null,
+  targetX: 400,
+  targetY: 320,
+  previewX: 400,
+  previewY: 320,
+  valid: false
+};
+
+function structureLabel(type) {
+  return type === "furnace" ? "Furnace" : "Crafting Bench";
+}
+
+function structureSize(type) {
+  return type === "furnace" ? { w: 64, h: 64 } : { w: 70, h: 58 };
+}
+
+function ensureStructureState() {
+  if (!Array.isArray(state.structures)) state.structures = [];
+  state.structures = state.structures.filter((structure) =>
+    structure && (structure.type === "craftingbench" || structure.type === "furnace")
+  );
+}
+
+function createStructureId(type) {
+  state.nextItemId = Math.max(1, Number(state.nextItemId || 1));
+  const id = type + "-" + state.nextItemId;
+  state.nextItemId += 1;
+  return id;
+}
+
+function getStructureById(id) {
+  ensureStructureState();
+  return state.structures.find((structure) => structure.id === id) || null;
+}
+
+function makeStructureObject(structure) {
+  const size = structureSize(structure.type);
+  return {
+    x: structure.x,
+    y: structure.y,
+    w: size.w,
+    h: size.h,
+    kind: structure.type,
+    interact: true,
+    label: structure.type === "furnace" ? "use furnace" : "use crafting bench",
+    action: structure.type,
+    structureId: structure.id
+  };
+}
+
+function restorePlacedStructures() {
+  ensureStructureState();
+  for (const structure of state.structures) {
+    objects.push(makeStructureObject(structure));
+  }
+}
+
+function isStructurePlacementActive() {
+  return structurePlacementState.active;
+}
+
+function beginStructurePlacement(type, slotIndex = null) {
+  if (gameScreen.classList.contains("hidden")) return;
+  if (type !== "craftingbench" && type !== "furnace") return;
+  if (type === "craftingbench" && state.craftingBenches <= 0) return;
+  if (type === "furnace" && state.furnaces <= 0) return;
+
+  closeAllGamePanels();
+  closeNpcDialogue();
+  closeBuyPanel();
+  closeSellPanel();
+
+  const size = structureSize(type);
+  const startX = Math.round((player.x + 54) / STRUCTURE_PLACEMENT_SNAP) * STRUCTURE_PLACEMENT_SNAP;
+  const startY = Math.round((player.y + 34) / STRUCTURE_PLACEMENT_SNAP) * STRUCTURE_PLACEMENT_SNAP;
+
+  structurePlacementState.active = true;
+  structurePlacementState.type = type;
+  structurePlacementState.slotIndex = slotIndex;
+  structurePlacementState.targetX = clamp(startX, 32, map.width - size.w - 32);
+  structurePlacementState.targetY = clamp(startY, 32, map.height - size.h - 32);
+  structurePlacementState.previewX = structurePlacementState.targetX;
+  structurePlacementState.previewY = structurePlacementState.targetY;
+  structurePlacementState.valid = canPlaceStructureAt(type, structurePlacementState.previewX, structurePlacementState.previewY);
+
+  toast("Place your " + structureLabel(type) + ". Click a clear spot.");
+}
+
+function endStructurePlacement() {
+  structurePlacementState.active = false;
+  structurePlacementState.type = null;
+  structurePlacementState.slotIndex = null;
+}
+
+function structurePlacementBox(type, x, y) {
+  const size = structureSize(type);
+  return {
+    x: x + 8,
+    y: y + 12,
+    w: size.w - 16,
+    h: size.h - 18
+  };
+}
+
+function canPlaceStructureAt(type, x, y) {
+  const size = structureSize(type);
+  const box = structurePlacementBox(type, x, y);
+  if (x < 32 || y < 32 || x + size.w > map.width - 32 || y + size.h > map.height - 32) return false;
+  if (typeof boxTouchesWater === "function" && boxTouchesWater(box)) return false;
+
+  for (const obj of objects) {
+    if (obj.hidden) continue;
+    if (obj.kind === "slime" || obj.kind === "slimegel" || obj.kind === "droppedaxe" || obj.kind === "droppedpickaxe" || obj.kind === "droppedsword") continue;
+
+    const padding = obj.kind === "tree" ? 12 : obj.kind === "npc" ? 34 : 10;
+    const blocked = { x: obj.x - padding, y: obj.y - padding, w: obj.w + padding * 2, h: obj.h + padding * 2 };
+    if (overlap(box, blocked)) return false;
+  }
+
+  return true;
+}
+
+function updateStructurePlacementPreview() {
+  if (!structurePlacementState.active) return;
+
+  const stepX = clamp(structurePlacementState.targetX - structurePlacementState.previewX, -STRUCTURE_PLACEMENT_SNAP, STRUCTURE_PLACEMENT_SNAP);
+  const stepY = clamp(structurePlacementState.targetY - structurePlacementState.previewY, -STRUCTURE_PLACEMENT_SNAP, STRUCTURE_PLACEMENT_SNAP);
+  structurePlacementState.previewX += stepX;
+  structurePlacementState.previewY += stepY;
+  structurePlacementState.valid = canPlaceStructureAt(structurePlacementState.type, structurePlacementState.previewX, structurePlacementState.previewY);
+}
+
+function confirmStructurePlacement() {
+  if (!structurePlacementState.active || !structurePlacementState.valid) return;
+
+  const type = structurePlacementState.type;
+  if (type === "craftingbench" && state.craftingBenches <= 0) return;
+  if (type === "furnace" && state.furnaces <= 0) return;
+
+  if (type === "craftingbench") state.craftingBenches -= 1;
+  if (type === "furnace") state.furnaces -= 1;
+
+  const structure = {
+    id: createStructureId(type),
+    type,
+    x: structurePlacementState.previewX,
+    y: structurePlacementState.previewY,
+    smeltJob: null
+  };
+
+  ensureStructureState();
+  state.structures.push(structure);
+  objects.push(makeStructureObject(structure));
+
+  if (Number.isInteger(structurePlacementState.slotIndex) && state.hotbar[structurePlacementState.slotIndex] === type) {
+    if ((type === "craftingbench" && state.craftingBenches <= 0) || (type === "furnace" && state.furnaces <= 0)) {
+      state.hotbar[structurePlacementState.slotIndex] = null;
+    }
+  }
+
+  endStructurePlacement();
+  addFloatingText(structure.x, structure.y - 10, structureLabel(type).toUpperCase());
+  toast(structureLabel(type) + " placed.");
+  save();
+  syncUI();
+}
+
+
 function makeCampfireObject(x, y) {
   return {
     x, y, w: 64, h: 64, kind: "campfire", interact: true, label: "open camp", action: "camp"
@@ -130,6 +303,29 @@ campPlacementCanvas.addEventListener("click", () => {
   campPlacementConfirm.classList.remove("hidden");
 });
 
+campPlacementCanvas.addEventListener("mousemove", (event) => {
+  if (!structurePlacementState.active) return;
+
+  const rect = canvas.getBoundingClientRect();
+  const scaleX = canvas.width / rect.width;
+  const scaleY = canvas.height / rect.height;
+  const size = structureSize(structurePlacementState.type);
+  const worldX = (event.clientX - rect.left) * scaleX + camera.x - size.w / 2;
+  const worldY = (event.clientY - rect.top) * scaleY + camera.y - size.h / 2;
+
+  structurePlacementState.targetX = clamp(Math.round(worldX / STRUCTURE_PLACEMENT_SNAP) * STRUCTURE_PLACEMENT_SNAP, 32, map.width - size.w - 32);
+  structurePlacementState.targetY = clamp(Math.round(worldY / STRUCTURE_PLACEMENT_SNAP) * STRUCTURE_PLACEMENT_SNAP, 32, map.height - size.h - 32);
+});
+
+campPlacementCanvas.addEventListener("click", () => {
+  if (!structurePlacementState.active) return;
+  if (!structurePlacementState.valid) {
+    toast("That spot is blocked. Choose clear land.");
+    return;
+  }
+  confirmStructurePlacement();
+});
+
 if (campPlacementConfirmButton) campPlacementConfirmButton.addEventListener("click", confirmCampfirePlacement);
 if (campPlacementRetryButton) campPlacementRetryButton.addEventListener("click", () => {
   campPlacementState.confirming = false;
@@ -193,6 +389,8 @@ function createWorld() {
     objects.push(makeCampfireObject(state.campX, state.campY));
   }
 
+  restorePlacedStructures();
+
   // Living spread: every biome can support early survival, while forests/rocky zones still matter.
   addWorldResource("tree", "wood", "hit tree", 82, {
     preferredBiomes: ["forest"], w: 64, h: 96, amount: 2, minHp: 5, maxHp: 9
@@ -207,7 +405,7 @@ function createWorld() {
     preferredBiomes: ["forest", "plains"], w: 48, h: 54, amount: 1, minHp: 2, maxHp: 3, noCollision: true
   });
   addWorldResource("mushroom", "mushroom", "gather mushroom", 26, {
-    preferredBiomes: ["forest"], w: 42, h: 46, amount: 1, minHp: 1, maxHp: 2, noCollision: true
+    preferredBiomes: ["forest"], w: 54, h: 44, amount: 1, minHp: 1, maxHp: 2, noCollision: true
   });
   addWorldResource("rock", "stone", "mine rock", 24, {
     preferredBiomes: ["rocky"], w: 52, h: 44, amount: 2, minHp: 7, maxHp: 12
@@ -418,6 +616,14 @@ function objectHitbox(obj) {
     return { x: obj.x + 18, y: obj.y + 26, w: 28, h: 26 };
   }
 
+  if (obj.kind === "craftingbench") {
+    return { x: obj.x + 12, y: obj.y + 20, w: obj.w - 24, h: obj.h - 24 };
+  }
+
+  if (obj.kind === "furnace") {
+    return { x: obj.x + 12, y: obj.y + 16, w: obj.w - 24, h: obj.h - 20 };
+  }
+
   if (obj.kind === "npc") {
     return { x: obj.x + 14, y: obj.y + 44, w: 36, h: 34 };
   }
@@ -609,6 +815,9 @@ function update() {
   if (campPlacementState.active) {
     updateCampfirePlacementPreview();
     updateDayNightUI();
+  } else if (structurePlacementState.active) {
+    updateStructurePlacementPreview();
+    updateDayNightUI();
   } else {
     healNearCampfire();
     updateDayNightUI();
@@ -755,12 +964,24 @@ function closeRowanPanelsWhenFar() {
   }
 }
 
+function interactionPriority(obj) {
+  if (obj.action === "pickupLoot" || obj.action === "pickupTool") return 1;
+  if (obj.action === "craftingbench" || obj.action === "furnace" || obj.action === "camp" || obj.action === "npc" || obj.action === "chest") return 2;
+  return 3;
+}
+
 function nearbyInteractable() {
   const reach = { x: player.x - 58, y: player.y - 58, w: 116, h: 116 };
+  const candidates = objects
+    .filter((obj) => obj.interact && !obj.hidden && overlap(reach, interactHitbox(obj)))
+    .map((obj) => ({
+      obj,
+      priority: interactionPriority(obj),
+      distance: Math.hypot((obj.x + obj.w / 2) - player.x, (obj.y + obj.h / 2) - player.y)
+    }))
+    .sort((a, b) => a.priority - b.priority || a.distance - b.distance);
 
-  return objects.find((obj) => {
-    return obj.interact && !obj.hidden && overlap(reach, interactHitbox(obj));
-  });
+  return candidates[0]?.obj || null;
 }
 
 function interact() {
@@ -778,6 +999,14 @@ function interact() {
 
   if (obj.action === "camp") {
     openCamp();
+  }
+
+  if (obj.action === "craftingbench") {
+    openCrafting(obj);
+  }
+
+  if (obj.action === "furnace") {
+    openSmelting(obj);
   }
 
   if (obj.action === "npc") {
@@ -1100,6 +1329,7 @@ function draw() {
   drawCombatEffects();
   drawFloatingTexts();
   drawCampfirePlacementGhost();
+  drawStructurePlacementGhost();
 
   ctx.restore();
 
@@ -1161,6 +1391,8 @@ function drawObject(obj) {
   if (obj.kind === "rarechest") drawChest(drawX, obj.y, obj.w, obj.h, obj.used, "rare");
   if (obj.kind === "legendarychest") drawChest(drawX, obj.y, obj.w, obj.h, obj.used, "legendary");
   if (obj.kind === "campfire") drawCampfire(drawX, obj.y, obj.w, obj.h);
+  if (obj.kind === "craftingbench") drawImg(images.craftingbench, drawX, obj.y, obj.w, obj.h, "#8b5a2b");
+  if (obj.kind === "furnace") drawImg(images.furnace, drawX, obj.y, obj.w, obj.h, "#6b6262");
   if (obj.kind === "npc") drawNpc(drawX, obj.y, obj.w, obj.h, obj.npcName || "Rowan");
   if (obj.kind === "slime") drawSlime(obj, drawX);
 
@@ -1338,6 +1570,24 @@ function drawCampfirePlacementGhost() {
   ctx.strokeStyle = campPlacementState.valid ? "#80ef78" : "#ff6055";
   ctx.lineWidth = 3;
   ctx.strokeRect(x, y, 64, 64);
+  ctx.restore();
+}
+
+function drawStructurePlacementGhost() {
+  if (!structurePlacementState.active) return;
+
+  const type = structurePlacementState.type;
+  const size = structureSize(type);
+  const x = structurePlacementState.previewX;
+  const y = structurePlacementState.previewY;
+
+  ctx.save();
+  ctx.globalAlpha = structurePlacementState.valid ? 0.7 : 0.42;
+  drawImg(type === "furnace" ? images.furnace : images.craftingbench, x, y, size.w, size.h, structurePlacementState.valid ? "#8b5a2b" : "#df3d32");
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = structurePlacementState.valid ? "#80ef78" : "#ff6055";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(x, y, size.w, size.h);
   ctx.restore();
 }
 
