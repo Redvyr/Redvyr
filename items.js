@@ -130,6 +130,10 @@ function selectedItemData() {
     return { type: "slimegel", name: "Slime Gel", count: state.slimeGel };
   }
 
+  if (selectedInventoryItem.type === "mushling" && state.mushlings > 0) {
+    return { type: "mushling", name: "Mushling", count: state.mushlings };
+  }
+
   return null;
 }
 
@@ -218,6 +222,8 @@ function updateInventoryItemDetails() {
     description.textContent = "Refined iron. Save it for stronger tools, weapons, and future village progress.";
   } else if (item.type === "steel") {
     description.textContent = "A high-tier metal reserved for future progression.";
+  } else if (item.type === "mushling") {
+    description.textContent = "A small mushroom sprout. Save it for future farming, nature crafting, or village supplies.";
   } else {
     description.textContent = "A monster material dropped by slimes. Sell it now or save it for crafting.";
   }

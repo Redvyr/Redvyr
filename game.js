@@ -137,7 +137,11 @@ const files = {
   sword: "sword.png",
   slime: "slime.png",
   darkslime: "darkslime.png",
-  slimegel: "slimegel.png"
+  slimegel: "slimegel.png",
+  craftingbench: "craftingbench.png",
+  furnace: "furnace.png",
+  mushroom: "mushroom.png",
+  mushling: "mushling.png"
 };
 
 for (const key in files) {
@@ -156,6 +160,7 @@ const state = {
   potions: 0,
   speedPotions: 0,
   slimeGel: 0,
+  mushlings: 0,
   copperOre: 0,
   ironOre: 0,
   copper: 0,
@@ -728,6 +733,7 @@ function loadSave() {
     state.potions = Number(data.potions || 0);
     state.speedPotions = Number(data.speedPotions || 0);
     state.slimeGel = Number(data.slimeGel || 0);
+    state.mushlings = Number(data.mushlings || 0);
     state.copperOre = Number(data.copperOre || 0);
     state.ironOre = Number(data.ironOre || 0);
     state.copper = Number(data.copper || 0);
@@ -1206,11 +1212,12 @@ function updateInventoryPanel() {
     ...makeStacks("iron", state.iron, images.iron),
     ...makeStacks("steel", state.steel, images.steel),
     ...makeStacks("slimegel", state.slimeGel, images.slimegel),
+    ...makeStacks("mushling", state.mushlings, images.mushling),
     ...makeStacks("potion", state.potions, images.potion),
     ...makeStacks("speedpotion", state.speedPotions, images.speedpotion)
   ];
 
-  const totalSlots = 25;
+  const totalSlots = 30;
 
   for (let i = 0; i < totalSlots; i++) {
     const slot = document.createElement("div");

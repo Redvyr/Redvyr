@@ -193,27 +193,39 @@ function createWorld() {
     objects.push(makeCampfireObject(state.campX, state.campY));
   }
 
-  // Broad region spawning: forests are resource-rich, plains stay open, rocky ground holds mining.
-  addWorldResource("tree", "wood", "hit tree", 62, {
+  // Living spread: every biome can support early survival, while forests/rocky zones still matter.
+  addWorldResource("tree", "wood", "hit tree", 82, {
     preferredBiomes: ["forest"], w: 64, h: 96, amount: 2, minHp: 5, maxHp: 9
   });
-  addWorldResource("tree", "wood", "hit tree", 10, {
+  addWorldResource("tree", "wood", "hit tree", 24, {
     preferredBiomes: ["plains"], w: 64, h: 96, amount: 2, minHp: 5, maxHp: 9
   });
-  addWorldResource("bush1", "bush", "shake bush", 25, {
+  addWorldResource("bush1", "bush", "shake bush", 42, {
     preferredBiomes: ["plains"], w: 48, h: 54, amount: 1, minHp: 2, maxHp: 3, noCollision: true
   });
-  addWorldResource("bush2", "bush", "shake bush", 23, {
+  addWorldResource("bush2", "bush", "shake bush", 42, {
     preferredBiomes: ["forest", "plains"], w: 48, h: 54, amount: 1, minHp: 2, maxHp: 3, noCollision: true
   });
-  addWorldResource("rock", "stone", "mine rock", 34, {
+  addWorldResource("mushroom", "mushroom", "gather mushroom", 26, {
+    preferredBiomes: ["forest"], w: 42, h: 46, amount: 1, minHp: 1, maxHp: 2, noCollision: true
+  });
+  addWorldResource("rock", "stone", "mine rock", 24, {
     preferredBiomes: ["rocky"], w: 52, h: 44, amount: 2, minHp: 7, maxHp: 12
   });
-  addWorldResource("copperore", "copper", "mine copper ore", 13, {
+  addWorldResource("rock", "stone", "mine rock", 14, {
+    preferredBiomes: ["plains", "forest"], w: 52, h: 44, amount: 2, minHp: 7, maxHp: 12
+  });
+  addWorldResource("copperore", "copper", "mine copper ore", 9, {
     preferredBiomes: ["rocky"], w: 52, h: 48, amount: 1, minHp: 13, maxHp: 17, requiresPickaxe: true
   });
-  addWorldResource("ironore", "iron", "mine iron ore", 7, {
+  addWorldResource("copperore", "copper", "mine copper ore", 4, {
+    preferredBiomes: ["plains", "forest"], w: 52, h: 48, amount: 1, minHp: 13, maxHp: 17, requiresPickaxe: true
+  });
+  addWorldResource("ironore", "iron", "mine iron ore", 5, {
     preferredBiomes: ["rocky"], w: 52, h: 48, amount: 1, minHp: 20, maxHp: 25, requiresPickaxe: true
+  });
+  addWorldResource("ironore", "iron", "mine iron ore", 2, {
+    preferredBiomes: ["forest", "plains"], w: 52, h: 48, amount: 1, minHp: 20, maxHp: 25, requiresPickaxe: true
   });
 
   spawnRareChests();
@@ -418,7 +430,7 @@ function objectHitbox(obj) {
 }
 
 function interactHitbox(obj) {
-  if (obj.kind === "bush1" || obj.kind === "bush2") {
+  if (obj.kind === "bush1" || obj.kind === "bush2" || obj.kind === "mushroom") {
     return { x: obj.x + 6, y: obj.y + 12, w: obj.w - 12, h: obj.h - 12 };
   }
 
@@ -756,7 +768,7 @@ function interact() {
 
   if (!obj) return;
 
-  if (obj.action === "wood" || obj.action === "stone" || obj.action === "copper" || obj.action === "iron" || obj.action === "bush") {
+  if (obj.action === "wood" || obj.action === "stone" || obj.action === "copper" || obj.action === "iron" || obj.action === "bush" || obj.action === "mushroom") {
     hitResource(obj);
   }
 
@@ -983,6 +995,14 @@ function hitResource(obj) {
     addFloatingText(obj.x, obj.y, "+1 Wood");
     temporarilyHide(obj, 8000);
   }
+
+  if (obj.action === "mushroom") {
+    state.mushlings += obj.amount || 1;
+    addXp(2);
+    toast("+" + (obj.amount || 1) + " mushling");
+    addFloatingText(obj.x, obj.y, "+" + (obj.amount || 1) + " Mushling");
+    temporarilyHide(obj, 14000);
+  }
 }
 
 function campGoldBonus() {
@@ -1136,6 +1156,7 @@ function drawObject(obj) {
   if (obj.kind === "ironore") drawImg(images.ironore, drawX, obj.y, obj.w, obj.h, "#707983");
   if (obj.kind === "bush1") drawImg(images.bush1, drawX, obj.y, obj.w, obj.h, "#3a9136");
   if (obj.kind === "bush2") drawImg(images.bush2, drawX, obj.y, obj.w, obj.h, "#3a9136");
+  if (obj.kind === "mushroom") drawImg(images.mushroom, drawX, obj.y, obj.w, obj.h, "#b75b86");
   if (obj.kind === "chest") drawChest(drawX, obj.y, obj.w, obj.h, obj.used, "normal");
   if (obj.kind === "rarechest") drawChest(drawX, obj.y, obj.w, obj.h, obj.used, "rare");
   if (obj.kind === "legendarychest") drawChest(drawX, obj.y, obj.w, obj.h, obj.used, "legendary");

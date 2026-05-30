@@ -116,37 +116,26 @@ function createWaterBodies() {
   const cols = Math.floor(map.width / map.tile);
   const rows = Math.floor(map.height / map.tile);
 
-  // A larger world can support water features that feel spaced apart.
-  for (let i = 0; i < 3; i++) {
-    const cx = 15 + nextTerrainRandom() * (cols - 30);
-    const cy = 12 + nextTerrainRandom() * (rows - 24);
-    const rx = i === 0 ? 10 + nextTerrainRandom() * 5 : 6 + nextTerrainRandom() * 4;
-    const ry = i === 0 ? 7 + nextTerrainRandom() * 4 : 5 + nextTerrainRandom() * 3;
-    paintLake(cx, cy, rx, ry);
+  // Water is now rare and intentional: a few ponds, one main lake, and one readable river.
+  const mainLakeX = 18 + nextTerrainRandom() * (cols - 36);
+  const mainLakeY = 18 + nextTerrainRandom() * (rows - 36);
+  paintLake(mainLakeX, mainLakeY, 6 + nextTerrainRandom() * 4, 4 + nextTerrainRandom() * 3);
+
+  for (let i = 0; i < 4; i++) {
+    const cx = 10 + nextTerrainRandom() * (cols - 20);
+    const cy = 10 + nextTerrainRandom() * (rows - 20);
+    paintLake(cx, cy, 2.2 + nextTerrainRandom() * 2.8, 1.8 + nextTerrainRandom() * 2.4);
   }
 
-  for (let i = 0; i < 8; i++) {
-    const cx = 9 + nextTerrainRandom() * (cols - 18);
-    const cy = 9 + nextTerrainRandom() * (rows - 18);
-    paintLake(cx, cy, 2.8 + nextTerrainRandom() * 3.8, 2.3 + nextTerrainRandom() * 3.2);
-  }
+  const horizontal = nextTerrainRandom() < 0.55;
+  const startCol = horizontal ? 4 : 18 + nextTerrainRandom() * (cols - 36);
+  const startRow = horizontal ? 18 + nextTerrainRandom() * (rows - 36) : 4;
+  const angle = horizontal
+    ? (nextTerrainRandom() < 0.5 ? 0.03 : Math.PI - 0.03)
+    : (nextTerrainRandom() < 0.5 ? Math.PI / 2 : -Math.PI / 2);
 
-  for (let i = 0; i < 3; i++) {
-    const horizontal = nextTerrainRandom() < 0.5;
-    const startCol = horizontal ? 4 : 14 + nextTerrainRandom() * (cols - 28);
-    const startRow = horizontal ? 14 + nextTerrainRandom() * (rows - 28) : 4;
-    const angle = horizontal
-      ? (nextTerrainRandom() < 0.5 ? 0.02 : Math.PI - 0.02)
-      : (nextTerrainRandom() < 0.5 ? Math.PI / 2 : -Math.PI / 2);
-
-    // Wider rivers read as real features instead of tiny one-tile streams.
-    paintRiver(
-      startCol,
-      startRow,
-      86 + Math.floor(nextTerrainRandom() * 78),
-      angle,
-      nextTerrainRandom() < 0.72 ? 1 : 2
-    );
+  if (nextTerrainRandom() < 0.75) {
+    paintRiver(startCol, startRow, 70 + Math.floor(nextTerrainRandom() * 58), angle, 1);
   }
 }
 
@@ -243,18 +232,17 @@ function generatedBaseTile(col, row, biome) {
   const variation = seededHash(col, row, state.worldSeed + 191);
 
   if (biome === "rocky") {
-    // Solid rocky ground is calmer and more intentional than random grass holes.
     return "rockpath";
   }
 
   if (biome === "forest") {
-    if (variation < 0.06) return "grassflower";
-    if (variation < 0.09) return "grassrock";
+    if (variation < 0.075) return "grassflower";
+    if (variation < 0.12) return "grassrock";
     return "grass";
   }
 
-  if (variation < 0.07) return "grassflower";
-  if (variation < 0.10) return "grassrock";
+  if (variation < 0.075) return "grassflower";
+  if (variation < 0.115) return "grassrock";
   return "grass";
 }
 
@@ -280,13 +268,15 @@ function generateWorldTerrain() {
     const biomes = [];
 
     for (let col = 0; col < cols; col++) {
-      // Broad fields create large calm regions instead of cramped biome patches.
-      const forestField = smoothNoise(col, row, 58, 17) * 0.84 + smoothNoise(col, row, 30, 33) * 0.16;
-      const rockyField = smoothNoise(col, row, 66, 67) * 0.86 + smoothNoise(col, row, 34, 85) * 0.14;
+      // Broad regions with less rocky dominance and more living forest pockets.
+      const forestField = smoothNoise(col, row, 54, 17) * 0.72 + smoothNoise(col, row, 22, 33) * 0.28;
+      const rockyField = smoothNoise(col, row, 78, 67) * 0.88 + smoothNoise(col, row, 38, 85) * 0.12;
+      const riverLife = waterTiles.has(tileKey(col + 1, row)) || waterTiles.has(tileKey(col - 1, row)) ||
+        waterTiles.has(tileKey(col, row + 1)) || waterTiles.has(tileKey(col, row - 1));
 
       let biome = "plains";
-      if (rockyField > 0.66 && rockyField > forestField + 0.035) biome = "rocky";
-      else if (forestField > 0.60) biome = "forest";
+      if (rockyField > 0.735 && rockyField > forestField + 0.09) biome = "rocky";
+      else if (forestField > 0.555 || riverLife) biome = "forest";
 
       const key = tileKey(col, row);
       let tile = generatedBaseTile(col, row, biome);

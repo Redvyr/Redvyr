@@ -19,7 +19,8 @@ const CRAFTING_MATERIALS = {
   rawcopper: { name: "Raw Copper", image: "rawcopper", count: () => state.copperOre, spend: (n) => state.copperOre -= n },
   rawiron: { name: "Raw Iron", image: "rawiron", count: () => state.ironOre, spend: (n) => state.ironOre -= n },
   iron: { name: "Iron", image: "iron", count: () => state.iron, spend: (n) => state.iron -= n },
-  slimegel: { name: "Slime Gel", image: "slimegel", count: () => state.slimeGel, spend: (n) => state.slimeGel -= n }
+  slimegel: { name: "Slime Gel", image: "slimegel", count: () => state.slimeGel, spend: (n) => state.slimeGel -= n },
+  mushling: { name: "Mushling", image: "mushling", count: () => state.mushlings, spend: (n) => state.mushlings -= n }
 };
 
 const CRAFTING_RECIPES = [
