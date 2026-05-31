@@ -53,15 +53,6 @@ const CRAFTING_RECIPES = [
     craft: () => createBasicSword()
   },
   {
-    id: "crafting-bench",
-    name: "Crafting Bench",
-    category: "building",
-    image: "craftingbench",
-    description: "Place it in the world to open crafting from a real workstation.",
-    ingredients: { wood: 10, stone: 4 },
-    craft: () => { state.craftingBenches += 1; }
-  },
-  {
     id: "furnace",
     name: "Furnace",
     category: "building",
@@ -256,13 +247,8 @@ function nearestCraftingBench(maxDistance = 140) {
 }
 
 if (craftingBtn) craftingBtn.addEventListener("click", () => {
-  const bench = nearestCraftingBench();
-  if (!bench) {
-    toast("Place and stand near a Crafting Bench to craft.");
-    closeGameMenu();
-    return;
-  }
-  openCrafting(bench);
+  toast("Crafting is now done at a placed Crafting Bench. Build your first one from the Campfire.");
+  closeGameMenu();
 });
 if (closeCraftingBtn) closeCraftingBtn.addEventListener("click", closeCrafting);
 

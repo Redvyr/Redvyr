@@ -259,6 +259,7 @@ let floatingTexts = [];
 let tileVariants = [];
 let dialogueTimer = null;
 let selectedInventoryItem = null;
+let selectedInventoryCategory = "all";
 
 const modalInfo = {
   Shop: "The main shop will be cosmetic later. In-game buying and selling is handled by NPCs inside World A.",
@@ -656,6 +657,29 @@ function campBenefitsHTML() {
     .join("");
 }
 
+
+function canBuildStarterCraftingBench() {
+  return state.wood >= 10 && state.stone >= 4;
+}
+
+function buildStarterCraftingBenchFromCamp() {
+  if (!canBuildStarterCraftingBench()) {
+    toast("Need 10 wood and 4 stone for a Crafting Bench.");
+    updateCampPanel();
+    return;
+  }
+
+  state.wood -= 10;
+  state.stone -= 4;
+  state.craftingBenches += 1;
+  addXp(6);
+  toast("Built Crafting Bench. Add it to your hotbar from Inventory.");
+  addFloatingText(player.x - 12, player.y - 65, "BENCH READY");
+  save();
+  syncUI();
+  updateCampPanel();
+}
+
 function updateCampPanel() {
   if (!campBody) return;
 
@@ -685,6 +709,16 @@ function updateCampPanel() {
       Heal Rate: ${campHealRate().toFixed(3)} HP/tick
     </div>
 
+    <div class="camp-card workstation-card">
+      <strong>Starter Workstation</strong>
+      Build your first Crafting Bench here so crafting does not get stuck behind itself.<br>
+      Cost: 10 Wood · 4 Stone<br>
+      Owned: ${state.craftingBenches}
+      <button id="buildStarterBenchBtn" class="camp-small-btn" ${canBuildStarterCraftingBench() ? "" : "disabled"}>
+        ${canBuildStarterCraftingBench() ? "Build Crafting Bench" : "Need 10 Wood + 4 Stone"}
+      </button>
+    </div>
+
     <div class="camp-card">
       <strong>Camp Benefits</strong>
       <div class="camp-benefit-list">
@@ -706,6 +740,8 @@ function updateCampPanel() {
   campUpgradeBtn.textContent =
     canUpgrade ? (state.campLevel === 4 ? "Create Camp Core" : "Upgrade Camp") : "Need More Resources";
 
+  const buildStarterBenchBtn = $("buildStarterBenchBtn");
+  if (buildStarterBenchBtn) buildStarterBenchBtn.addEventListener("click", buildStarterCraftingBenchFromCamp);
 }
 
 function openCamp() {
@@ -1222,6 +1258,51 @@ function updateQuestPanel() {
   }
 }
 
+
+function inventoryCategoryForType(type) {
+  if (type === "axe" || type === "pickaxe" || type === "sword") return "tools";
+  if (type === "craftingbench" || type === "furnace") return "building";
+  if (type === "potion" || type === "speedpotion") return "consumables";
+  return "materials";
+}
+
+function filterInventoryStacks(stacks) {
+  if (selectedInventoryCategory === "all") return stacks;
+  return stacks.filter((item) => inventoryCategoryForType(item.type) === selectedInventoryCategory);
+}
+
+function ensureInventoryCategoryBar() {
+  if (!$('inventoryCategoryBar')) {
+    const bar = document.createElement('div');
+    bar.id = 'inventoryCategoryBar';
+    bar.className = 'inventory-category-bar';
+    inventoryGrid.insertAdjacentElement('beforebegin', bar);
+  }
+
+  const bar = $('inventoryCategoryBar');
+  const categories = [
+    ['all', 'All'],
+    ['tools', 'Tools'],
+    ['materials', 'Materials'],
+    ['building', 'Build'],
+    ['consumables', 'Food/Pots']
+  ];
+
+  bar.innerHTML = '';
+  categories.forEach(([key, label]) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.textContent = label;
+    button.className = selectedInventoryCategory === key ? 'active' : '';
+    button.addEventListener('click', () => {
+      selectedInventoryCategory = key;
+      selectedInventoryItem = null;
+      updateInventoryPanel();
+    });
+    bar.appendChild(button);
+  });
+}
+
 function updateInventoryPanel() {
   if (!inventoryGrid) return;
 
@@ -1230,8 +1311,9 @@ function updateInventoryPanel() {
 
   cleanHotbar();
   inventoryGrid.innerHTML = "";
+  ensureInventoryCategoryBar();
 
-  const stacks = [
+  let stacks = [
     ...state.axes.map((axe) => ({
       type: "axe",
       itemId: axe.id,
@@ -1267,6 +1349,8 @@ function updateInventoryPanel() {
     ...makeStacks("potion", state.potions, images.potion),
     ...makeStacks("speedpotion", state.speedPotions, images.speedpotion)
   ];
+
+  stacks = filterInventoryStacks(stacks);
 
   const totalSlots = 60;
 

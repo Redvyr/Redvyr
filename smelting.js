@@ -246,7 +246,10 @@ function collectSmeltedMaterial() {
   updateSmeltingPanel();
 }
 
-if (smeltingBtn) smeltingBtn.addEventListener("click", () => openSmelting());
+if (smeltingBtn) smeltingBtn.addEventListener("click", () => {
+  toast("Smelting is now done at a placed Furnace.");
+  closeGameMenu();
+});
 if (closeSmeltingBtn) closeSmeltingBtn.addEventListener("click", closeSmelting);
 
 setInterval(() => {
