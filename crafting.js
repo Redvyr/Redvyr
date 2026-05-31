@@ -53,6 +53,15 @@ const CRAFTING_RECIPES = [
     craft: () => createBasicSword()
   },
   {
+    id: "crafting-bench",
+    name: "Crafting Bench",
+    category: "building",
+    image: "craftingbench",
+    description: "Place it in the world to open crafting from a real workstation.",
+    ingredients: { wood: 10, stone: 4 },
+    craft: () => { state.craftingBenches += 1; }
+  },
+  {
     id: "furnace",
     name: "Furnace",
     category: "building",
@@ -60,6 +69,15 @@ const CRAFTING_RECIPES = [
     description: "Place it in the world to smelt raw ore over time and collect it later.",
     ingredients: { stone: 16, copper: 3 },
     craft: () => { state.furnaces += 1; }
+  },
+  {
+    id: "storage-chest",
+    name: "Storage Chest",
+    category: "building",
+    image: "storagechest",
+    description: "A placeable chest with 18 slots. Wilderness chests are future public-access; kingdom land can restrict permissions later.",
+    ingredients: { wood: 12, stone: 4 },
+    craft: () => { state.storageChests += 1; }
   }
 ];
 
@@ -247,8 +265,13 @@ function nearestCraftingBench(maxDistance = 140) {
 }
 
 if (craftingBtn) craftingBtn.addEventListener("click", () => {
-  toast("Crafting is now done at a placed Crafting Bench. Build your first one from the Campfire.");
-  closeGameMenu();
+  const bench = nearestCraftingBench();
+  if (!bench) {
+    toast("Place and stand near a Crafting Bench to craft.");
+    closeGameMenu();
+    return;
+  }
+  openCrafting(bench);
 });
 if (closeCraftingBtn) closeCraftingBtn.addEventListener("click", closeCrafting);
 

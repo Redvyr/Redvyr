@@ -186,8 +186,7 @@
         
         Menu: M · Hotbar: 1-5<br>
         Inventory: I · Quests: Q · Stats: C<br>
-        Crafting Bench/Furnace: press E near placed workstations<br>
-        Crafting / Smelting: Menu
+        Crafting: Crafting Bench · Smelting: Furnace
       </div>
 
       <div id="inventoryPanel" class="side-panel hidden">
@@ -244,6 +243,31 @@
         </div>
 
         <div id="smeltingRecipes" class="smelting-recipes"></div>
+      </div>
+
+
+      <div id="storagePanel" class="storage-panel hidden">
+        <div class="storage-header">
+          <div>
+            <h2>Storage Chest</h2>
+            <p id="storagePermissionText">Wilderness chest: anyone can look inside later in multiplayer.</p>
+          </div>
+          <button id="closeStorageBtn" class="storage-close">X</button>
+        </div>
+
+        <div class="storage-layout">
+          <div class="storage-side">
+            <h3>Your Inventory</h3>
+            <div id="storageInventoryGrid" class="storage-grid"></div>
+          </div>
+          <div class="storage-swap-hint">⇄</div>
+          <div class="storage-side">
+            <h3>Chest</h3>
+            <div id="storageChestGrid" class="storage-grid chest-grid"></div>
+          </div>
+        </div>
+
+        <p class="storage-help">Drag items between sides, or click an item to move one stack. Tools and building items can be stored too.</p>
       </div>
 
       <div id="questPanel" class="side-panel quest-panel hidden">

@@ -88,6 +88,11 @@ const sellItems = $("sellItems");
 const hotbar = $("hotbar");
 const gameMenuBtn = $("gameMenuBtn");
 const gameMenu = $("gameMenu");
+const storagePanel = $("storagePanel");
+const closeStorageBtn = $("closeStorageBtn");
+const storageInventoryGrid = $("storageInventoryGrid");
+const storageChestGrid = $("storageChestGrid");
+const storagePermissionText = $("storagePermissionText");
 
 const canvas = $("game");
 const ctx = canvas.getContext("2d");
@@ -141,6 +146,7 @@ const files = {
   slimegel: "slimegel.png",
   craftingbench: "craftingbench.png",
   furnace: "furnace.png",
+  storagechest: "storagechest.png",
   mushroom: "mushroom.png",
   mushling: "mushling.png"
 };
@@ -169,6 +175,7 @@ const state = {
   steel: 0,
   craftingBenches: 0,
   furnaces: 0,
+  storageChests: 0,
 
   axes: [],
   pickaxes: [],
@@ -259,7 +266,6 @@ let floatingTexts = [];
 let tileVariants = [];
 let dialogueTimer = null;
 let selectedInventoryItem = null;
-let selectedInventoryCategory = "all";
 
 const modalInfo = {
   Shop: "The main shop will be cosmetic later. In-game buying and selling is handled by NPCs inside World A.",
@@ -658,13 +664,26 @@ function campBenefitsHTML() {
 }
 
 
+function hasUsableCraftingBench() {
+  return Boolean(
+    state.craftingBenches > 0 ||
+    (Array.isArray(state.structures) && state.structures.some((structure) => structure.type === "craftingbench"))
+  );
+}
+
 function canBuildStarterCraftingBench() {
-  return state.wood >= 10 && state.stone >= 4;
+  return state.wood >= 10 && state.stone >= 4 && !hasUsableCraftingBench();
 }
 
 function buildStarterCraftingBenchFromCamp() {
-  if (!canBuildStarterCraftingBench()) {
-    toast("Need 10 wood and 4 stone for a Crafting Bench.");
+  if (hasUsableCraftingBench()) {
+    toast("You already have a Crafting Bench.");
+    updateCampPanel();
+    return;
+  }
+
+  if (state.wood < 10 || state.stone < 4) {
+    toast("Need 10 wood and 4 stone.");
     updateCampPanel();
     return;
   }
@@ -672,9 +691,10 @@ function buildStarterCraftingBenchFromCamp() {
   state.wood -= 10;
   state.stone -= 4;
   state.craftingBenches += 1;
-  addXp(6);
-  toast("Built Crafting Bench. Add it to your hotbar from Inventory.");
-  addFloatingText(player.x - 12, player.y - 65, "BENCH READY");
+  selectedInventoryItem = { type: "craftingbench" };
+
+  toast("Built Crafting Bench. Add it to your hotbar and place it.");
+  addFloatingText(player.x - 10, player.y - 62, "BENCH READY");
   save();
   syncUI();
   updateCampPanel();
@@ -709,13 +729,17 @@ function updateCampPanel() {
       Heal Rate: ${campHealRate().toFixed(3)} HP/tick
     </div>
 
-    <div class="camp-card workstation-card">
+    <div class="camp-card starter-workstation-card">
       <strong>Starter Workstation</strong>
-      Build your first Crafting Bench here so crafting does not get stuck behind itself.<br>
-      Cost: 10 Wood · 4 Stone<br>
-      Owned: ${state.craftingBenches}
-      <button id="buildStarterBenchBtn" class="camp-small-btn" ${canBuildStarterCraftingBench() ? "" : "disabled"}>
-        ${canBuildStarterCraftingBench() ? "Build Crafting Bench" : "Need 10 Wood + 4 Stone"}
+      ${hasUsableCraftingBench()
+        ? "Crafting Bench unlocked. Use your placed bench for normal crafting."
+        : "Build your first Crafting Bench here so crafting does not get stuck in a loop."}
+      <div class="camp-cost starter-cost">
+        <div>10 Wood</div>
+        <div>4 Stone</div>
+      </div>
+      <button id="campBuildBenchBtn" class="camp-mini-action" ${canBuildStarterCraftingBench() ? "" : "disabled"}>
+        ${hasUsableCraftingBench() ? "Bench Ready" : canBuildStarterCraftingBench() ? "Build Crafting Bench" : "Need Wood + Stone"}
       </button>
     </div>
 
@@ -740,8 +764,11 @@ function updateCampPanel() {
   campUpgradeBtn.textContent =
     canUpgrade ? (state.campLevel === 4 ? "Create Camp Core" : "Upgrade Camp") : "Need More Resources";
 
-  const buildStarterBenchBtn = $("buildStarterBenchBtn");
-  if (buildStarterBenchBtn) buildStarterBenchBtn.addEventListener("click", buildStarterCraftingBenchFromCamp);
+  const buildBenchBtn = $("campBuildBenchBtn");
+  if (buildBenchBtn && !hasUsableCraftingBench()) {
+    buildBenchBtn.addEventListener("click", buildStarterCraftingBenchFromCamp);
+  }
+
 }
 
 function openCamp() {
@@ -781,6 +808,7 @@ function loadSave() {
     state.steel = Number(data.steel || 0);
     state.craftingBenches = Number(data.craftingBenches || 0);
     state.furnaces = Number(data.furnaces || 0);
+    state.storageChests = Number(data.storageChests || 0);
 
     state.nextItemId = Math.max(1, Number(data.nextItemId || 1));
     state.axes = Array.isArray(data.axes)
@@ -847,7 +875,7 @@ function loadSave() {
           if (item === "axe" && state.axes[0]) {
             return { type: "axe", itemId: state.axes[0].id };
           }
-          if (item === "craftingbench" || item === "furnace" || item === "potion" || item === "speedpotion") {
+          if (item === "craftingbench" || item === "furnace" || item === "storagechest" || item === "potion" || item === "speedpotion") {
             return item;
           }
           return item;
@@ -919,7 +947,7 @@ function loadSave() {
 
     state.structures = Array.isArray(data.structures)
       ? data.structures
-          .filter((structure) => structure && (structure.type === "craftingbench" || structure.type === "furnace"))
+          .filter((structure) => structure && (structure.type === "craftingbench" || structure.type === "furnace" || structure.type === "storagechest"))
           .map((structure) => ({
             id: String(structure.id || (structure.type + "-" + Math.random().toString(16).slice(2))),
             type: structure.type,
@@ -930,7 +958,13 @@ function loadSave() {
               startedAt: Number(structure.smeltJob.startedAt || Date.now()),
               durationMs: Number(structure.smeltJob.durationMs || 7000),
               ready: Boolean(structure.smeltJob.ready)
-            } : null
+            } : null,
+            slots: structure.type === "storagechest" && Array.isArray(structure.slots)
+              ? sanitizeStorageSlots(structure.slots, 18)
+              : (structure.type === "storagechest" ? emptyStorageSlots(18) : undefined),
+            owner: structure.owner || state.name,
+            kingdomId: structure.kingdomId || null,
+            accessMode: structure.accessMode || "wilderness-public"
           }))
       : [];
 
@@ -1025,6 +1059,7 @@ function syncUI() {
   if (!sellPanel.classList.contains("hidden")) updateSellPanel();
   if (typeof updateCraftingPanel === "function") updateCraftingPanel();
   if (typeof updateSmeltingPanel === "function") updateSmeltingPanel();
+  if (typeof updateStoragePanel === "function") updateStoragePanel();
 }
 
 /* BUTTONS / PANELS */
@@ -1238,6 +1273,7 @@ function closeAllGamePanels() {
   closeCamp();
   if (typeof closeCrafting === "function") closeCrafting();
   if (typeof closeSmelting === "function") closeSmelting();
+  if (typeof closeStorage === "function") closeStorage();
   if (typeof closeTerritory === "function") closeTerritory();
   closeBuyPanel();
   closeSellPanel();
@@ -1258,51 +1294,6 @@ function updateQuestPanel() {
   }
 }
 
-
-function inventoryCategoryForType(type) {
-  if (type === "axe" || type === "pickaxe" || type === "sword") return "tools";
-  if (type === "craftingbench" || type === "furnace") return "building";
-  if (type === "potion" || type === "speedpotion") return "consumables";
-  return "materials";
-}
-
-function filterInventoryStacks(stacks) {
-  if (selectedInventoryCategory === "all") return stacks;
-  return stacks.filter((item) => inventoryCategoryForType(item.type) === selectedInventoryCategory);
-}
-
-function ensureInventoryCategoryBar() {
-  if (!$('inventoryCategoryBar')) {
-    const bar = document.createElement('div');
-    bar.id = 'inventoryCategoryBar';
-    bar.className = 'inventory-category-bar';
-    inventoryGrid.insertAdjacentElement('beforebegin', bar);
-  }
-
-  const bar = $('inventoryCategoryBar');
-  const categories = [
-    ['all', 'All'],
-    ['tools', 'Tools'],
-    ['materials', 'Materials'],
-    ['building', 'Build'],
-    ['consumables', 'Food/Pots']
-  ];
-
-  bar.innerHTML = '';
-  categories.forEach(([key, label]) => {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.textContent = label;
-    button.className = selectedInventoryCategory === key ? 'active' : '';
-    button.addEventListener('click', () => {
-      selectedInventoryCategory = key;
-      selectedInventoryItem = null;
-      updateInventoryPanel();
-    });
-    bar.appendChild(button);
-  });
-}
-
 function updateInventoryPanel() {
   if (!inventoryGrid) return;
 
@@ -1310,10 +1301,10 @@ function updateInventoryPanel() {
   invCamp.textContent = state.campLevel;
 
   cleanHotbar();
+  if (typeof ensureInventoryCategoryTabs === "function") ensureInventoryCategoryTabs();
   inventoryGrid.innerHTML = "";
-  ensureInventoryCategoryBar();
 
-  let stacks = [
+  const allStacks = [
     ...state.axes.map((axe) => ({
       type: "axe",
       itemId: axe.id,
@@ -1346,11 +1337,14 @@ function updateInventoryPanel() {
     ...makeStacks("mushling", state.mushlings, images.mushling),
     ...makeStacks("craftingbench", state.craftingBenches, images.craftingbench),
     ...makeStacks("furnace", state.furnaces, images.furnace),
+    ...makeStacks("storagechest", state.storageChests, images.storagechest),
     ...makeStacks("potion", state.potions, images.potion),
     ...makeStacks("speedpotion", state.speedPotions, images.speedpotion)
   ];
 
-  stacks = filterInventoryStacks(stacks);
+  const stacks = typeof inventoryItemMatchesCategory === "function"
+    ? allStacks.filter(inventoryItemMatchesCategory)
+    : allStacks;
 
   const totalSlots = 60;
 
@@ -1457,6 +1451,13 @@ function updateInventoryPanel() {
         slot.title = "Double-click to add Furnace to hotbar for placement.";
         if (state.hotbar.includes("furnace")) slot.classList.add("hotbar-linked");
         slot.addEventListener("dblclick", () => addItemToHotbar("furnace"));
+      }
+
+      if (item.type === "storagechest") {
+        slot.classList.add("assignable");
+        slot.title = "Double-click to add Storage Chest to hotbar for placement.";
+        if (state.hotbar.includes("storagechest")) slot.classList.add("hotbar-linked");
+        slot.addEventListener("dblclick", () => addItemToHotbar("storagechest"));
       }
     } else {
       slot.classList.add("empty");

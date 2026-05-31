@@ -1,5 +1,55 @@
 /* INVENTORY ITEM MANAGEMENT */
 
+let selectedInventoryCategory = "all";
+
+const INVENTORY_CATEGORIES = [
+  { id: "all", name: "All" },
+  { id: "tools", name: "Tools" },
+  { id: "materials", name: "Materials" },
+  { id: "build", name: "Build" },
+  { id: "consumables", name: "Food/Pots" }
+];
+
+function inventoryCategoryForItem(item) {
+  if (!item) return "materials";
+  if (item.type === "axe" || item.type === "pickaxe" || item.type === "sword") return "tools";
+  if (item.type === "craftingbench" || item.type === "furnace" || item.type === "storagechest") return "build";
+  if (item.type === "potion" || item.type === "speedpotion") return "consumables";
+  return "materials";
+}
+
+function inventoryItemMatchesCategory(item) {
+  return selectedInventoryCategory === "all" || inventoryCategoryForItem(item) === selectedInventoryCategory;
+}
+
+function ensureInventoryCategoryTabs() {
+  let tabs = $("inventoryCategoryTabs");
+
+  if (!tabs) {
+    tabs = document.createElement("div");
+    tabs.id = "inventoryCategoryTabs";
+    tabs.className = "inventory-category-tabs";
+    inventoryGrid.insertAdjacentElement("beforebegin", tabs);
+  }
+
+  tabs.innerHTML = "";
+
+  INVENTORY_CATEGORIES.forEach((category) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "inventory-category-tab" + (selectedInventoryCategory === category.id ? " active" : "");
+    button.textContent = category.name;
+    button.addEventListener("click", () => {
+      selectedInventoryCategory = category.id;
+      updateInventoryPanel();
+    });
+    tabs.appendChild(button);
+  });
+
+  return tabs;
+}
+
+
 function ensureItemDetailPanel() {
   let details = $("inventoryItemDetails");
 
@@ -104,6 +154,10 @@ function selectedItemData() {
 
   if (selectedInventoryItem.type === "furnace" && state.furnaces > 0) {
     return { type: "furnace", name: "Furnace", count: state.furnaces };
+  }
+
+  if (selectedInventoryItem.type === "storagechest" && state.storageChests > 0) {
+    return { type: "storagechest", name: "Storage Chest", count: state.storageChests };
   }
 
   if (selectedInventoryItem.type === "wood" && state.wood > 0) {
@@ -220,6 +274,8 @@ function updateInventoryItemDetails() {
     description.textContent = "Place this near your camp to open crafting from a real world object.";
   } else if (item.type === "furnace") {
     description.textContent = "Place this near your camp to smelt raw ore over time and collect it later.";
+  } else if (item.type === "storagechest") {
+    description.textContent = "Place this as stationary storage. In future multiplayer, wilderness chests are public but kingdom land can protect access.";
   } else if (item.type === "wood") {
     description.textContent = "A building material gathered from trees and bushes.";
   } else if (item.type === "stone") {
@@ -242,7 +298,7 @@ function updateInventoryItemDetails() {
 
   details.appendChild(description);
 
-  if (item.type !== "axe" && item.type !== "pickaxe" && item.type !== "sword" && item.type !== "potion" && item.type !== "speedpotion" && item.type !== "craftingbench" && item.type !== "furnace") return;
+  if (item.type !== "axe" && item.type !== "pickaxe" && item.type !== "sword" && item.type !== "potion" && item.type !== "speedpotion" && item.type !== "craftingbench" && item.type !== "furnace" && item.type !== "storagechest") return;
 
   const actions = document.createElement("div");
   actions.className = "inventory-item-actions";
@@ -274,6 +330,10 @@ function updateInventoryItemDetails() {
     equipButton.textContent = state.hotbar.includes("furnace") ? "In Hotbar" : "Add to Hotbar";
     equipButton.disabled = state.hotbar.includes("furnace");
     equipButton.addEventListener("click", () => addItemToHotbar("furnace"));
+  } else if (item.type === "storagechest") {
+    equipButton.textContent = state.hotbar.includes("storagechest") ? "In Hotbar" : "Add to Hotbar";
+    equipButton.disabled = state.hotbar.includes("storagechest");
+    equipButton.addEventListener("click", () => addItemToHotbar("storagechest"));
   }
 
   actions.appendChild(equipButton);
@@ -669,6 +729,7 @@ function cleanHotbar() {
     if (item === "speedpotion" && state.speedPotions > 0) return item;
     if (item === "craftingbench" && state.craftingBenches > 0) return item;
     if (item === "furnace" && state.furnaces > 0) return item;
+    if (item === "storagechest" && state.storageChests > 0) return item;
 
     const toolItem = hotbarToolItem(item);
     if (toolItem && toolByHotbarItem(toolItem) && !seenTools.has(toolItem.itemId)) {
@@ -695,18 +756,20 @@ function cleanHotbar() {
 function addItemToHotbar(itemType, itemId = null) {
   cleanHotbar();
 
-  if (itemType === "potion" || itemType === "speedpotion" || itemType === "craftingbench" || itemType === "furnace") {
+  if (itemType === "potion" || itemType === "speedpotion" || itemType === "craftingbench" || itemType === "furnace" || itemType === "storagechest") {
     const counts = {
       potion: state.potions,
       speedpotion: state.speedPotions,
       craftingbench: state.craftingBenches,
-      furnace: state.furnaces
+      furnace: state.furnaces,
+      storagechest: state.storageChests
     };
     const names = {
       potion: "Health Potion",
       speedpotion: "Speed Potion",
       craftingbench: "Crafting Bench",
-      furnace: "Furnace"
+      furnace: "Furnace",
+      storagechest: "Storage Chest"
     };
     const count = counts[itemType] || 0;
     if (count <= 0) return;
@@ -800,7 +863,7 @@ function activateHotbarSlot(slotIndex) {
     return;
   }
 
-  if (item === "craftingbench" || item === "furnace") {
+  if (item === "craftingbench" || item === "furnace" || item === "storagechest") {
     if (typeof beginStructurePlacement === "function") {
       beginStructurePlacement(item, slotIndex);
     } else {
@@ -861,7 +924,9 @@ function updateHotbar() {
             ? "Place Crafting Bench"
             : item === "furnace"
               ? "Place Furnace"
-              : "Empty hotbar slot";
+              : item === "storagechest"
+                ? "Place Storage Chest"
+                : "Empty hotbar slot";
 
     const isEquipped =
       tool && ((tool.type === "axe" && state.equippedAxeId === tool.id) ||
@@ -875,7 +940,7 @@ function updateHotbar() {
     key.textContent = String(index + 1);
     slot.appendChild(key);
 
-    if (tool || item === "potion" || item === "speedpotion" || item === "craftingbench" || item === "furnace") {
+    if (tool || item === "potion" || item === "speedpotion" || item === "craftingbench" || item === "furnace" || item === "storagechest") {
       const icon = document.createElement("img");
       icon.src = tool
         ? images[tool.type].src
@@ -885,7 +950,9 @@ function updateHotbar() {
             ? images.craftingbench.src
             : item === "furnace"
               ? images.furnace.src
-              : images.potion.src;
+              : item === "storagechest"
+                ? images.storagechest.src
+                : images.potion.src;
       icon.alt = tool
         ? tool.name
         : item === "speedpotion"
@@ -894,14 +961,16 @@ function updateHotbar() {
             ? "Crafting Bench"
             : item === "furnace"
               ? "Furnace"
-              : "Health Potion";
+              : item === "storagechest"
+                ? "Storage Chest"
+                : "Health Potion";
       slot.appendChild(icon);
 
       const count = document.createElement("span");
       count.className = "hotbar-count";
       count.textContent = tool
         ? toolDurabilityText(tool)
-        : "x" + (item === "speedpotion" ? state.speedPotions : item === "craftingbench" ? state.craftingBenches : item === "furnace" ? state.furnaces : state.potions);
+        : "x" + (item === "speedpotion" ? state.speedPotions : item === "craftingbench" ? state.craftingBenches : item === "furnace" ? state.furnaces : item === "storagechest" ? state.storageChests : state.potions);
       slot.appendChild(count);
     }
 
@@ -918,3 +987,293 @@ function closeGameMenu() {
   gameMenu.classList.add("hidden");
 }
 
+
+/* PHASE 8C.1 — PLACEABLE STORAGE CHESTS */
+
+let activeStorageChestId = null;
+let storageDragSource = null;
+
+const STORAGE_SLOT_COUNT = 18;
+
+const STORAGE_ITEM_INFO = {
+  wood: { name: "Wood", image: "wood", get: () => state.wood, set: (n) => state.wood = n },
+  stone: { name: "Stone", image: "stone", get: () => state.stone, set: (n) => state.stone = n },
+  rawcopper: { name: "Raw Copper", image: "rawcopper", get: () => state.copperOre, set: (n) => state.copperOre = n },
+  rawiron: { name: "Raw Iron", image: "rawiron", get: () => state.ironOre, set: (n) => state.ironOre = n },
+  copper: { name: "Copper", image: "copper", get: () => state.copper, set: (n) => state.copper = n },
+  iron: { name: "Iron", image: "iron", get: () => state.iron, set: (n) => state.iron = n },
+  steel: { name: "Steel", image: "steel", get: () => state.steel, set: (n) => state.steel = n },
+  slimegel: { name: "Slime Gel", image: "slimegel", get: () => state.slimeGel, set: (n) => state.slimeGel = n },
+  mushling: { name: "Mushling", image: "mushling", get: () => state.mushlings, set: (n) => state.mushlings = n },
+  potion: { name: "Health Potion", image: "potion", get: () => state.potions, set: (n) => state.potions = n },
+  speedpotion: { name: "Speed Potion", image: "speedpotion", get: () => state.speedPotions, set: (n) => state.speedPotions = n },
+  craftingbench: { name: "Crafting Bench", image: "craftingbench", get: () => state.craftingBenches, set: (n) => state.craftingBenches = n },
+  furnace: { name: "Furnace", image: "furnace", get: () => state.furnaces, set: (n) => state.furnaces = n },
+  storagechest: { name: "Storage Chest", image: "storagechest", get: () => state.storageChests, set: (n) => state.storageChests = n }
+};
+
+function emptyStorageSlots(count = STORAGE_SLOT_COUNT) {
+  return Array.from({ length: count }, () => null);
+}
+
+function sanitizeStorageSlots(slots, count = STORAGE_SLOT_COUNT) {
+  const output = emptyStorageSlots(count);
+  if (!Array.isArray(slots)) return output;
+
+  slots.slice(0, count).forEach((slot, index) => {
+    if (!slot || typeof slot !== "object") return;
+
+    if (slot.kind === "tool" && (slot.type === "axe" || slot.type === "pickaxe" || slot.type === "sword") && slot.toolData) {
+      const maxDurability = slot.type === "sword" ? 80 : 60;
+      output[index] = {
+        kind: "tool",
+        type: slot.type,
+        count: 1,
+        toolData: {
+          id: String(slot.toolData.id || (slot.type + "-stored-" + index)),
+          type: slot.type,
+          name: slot.toolData.name || (slot.type === "sword" ? "Basic Sword" : slot.type === "pickaxe" ? "Basic Pickaxe" : "Basic Axe"),
+          durability: Math.max(1, Math.min(maxDurability, Number(slot.toolData.durability || maxDurability))),
+          maxDurability
+        }
+      };
+      return;
+    }
+
+    if (STORAGE_ITEM_INFO[slot.type]) {
+      output[index] = {
+        kind: "stack",
+        type: slot.type,
+        count: Math.max(1, Number(slot.count || 1))
+      };
+    }
+  });
+
+  return output;
+}
+
+function storageChestStructure() {
+  const structure = getStructureById(activeStorageChestId);
+  if (!structure || structure.type !== "storagechest") return null;
+  structure.slots = sanitizeStorageSlots(structure.slots, STORAGE_SLOT_COUNT);
+  return structure;
+}
+
+function storageInventoryStacks() {
+  return [
+    ...state.axes.map((axe) => ({ kind: "tool", type: "axe", itemId: axe.id, name: axe.name, durability: axe.durability, maxDurability: axe.maxDurability, image: "axe" })),
+    ...state.pickaxes.map((pickaxe) => ({ kind: "tool", type: "pickaxe", itemId: pickaxe.id, name: pickaxe.name, durability: pickaxe.durability, maxDurability: pickaxe.maxDurability, image: "pickaxe" })),
+    ...state.swords.map((sword) => ({ kind: "tool", type: "sword", itemId: sword.id, name: sword.name, durability: sword.durability, maxDurability: sword.maxDurability, image: "sword" })),
+    ...Object.entries(STORAGE_ITEM_INFO)
+      .filter(([, info]) => info.get() > 0)
+      .map(([type, info]) => ({ kind: "stack", type, name: info.name, count: info.get(), image: info.image }))
+  ];
+}
+
+function storageSlotLabel(item) {
+  if (!item) return "";
+  if (item.kind === "tool") return toolDurabilityText(item.toolData || item) + "/" + (item.maxDurability || item.toolData?.maxDurability || "");
+  return "x" + item.count;
+}
+
+function storageSlotName(item) {
+  if (!item) return "Empty";
+  if (item.kind === "tool") return item.name || item.toolData?.name || "Tool";
+  return STORAGE_ITEM_INFO[item.type]?.name || item.type;
+}
+
+function storageSlotImage(item) {
+  if (!item) return null;
+  const imageKey = item.kind === "tool" ? item.type : STORAGE_ITEM_INFO[item.type]?.image;
+  return images[imageKey] || null;
+}
+
+function openStorage(obj) {
+  const structure = getStructureById(obj.structureId);
+  if (!structure || structure.type !== "storagechest") return;
+
+  closeAllGamePanels();
+  activeStorageChestId = structure.id;
+  structure.slots = sanitizeStorageSlots(structure.slots, STORAGE_SLOT_COUNT);
+  storagePanel.classList.remove("hidden");
+  updateStoragePanel();
+}
+
+function closeStorage() {
+  if (storagePanel) storagePanel.classList.add("hidden");
+  activeStorageChestId = null;
+  storageDragSource = null;
+}
+
+function removeInventoryForStorage(item) {
+  if (!item) return null;
+
+  if (item.kind === "tool") {
+    let list = item.type === "axe" ? state.axes : item.type === "pickaxe" ? state.pickaxes : state.swords;
+    const tool = list.find((entry) => entry.id === item.itemId);
+    if (!tool) return null;
+
+    if (item.type === "axe") state.axes = state.axes.filter((entry) => entry.id !== item.itemId);
+    if (item.type === "pickaxe") state.pickaxes = state.pickaxes.filter((entry) => entry.id !== item.itemId);
+    if (item.type === "sword") state.swords = state.swords.filter((entry) => entry.id !== item.itemId);
+    removeToolFromHotbar(item.type, item.itemId);
+
+    return { kind: "tool", type: item.type, count: 1, toolData: { ...tool } };
+  }
+
+  const info = STORAGE_ITEM_INFO[item.type];
+  if (!info || info.get() <= 0) return null;
+  const amount = Math.min(16, info.get());
+  info.set(info.get() - amount);
+  return { kind: "stack", type: item.type, count: amount };
+}
+
+function giveStorageItemToInventory(item) {
+  if (!item) return false;
+
+  if (item.kind === "tool" && item.toolData) {
+    const tool = { ...item.toolData };
+    if (tool.type === "axe") state.axes.push(tool);
+    if (tool.type === "pickaxe") state.pickaxes.push(tool);
+    if (tool.type === "sword") state.swords.push(tool);
+    return true;
+  }
+
+  const info = STORAGE_ITEM_INFO[item.type];
+  if (!info) return false;
+  info.set(info.get() + Math.max(1, Number(item.count || 1)));
+  return true;
+}
+
+function firstEmptyStorageSlot(chest) {
+  return chest.slots.findIndex((slot) => !slot);
+}
+
+function moveInventoryItemToChest(inventoryIndex, targetSlot = null) {
+  const chest = storageChestStructure();
+  if (!chest) return;
+  const item = storageInventoryStacks()[inventoryIndex];
+  if (!item) return;
+
+  const slotIndex = Number.isInteger(targetSlot) ? targetSlot : firstEmptyStorageSlot(chest);
+  if (slotIndex < 0 || slotIndex >= chest.slots.length) {
+    toast("Storage chest is full.");
+    return;
+  }
+  if (chest.slots[slotIndex]) {
+    toast("That chest slot is full.");
+    return;
+  }
+
+  const stored = removeInventoryForStorage(item);
+  if (!stored) return;
+  chest.slots[slotIndex] = stored;
+  toast("Stored " + storageSlotName(stored) + ".");
+  save();
+  syncUI();
+  updateStoragePanel();
+}
+
+function moveChestItemToInventory(slotIndex) {
+  const chest = storageChestStructure();
+  if (!chest || !chest.slots[slotIndex]) return;
+
+  const item = chest.slots[slotIndex];
+  if (!giveStorageItemToInventory(item)) return;
+  chest.slots[slotIndex] = null;
+  toast("Took " + storageSlotName(item) + ".");
+  save();
+  syncUI();
+  updateStoragePanel();
+}
+
+function renderStorageSlot(item, options) {
+  const slot = document.createElement("button");
+  slot.type = "button";
+  slot.className = "storage-slot" + (item ? " filled" : " empty");
+
+  if (item) {
+    const img = document.createElement("img");
+    const image = storageSlotImage(item);
+    if (image) img.src = image.src;
+    img.alt = storageSlotName(item);
+    slot.appendChild(img);
+
+    const count = document.createElement("span");
+    count.textContent = storageSlotLabel(item);
+    slot.appendChild(count);
+
+    slot.title = storageSlotName(item) + " · drag or click to move";
+    slot.draggable = true;
+    slot.addEventListener("dragstart", (event) => {
+      storageDragSource = options.source;
+      slot.classList.add("dragging");
+      event.dataTransfer.effectAllowed = "move";
+      event.dataTransfer.setData("text/plain", JSON.stringify(options.source));
+    });
+    slot.addEventListener("dragend", () => slot.classList.remove("dragging"));
+  }
+
+  slot.addEventListener("click", () => {
+    if (options.source.side === "inventory") moveInventoryItemToChest(options.source.index);
+    if (options.source.side === "chest") moveChestItemToInventory(options.source.index);
+  });
+
+  slot.addEventListener("dragover", (event) => {
+    event.preventDefault();
+    slot.classList.add("drop-target");
+  });
+  slot.addEventListener("dragleave", () => slot.classList.remove("drop-target"));
+  slot.addEventListener("drop", (event) => {
+    event.preventDefault();
+    slot.classList.remove("drop-target");
+    const source = storageDragSource || JSON.parse(event.dataTransfer.getData("text/plain") || "null");
+    if (!source) return;
+
+    if (options.source.side === "chest" && source.side === "inventory") {
+      moveInventoryItemToChest(source.index, options.source.index);
+    } else if (options.source.side === "inventory" && source.side === "chest") {
+      moveChestItemToInventory(source.index);
+    }
+  });
+
+  return slot;
+}
+
+function updateStoragePanel() {
+  if (!storagePanel || storagePanel.classList.contains("hidden")) return;
+  const chest = storageChestStructure();
+  if (!chest) {
+    closeStorage();
+    return;
+  }
+
+  if (storagePermissionText) {
+    storagePermissionText.textContent = chest.accessMode === "wilderness-public"
+      ? "Wilderness chest: future multiplayer rule = anyone can look inside. Kingdom land can restrict it later."
+      : "Kingdom chest: future permissions decide who can open/build here.";
+  }
+
+  storageInventoryGrid.innerHTML = "";
+  storageChestGrid.innerHTML = "";
+
+  storageInventoryStacks().forEach((item, index) => {
+    storageInventoryGrid.appendChild(renderStorageSlot(item, { source: { side: "inventory", index } }));
+  });
+
+  if (storageInventoryGrid.children.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "storage-empty-note";
+    empty.textContent = "Inventory is empty.";
+    storageInventoryGrid.appendChild(empty);
+  }
+
+  chest.slots.forEach((item, index) => {
+    storageChestGrid.appendChild(renderStorageSlot(item, { source: { side: "chest", index } }));
+  });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const closeStorageButton = document.getElementById("closeStorageBtn");
+  if (closeStorageButton) closeStorageButton.addEventListener("click", closeStorage);
+});

@@ -657,44 +657,8 @@ label {
 
 .inventory-grid {
   display: grid;
-  grid-template-columns: repeat(5, 58px);
-  justify-content: center;
+  grid-template-columns: repeat(10, 1fr);
   gap: 8px;
-  padding-right: 4px;
-}
-
-#inventoryPanel {
-  width: 380px;
-}
-
-#inventoryPanel .inventory-help {
-  font-size: 12px;
-  line-height: 1.35;
-  margin-bottom: 10px;
-  color: rgba(255,240,200,0.78);
-}
-
-.inventory-category-bar {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 7px;
-  margin-bottom: 10px;
-}
-
-.inventory-category-bar button {
-  padding: 8px 7px;
-  border-radius: 4px;
-  background: rgba(0,0,0,0.28);
-  border: 1px solid rgba(242,195,95,0.36);
-  color: var(--cream);
-  font-size: 11px;
-  text-transform: uppercase;
-}
-
-.inventory-category-bar button.active {
-  background: linear-gradient(#d9442e, #8e1c13);
-  border-color: var(--gold);
-  color: white;
 }
 
 .inventory-slot {
@@ -712,10 +676,10 @@ label {
 }
 
 .inventory-slot img {
-  width: 36px;
-  height: 36px;
-  max-width: 36px;
-  max-height: 36px;
+  width: 34px;
+  height: 34px;
+  max-width: 34px;
+  max-height: 34px;
   object-fit: contain;
   image-rendering: pixelated;
 }
@@ -2074,24 +2038,261 @@ label {
   }
 }
 
-
-.workstation-card {
-  display: grid;
-  gap: 8px;
+/* PHASE 8B — INVENTORY POLISH */
+#inventoryPanel {
+  width: 420px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-.camp-small-btn {
+#inventoryPanel .panel-header,
+#inventoryPanel .inventory-stats,
+#inventoryPanel .inventory-help,
+#inventoryPanel .inventory-category-tabs,
+#inventoryPanel .inventory-item-details {
+  flex: 0 0 auto;
+}
+
+.inventory-category-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 10px 0 10px;
+}
+
+.inventory-category-tab {
+  flex: 1 1 auto;
+  min-width: 70px;
+  padding: 8px 9px;
+  border-radius: 4px;
+  color: #fff0c8;
+  background: rgba(0,0,0,0.3);
+  border: 2px solid rgba(242,195,95,0.38);
+  font-size: 12px;
+  box-shadow: 0 3px 0 rgba(0,0,0,0.25);
+}
+
+.inventory-category-tab.active {
+  color: #1b0d06;
+  background: #f2c35f;
+  border-color: #ffe4a6;
+}
+
+#inventoryPanel .inventory-grid {
+  grid-template-columns: repeat(5, 1fr);
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: min(335px, calc(100vh - 420px));
+  min-height: 190px;
+  padding: 2px 6px 8px 2px;
+  margin-right: -4px;
+  scrollbar-width: thin;
+}
+
+#inventoryPanel .inventory-slot {
+  min-height: 63px;
+}
+
+#inventoryPanel .inventory-item-details {
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+  margin-top: 10px;
+  background: rgba(18, 8, 3, 0.98);
+  border-color: rgba(242,195,95,0.68);
+  box-shadow: 0 -10px 22px rgba(0,0,0,0.34);
+}
+
+#inventoryPanel .inventory-item-actions button:disabled {
+  opacity: 0.6;
+  cursor: default;
+  transform: none;
+}
+
+.camp-mini-action {
   width: 100%;
-  margin-top: 6px;
+  margin-top: 10px;
   padding: 10px 12px;
   border-radius: 4px;
   color: white;
   background: linear-gradient(#d9442e, #8e1c13);
-  border: 2px solid var(--gold);
-  font-size: 13px;
+  border: 2px solid #f2c35f;
+  font-weight: 900;
 }
 
-.camp-small-btn:disabled {
-  opacity: 0.55;
-  filter: grayscale(0.25);
+.camp-mini-action:disabled {
+  opacity: 0.58;
+  filter: grayscale(0.2);
+  cursor: default;
+}
+
+.starter-cost {
+  margin-top: 10px;
+}
+
+@media (max-width: 760px) {
+  #inventoryPanel {
+    width: min(420px, calc(100vw - 30px));
+  }
+
+  #inventoryPanel .inventory-grid {
+    grid-template-columns: repeat(5, 1fr);
+    max-height: min(300px, calc(100vh - 430px));
+  }
+}
+
+/* PHASE 8C.1 — STORAGE CHEST */
+.storage-panel {
+  position: absolute;
+  z-index: 18;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(900px, calc(100vw - 34px));
+  max-height: min(650px, calc(100vh - 38px));
+  padding: 16px;
+  border-radius: 7px;
+  background: rgba(18, 8, 3, 0.93);
+  border: 2px solid rgba(242, 195, 95, 0.68);
+  box-shadow: 0 7px 0 rgba(0,0,0,0.35), 0 20px 52px rgba(0,0,0,0.48);
+  backdrop-filter: blur(5px);
+}
+
+.storage-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 13px;
+}
+
+.storage-header h2 {
+  color: #ffe4a6;
+  font-family: Georgia, serif;
+  font-size: 28px;
+  text-shadow: 2px 2px 0 #55130c;
+}
+
+.storage-header p,
+.storage-help {
+  margin-top: 4px;
+  color: rgba(255,240,200,0.78);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.storage-close {
+  min-width: 38px;
+  height: 34px;
+  color: #fff0c8;
+  background: rgba(40,22,14,0.95);
+  border: 2px solid rgba(242,195,95,0.55);
+  border-radius: 5px;
+}
+
+.storage-layout {
+  display: grid;
+  grid-template-columns: 1fr 34px 1fr;
+  gap: 10px;
+  align-items: start;
+}
+
+.storage-side {
+  min-height: 330px;
+  padding: 12px;
+  border-radius: 6px;
+  border: 2px solid rgba(242,195,95,0.35);
+  background: rgba(0,0,0,0.23);
+}
+
+.storage-side h3 {
+  color: var(--gold);
+  font-size: 13px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  margin-bottom: 9px;
+}
+
+.storage-swap-hint {
+  align-self: center;
+  text-align: center;
+  color: #ffe4a6;
+  font-size: 24px;
+  text-shadow: 2px 2px 0 #000;
+}
+
+.storage-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 52px);
+  gap: 8px;
+  align-content: start;
+  max-height: 430px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.storage-slot {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 5px;
+  background: rgba(0,0,0,0.34);
+  border: 2px solid rgba(242,195,95,0.32);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
+}
+
+.storage-slot img {
+  width: 35px;
+  height: 35px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+.storage-slot span {
+  position: absolute;
+  right: 3px;
+  bottom: 2px;
+  padding: 1px 3px;
+  border-radius: 3px;
+  background: rgba(0,0,0,0.7);
+  color: #fff0c8;
+  font-size: 10px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.storage-slot.dragging {
+  opacity: 0.45;
+}
+
+.storage-slot.drop-target {
+  border-color: #80ef78;
+  box-shadow: 0 0 12px rgba(128,239,120,0.35), inset 0 0 0 2px rgba(128,239,120,0.22);
+}
+
+.storage-empty-note {
+  grid-column: 1 / -1;
+  padding: 14px;
+  color: rgba(255,240,200,0.65);
+  font-size: 12px;
+  border: 2px dashed rgba(242,195,95,0.25);
+  border-radius: 5px;
+}
+
+@media (max-width: 760px) {
+  .storage-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .storage-swap-hint {
+    display: none;
+  }
+
+  .storage-grid {
+    grid-template-columns: repeat(5, 52px);
+  }
 }

@@ -30,17 +30,21 @@ const structurePlacementState = {
 };
 
 function structureLabel(type) {
-  return type === "furnace" ? "Furnace" : "Crafting Bench";
+  if (type === "furnace") return "Furnace";
+  if (type === "storagechest") return "Storage Chest";
+  return "Crafting Bench";
 }
 
 function structureSize(type) {
-  return type === "furnace" ? { w: 64, h: 64 } : { w: 70, h: 58 };
+  if (type === "furnace") return { w: 64, h: 64 };
+  if (type === "storagechest") return { w: 64, h: 58 };
+  return { w: 70, h: 58 };
 }
 
 function ensureStructureState() {
   if (!Array.isArray(state.structures)) state.structures = [];
   state.structures = state.structures.filter((structure) =>
-    structure && (structure.type === "craftingbench" || structure.type === "furnace")
+    structure && (structure.type === "craftingbench" || structure.type === "furnace" || structure.type === "storagechest")
   );
 }
 
@@ -65,7 +69,7 @@ function makeStructureObject(structure) {
     h: size.h,
     kind: structure.type,
     interact: true,
-    label: structure.type === "furnace" ? "use furnace" : "use crafting bench",
+    label: structure.type === "furnace" ? "use furnace" : structure.type === "storagechest" ? "open storage chest" : "use crafting bench",
     action: structure.type,
     structureId: structure.id
   };
@@ -84,9 +88,10 @@ function isStructurePlacementActive() {
 
 function beginStructurePlacement(type, slotIndex = null) {
   if (gameScreen.classList.contains("hidden")) return;
-  if (type !== "craftingbench" && type !== "furnace") return;
+  if (type !== "craftingbench" && type !== "furnace" && type !== "storagechest") return;
   if (type === "craftingbench" && state.craftingBenches <= 0) return;
   if (type === "furnace" && state.furnaces <= 0) return;
+  if (type === "storagechest" && state.storageChests <= 0) return;
 
   closeAllGamePanels();
   closeNpcDialogue();
@@ -159,16 +164,22 @@ function confirmStructurePlacement() {
   const type = structurePlacementState.type;
   if (type === "craftingbench" && state.craftingBenches <= 0) return;
   if (type === "furnace" && state.furnaces <= 0) return;
+  if (type === "storagechest" && state.storageChests <= 0) return;
 
   if (type === "craftingbench") state.craftingBenches -= 1;
   if (type === "furnace") state.furnaces -= 1;
+  if (type === "storagechest") state.storageChests -= 1;
 
   const structure = {
     id: createStructureId(type),
     type,
     x: structurePlacementState.previewX,
     y: structurePlacementState.previewY,
-    smeltJob: null
+    smeltJob: null,
+    slots: type === "storagechest" ? emptyStorageSlots(18) : undefined,
+    owner: state.name,
+    kingdomId: null,
+    accessMode: "wilderness-public"
   };
 
   ensureStructureState();
@@ -176,7 +187,7 @@ function confirmStructurePlacement() {
   objects.push(makeStructureObject(structure));
 
   if (Number.isInteger(structurePlacementState.slotIndex) && state.hotbar[structurePlacementState.slotIndex] === type) {
-    if ((type === "craftingbench" && state.craftingBenches <= 0) || (type === "furnace" && state.furnaces <= 0)) {
+    if ((type === "craftingbench" && state.craftingBenches <= 0) || (type === "furnace" && state.furnaces <= 0) || (type === "storagechest" && state.storageChests <= 0)) {
       state.hotbar[structurePlacementState.slotIndex] = null;
     }
   }
@@ -184,6 +195,39 @@ function confirmStructurePlacement() {
   endStructurePlacement();
   addFloatingText(structure.x, structure.y - 10, structureLabel(type).toUpperCase());
   toast(structureLabel(type) + " placed.");
+  save();
+  syncUI();
+}
+
+
+function destroyPlacedStructure(obj) {
+  const structure = getStructureById(obj.structureId);
+  if (!structure) return;
+
+  if (structure.type === "furnace" && !equippedPickaxe()) {
+    toast("Equip a pickaxe to break a Furnace.");
+    return;
+  }
+
+  if ((structure.type === "craftingbench" || structure.type === "storagechest") && !equippedAxe()) {
+    toast("Equip an axe to break this build.");
+    return;
+  }
+
+  if (structure.type === "storagechest" && Array.isArray(structure.slots) && structure.slots.some(Boolean)) {
+    toast("Empty the chest before breaking it.");
+    return;
+  }
+
+  state.structures = state.structures.filter((entry) => entry.id !== structure.id);
+  objects = objects.filter((entry) => entry !== obj);
+
+  if (structure.type === "craftingbench") state.craftingBenches += 1;
+  if (structure.type === "furnace") state.furnaces += 1;
+  if (structure.type === "storagechest") state.storageChests += 1;
+
+  addFloatingText(obj.x, obj.y - 10, "PICKED UP");
+  toast(structureLabel(structure.type) + " returned to inventory.");
   save();
   syncUI();
 }
@@ -903,7 +947,11 @@ function update() {
   const prompt = $("interactPrompt");
 
   if (near) {
-    if (near.action === "wood" || near.action === "stone" || near.action === "copper" || near.action === "iron" || near.action === "bush") {
+    if ((near.action === "craftingbench" || near.action === "storagechest") && equippedAxe()) {
+      prompt.textContent = "Press E to destroy " + structureLabel(near.action);
+    } else if (near.action === "furnace" && equippedPickaxe()) {
+      prompt.textContent = "Press E to destroy Furnace";
+    } else if (near.action === "wood" || near.action === "stone" || near.action === "copper" || near.action === "iron" || near.action === "bush") {
       prompt.textContent = "Press E to " + near.label + " (" + Math.max(0, Math.ceil(near.hp)) + " HP)";
     } else {
       prompt.textContent = "Press E to " + near.label;
@@ -966,7 +1014,7 @@ function closeRowanPanelsWhenFar() {
 
 function interactionPriority(obj) {
   if (obj.action === "pickupLoot" || obj.action === "pickupTool") return 1;
-  if (obj.action === "craftingbench" || obj.action === "furnace" || obj.action === "camp" || obj.action === "npc" || obj.action === "chest") return 2;
+  if (obj.action === "craftingbench" || obj.action === "furnace" || obj.action === "storagechest" || obj.action === "camp" || obj.action === "npc" || obj.action === "chest") return 2;
   return 3;
 }
 
@@ -1002,11 +1050,18 @@ function interact() {
   }
 
   if (obj.action === "craftingbench") {
-    openCrafting(obj);
+    if (equippedAxe()) destroyPlacedStructure(obj);
+    else openCrafting(obj);
   }
 
   if (obj.action === "furnace") {
-    openSmelting(obj);
+    if (equippedPickaxe()) destroyPlacedStructure(obj);
+    else openSmelting(obj);
+  }
+
+  if (obj.action === "storagechest") {
+    if (equippedAxe()) destroyPlacedStructure(obj);
+    else openStorage(obj);
   }
 
   if (obj.action === "npc") {
@@ -1393,6 +1448,7 @@ function drawObject(obj) {
   if (obj.kind === "campfire") drawCampfire(drawX, obj.y, obj.w, obj.h);
   if (obj.kind === "craftingbench") drawImg(images.craftingbench, drawX, obj.y, obj.w, obj.h, "#8b5a2b");
   if (obj.kind === "furnace") drawImg(images.furnace, drawX, obj.y, obj.w, obj.h, "#6b6262");
+  if (obj.kind === "storagechest") drawImg(images.storagechest, drawX, obj.y, obj.w, obj.h, "#a86b36");
   if (obj.kind === "npc") drawNpc(drawX, obj.y, obj.w, obj.h, obj.npcName || "Rowan");
   if (obj.kind === "slime") drawSlime(obj, drawX);
 
@@ -1583,7 +1639,7 @@ function drawStructurePlacementGhost() {
 
   ctx.save();
   ctx.globalAlpha = structurePlacementState.valid ? 0.7 : 0.42;
-  drawImg(type === "furnace" ? images.furnace : images.craftingbench, x, y, size.w, size.h, structurePlacementState.valid ? "#8b5a2b" : "#df3d32");
+  drawImg(type === "furnace" ? images.furnace : type === "storagechest" ? images.storagechest : images.craftingbench, x, y, size.w, size.h, structurePlacementState.valid ? "#8b5a2b" : "#df3d32");
   ctx.globalAlpha = 1;
   ctx.strokeStyle = structurePlacementState.valid ? "#80ef78" : "#ff6055";
   ctx.lineWidth = 3;
