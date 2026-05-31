@@ -18,6 +18,10 @@ const campPlacementState = {
 
 /* PHASE 8A.1 — PLACEABLE CRAFTING BENCH + FURNACE */
 const STRUCTURE_PLACEMENT_SNAP = 16;
+
+/* PHASE 8C.2 — CAMP BUILD RADIUS */
+const CAMP_BUILD_RADIUS_TILES = 18;
+const CAMP_BUILD_RADIUS = CAMP_BUILD_RADIUS_TILES * 32;
 const structurePlacementState = {
   active: false,
   type: null,
@@ -130,17 +134,48 @@ function structurePlacementBox(type, x, y) {
   };
 }
 
+function campBuildCenter() {
+  const camp = currentCampfire();
+  if (!camp) return null;
+  return { x: camp.x + camp.w / 2, y: camp.y + camp.h / 2 };
+}
+
+function isInsideCampBuildRadius(worldX, worldY) {
+  const center = campBuildCenter();
+  if (!center) return false;
+  return Math.hypot(worldX - center.x, worldY - center.y) <= CAMP_BUILD_RADIUS;
+}
+
+function structurePlacementStatus(type, x, y) {
+  const box = structurePlacementBox(type, x, y);
+  const centerX = box.x + box.w / 2;
+  const centerY = box.y + box.h / 2;
+
+  if (!state.campPlaced || !currentCampfire()) {
+    return { ok: false, reason: "Place your Camp Core first." };
+  }
+
+  if (!isInsideCampBuildRadius(centerX, centerY)) {
+    return { ok: false, reason: "Build closer to your camp." };
+  }
+
+  return { ok: true, reason: "" };
+}
+
 function canPlaceStructureAt(type, x, y) {
   const size = structureSize(type);
   const box = structurePlacementBox(type, x, y);
   if (x < 32 || y < 32 || x + size.w > map.width - 32 || y + size.h > map.height - 32) return false;
   if (typeof boxTouchesWater === "function" && boxTouchesWater(box)) return false;
 
+  const campStatus = structurePlacementStatus(type, x, y);
+  if (!campStatus.ok) return false;
+
   for (const obj of objects) {
     if (obj.hidden) continue;
-    if (obj.kind === "slime" || obj.kind === "slimegel" || obj.kind === "droppedaxe" || obj.kind === "droppedpickaxe" || obj.kind === "droppedsword") continue;
+    if (obj.kind === "slime" || obj.kind === "slimegel" || obj.kind === "droppedloot" || obj.kind === "droppedaxe" || obj.kind === "droppedpickaxe" || obj.kind === "droppedsword") continue;
 
-    const padding = obj.kind === "tree" ? 12 : obj.kind === "npc" ? 34 : 10;
+    const padding = obj.kind === "tree" || obj.kind === "largetree" ? 12 : obj.kind === "npc" ? 34 : 10;
     const blocked = { x: obj.x - padding, y: obj.y - padding, w: obj.w + padding * 2, h: obj.h + padding * 2 };
     if (overlap(box, blocked)) return false;
   }
@@ -200,6 +235,42 @@ function confirmStructurePlacement() {
 }
 
 
+function scatterStorageChestContents(structure, obj) {
+  if (structure.type !== "storagechest" || !Array.isArray(structure.slots)) return 0;
+
+  let dropped = 0;
+  structure.slots.forEach((slot, index) => {
+    if (!slot) return;
+    const angle = (index / Math.max(1, structure.slots.length)) * Math.PI * 2 + Math.random() * 0.65;
+    const distance = 22 + (index % 5) * 7 + Math.random() * 12;
+    const x = clamp(obj.x + obj.w / 2 + Math.cos(angle) * distance, 24, map.width - 48);
+    const y = clamp(obj.y + obj.h / 2 + Math.sin(angle) * distance, 24, map.height - 48);
+
+    if (slot.kind === "tool" && slot.toolData) {
+      const drop = {
+        id: "tooldrop-" + Date.now() + "-" + Math.floor(Math.random() * 100000),
+        x,
+        y,
+        droppedAt: Date.now(),
+        toolData: { ...slot.toolData }
+      };
+      if (!Array.isArray(state.droppedTools)) state.droppedTools = [];
+      state.droppedTools.push(drop);
+      objects.push(createDroppedToolObject(drop));
+      dropped += 1;
+      return;
+    }
+
+    if (slot.kind === "stack" && typeof spawnWorldLootDrop === "function") {
+      spawnWorldLootDrop(slot.type, x, y, slot.count);
+      dropped += 1;
+    }
+  });
+
+  structure.slots = emptyStorageSlots(18);
+  return dropped;
+}
+
 function destroyPlacedStructure(obj) {
   const structure = getStructureById(obj.structureId);
   if (!structure) return;
@@ -214,10 +285,7 @@ function destroyPlacedStructure(obj) {
     return;
   }
 
-  if (structure.type === "storagechest" && Array.isArray(structure.slots) && structure.slots.some(Boolean)) {
-    toast("Empty the chest before breaking it.");
-    return;
-  }
+  const scattered = scatterStorageChestContents(structure, obj);
 
   state.structures = state.structures.filter((entry) => entry.id !== structure.id);
   objects = objects.filter((entry) => entry !== obj);
@@ -226,12 +294,11 @@ function destroyPlacedStructure(obj) {
   if (structure.type === "furnace") state.furnaces += 1;
   if (structure.type === "storagechest") state.storageChests += 1;
 
-  addFloatingText(obj.x, obj.y - 10, "PICKED UP");
-  toast(structureLabel(structure.type) + " returned to inventory.");
+  addFloatingText(obj.x, obj.y - 10, scattered > 0 ? "ITEMS DROPPED" : "PICKED UP");
+  toast(scattered > 0 ? "Chest broke and dropped its contents." : structureLabel(structure.type) + " returned to inventory.");
   save();
   syncUI();
 }
-
 
 function makeCampfireObject(x, y) {
   return {
@@ -364,7 +431,12 @@ campPlacementCanvas.addEventListener("mousemove", (event) => {
 campPlacementCanvas.addEventListener("click", () => {
   if (!structurePlacementState.active) return;
   if (!structurePlacementState.valid) {
-    toast("That spot is blocked. Choose clear land.");
+    const status = structurePlacementStatus(
+      structurePlacementState.type,
+      structurePlacementState.previewX,
+      structurePlacementState.previewY
+    );
+    toast(status.ok ? "That spot is blocked. Choose clear land." : status.reason);
     return;
   }
   confirmStructurePlacement();
@@ -438,6 +510,12 @@ function createWorld() {
   // Living spread: every biome can support early survival, while forests/rocky zones still matter.
   addWorldResource("tree", "wood", "hit tree", 82, {
     preferredBiomes: ["forest"], w: 64, h: 96, amount: 2, minHp: 5, maxHp: 9
+  });
+  addWorldResource("largetree", "wood", "chop large tree", 18, {
+    preferredBiomes: ["forest"], w: 96, h: 136, amount: 5, minHp: 16, maxHp: 24
+  });
+  addWorldResource("largetree", "wood", "chop large tree", 4, {
+    preferredBiomes: ["plains"], w: 92, h: 128, amount: 4, minHp: 14, maxHp: 21
   });
   addWorldResource("tree", "wood", "hit tree", 24, {
     preferredBiomes: ["plains"], w: 64, h: 96, amount: 2, minHp: 5, maxHp: 9
@@ -656,6 +734,10 @@ function objectHitbox(obj) {
     return { x: obj.x + 20, y: obj.y + 64, w: 24, h: 28 };
   }
 
+  if (obj.kind === "largetree") {
+    return { x: obj.x + 34, y: obj.y + 92, w: 28, h: 36 };
+  }
+
   if (obj.kind === "campfire") {
     return { x: obj.x + 18, y: obj.y + 26, w: 28, h: 26 };
   }
@@ -713,6 +795,7 @@ function canMoveTo(x, y) {
 
   for (const obj of objects) {
     if (obj.hidden || obj.noCollision) continue;
+    if (obj.kind === "npc" || obj.kind === "slime") continue;
 
     if (overlap(box, objectHitbox(obj))) {
       return false;
@@ -720,6 +803,101 @@ function canMoveTo(x, y) {
   }
 
   return true;
+}
+
+
+/* PHASE 8D — DROPPED ITEM SPREAD / DESPAWN */
+const DROPPED_ITEM_DESPAWN_MS = 5 * 60 * 1000;
+const DROPPED_ITEM_SPREAD_DISTANCE = 34;
+
+function isDroppedGroundItem(obj) {
+  return Boolean(obj && !obj.hidden && (obj.action === "pickupLoot" || obj.action === "pickupTool"));
+}
+
+function removeDroppedGroundItem(obj) {
+  obj.hidden = true;
+  obj.interact = false;
+
+  if (obj.action === "pickupLoot" && obj.lootData) {
+    state.droppedLoot = (state.droppedLoot || []).filter((drop) => drop.id !== obj.lootData.id);
+  }
+
+  if (obj.action === "pickupTool" && obj.toolData) {
+    state.droppedTools = (state.droppedTools || []).filter((drop) => drop.id !== obj.dropId && drop.toolData?.id !== obj.toolData.id);
+  }
+}
+
+function syncDroppedItemState(obj) {
+  if (obj.action === "pickupLoot" && obj.lootData) {
+    const drop = (state.droppedLoot || []).find((entry) => entry.id === obj.lootData.id);
+    if (drop) {
+      drop.x = obj.x;
+      drop.y = obj.y;
+      drop.droppedAt = obj.droppedAt || drop.droppedAt || Date.now();
+    }
+  }
+
+  if (obj.action === "pickupTool" && obj.toolData) {
+    const drop = (state.droppedTools || []).find((entry) => entry.id === obj.dropId || entry.toolData?.id === obj.toolData.id);
+    if (drop) {
+      drop.x = obj.x;
+      drop.y = obj.y;
+      drop.droppedAt = obj.droppedAt || drop.droppedAt || Date.now();
+    }
+  }
+}
+
+function updateDroppedGroundItems() {
+  const now = Date.now();
+  const drops = objects.filter(isDroppedGroundItem);
+  let changed = false;
+
+  for (const drop of drops) {
+    if (!drop.droppedAt) drop.droppedAt = now;
+    if (now - drop.droppedAt >= DROPPED_ITEM_DESPAWN_MS) {
+      removeDroppedGroundItem(drop);
+      changed = true;
+      continue;
+    }
+
+    if (!Number.isFinite(drop.bobPhase)) drop.bobPhase = Math.random() * Math.PI * 2;
+    drop.bobPhase += 0.08;
+  }
+
+  for (let i = 0; i < drops.length; i++) {
+    const a = drops[i];
+    if (!isDroppedGroundItem(a)) continue;
+
+    for (let j = i + 1; j < drops.length; j++) {
+      const b = drops[j];
+      if (!isDroppedGroundItem(b)) continue;
+
+      const ax = a.x + a.w / 2;
+      const ay = a.y + a.h / 2;
+      const bx = b.x + b.w / 2;
+      const by = b.y + b.h / 2;
+      const dx = bx - ax;
+      const dy = by - ay;
+      const dist = Math.hypot(dx, dy) || 1;
+
+      if (dist < DROPPED_ITEM_SPREAD_DISTANCE) {
+        const push = (DROPPED_ITEM_SPREAD_DISTANCE - dist) * 0.035;
+        const nx = dx / dist;
+        const ny = dy / dist;
+        a.x = clamp(a.x - nx * push, 24, map.width - a.w - 24);
+        a.y = clamp(a.y - ny * push, 24, map.height - a.h - 24);
+        b.x = clamp(b.x + nx * push, 24, map.width - b.w - 24);
+        b.y = clamp(b.y + ny * push, 24, map.height - b.h - 24);
+        changed = true;
+      }
+    }
+  }
+
+  if (changed) {
+    for (const drop of drops) syncDroppedItemState(drop);
+  }
+
+  objects = objects.filter((obj) => !obj.hidden || (obj.action !== "pickupLoot" && obj.action !== "pickupTool"));
 }
 
 
@@ -872,6 +1050,8 @@ function update() {
   for (const obj of objects) {
     if (obj.shake && obj.shake > 0) obj.shake -= 1;
   }
+
+  updateDroppedGroundItems();
 
   if (player.axeSwing > 0) player.axeSwing -= 1;
   if (player.attackSwing > 0) player.attackSwing -= 1;
@@ -1168,6 +1348,7 @@ function useEquippedAxeDurability(obj) {
 
   let cost = 0;
   if (obj.kind === "tree") cost = 1;
+  if (obj.kind === "largetree") cost = 1.5;
   if (obj.kind === "bush2") cost = 0.5;
   if (obj.kind === "bush1") cost = 0.25;
 
@@ -1239,12 +1420,20 @@ function hitResource(obj) {
   }
 
   if (obj.action === "wood") {
-    state.wood += obj.amount || 1;
+    const woodAmount = obj.amount || 1;
+    state.wood += woodAmount;
     state.gold += campGoldBonus();
-    addXp(5);
-    toast("+" + (obj.amount || 1) + " wood");
-    addFloatingText(obj.x, obj.y, "+" + (obj.amount || 1) + " Wood");
-    temporarilyHide(obj, resourceRespawnTime());
+    addXp(obj.kind === "largetree" ? 9 : 5);
+    toast("+" + woodAmount + " wood");
+    addFloatingText(obj.x, obj.y, "+" + woodAmount + " Wood");
+
+    if (obj.kind === "largetree" && Math.random() < 0.16) {
+      state.mushlings += 1;
+      addFloatingText(obj.x, obj.y + 22, "+1 Mushling");
+      toast("Large tree dropped a mushling!");
+    }
+
+    temporarilyHide(obj, obj.kind === "largetree" ? resourceRespawnTime() + 6000 : resourceRespawnTime());
   }
 
   if (obj.action === "stone") {
@@ -1352,7 +1541,7 @@ function respawnResourceElsewhere(obj, ms) {
     const preferredBiomes =
       obj.kind === "copperore" || obj.kind === "ironore" || obj.kind === "rock"
         ? ["rocky"]
-        : obj.kind === "tree"
+        : obj.kind === "tree" || obj.kind === "largetree"
           ? ["forest"]
           : ["plains", "forest"];
 
@@ -1433,9 +1622,12 @@ function drawEntitiesLayered() {
 
 function drawObject(obj) {
   const shakeX = obj.shake > 0 ? Math.sin(obj.shake * 2.5) * 3 : 0;
+  const bobY = isDroppedGroundItem(obj) ? Math.sin(obj.bobPhase || 0) * 2 : 0;
   const drawX = obj.x + shakeX;
+  const drawY = obj.y + bobY;
 
   if (obj.kind === "tree") drawImg(images.tree, drawX, obj.y, obj.w, obj.h, "#2f7832");
+  if (obj.kind === "largetree") drawImg(images.largetree, drawX, obj.y, obj.w, obj.h, "#276b2d");
   if (obj.kind === "rock") drawImg(images.rock, drawX, obj.y, obj.w, obj.h, "#89939e");
   if (obj.kind === "copperore") drawImg(images.copperore, drawX, obj.y, obj.w, obj.h, "#b87333");
   if (obj.kind === "ironore") drawImg(images.ironore, drawX, obj.y, obj.w, obj.h, "#707983");
@@ -1454,26 +1646,29 @@ function drawObject(obj) {
 
   if (obj.kind === "droppedaxe") {
     ctx.fillStyle = "rgba(0,0,0,0.20)";
-    ctx.fillRect(drawX + 7, obj.y + 31, 28, 6);
-    drawImg(images.axe, drawX, obj.y, obj.w, obj.h, "#a86b36");
+    ctx.fillRect(drawX + 6, obj.y + 34, 31, 6);
+    drawImg(images.axe, drawX - 2, drawY - 2, obj.w + 6, obj.h + 6, "#a86b36");
   }
 
   if (obj.kind === "droppedsword") {
     ctx.fillStyle = "rgba(0,0,0,0.20)";
-    ctx.fillRect(drawX + 7, obj.y + 31, 28, 6);
-    drawImg(images.sword, drawX, obj.y, obj.w, obj.h, "#d7eaff");
+    ctx.fillRect(drawX + 7, obj.y + 35, 32, 6);
+    drawImg(images.sword, drawX - 2, drawY - 3, obj.w + 7, obj.h + 7, "#d7eaff");
   }
 
   if (obj.kind === "droppedpickaxe") {
     ctx.fillStyle = "rgba(0,0,0,0.20)";
-    ctx.fillRect(drawX + 7, obj.y + 31, 28, 6);
-    drawImg(images.pickaxe, drawX, obj.y, obj.w, obj.h, "#9b7451");
+    ctx.fillRect(drawX + 6, obj.y + 34, 31, 6);
+    drawImg(images.pickaxe, drawX - 1, drawY - 1, obj.w + 4, obj.h + 4, "#9b7451");
   }
 
-  if (obj.kind === "slimegel") {
+  if (obj.kind === "slimegel" || obj.kind === "droppedloot") {
+    const itemType = obj.itemType || obj.lootData?.type || "slimegel";
+    const info = typeof STORAGE_ITEM_INFO === "object" ? STORAGE_ITEM_INFO[itemType] : null;
+    const image = itemType === "slimegel" ? images.slimegel : info ? images[info.image] : images.slimegel;
     ctx.fillStyle = "rgba(0,0,0,0.18)";
     ctx.fillRect(drawX + 5, obj.y + 25, 22, 5);
-    drawImg(images.slimegel, drawX, obj.y, obj.w, obj.h, "#59cf60");
+    drawImg(image, drawX, drawY, obj.w, obj.h, "#59cf60");
   }
 }
 
@@ -1629,8 +1824,25 @@ function drawCampfirePlacementGhost() {
   ctx.restore();
 }
 
+function drawBuildRadiusGuide() {
+  const center = campBuildCenter();
+  if (!center) return;
+
+  ctx.save();
+  ctx.globalAlpha = 0.28;
+  ctx.strokeStyle = "#f2c35f";
+  ctx.lineWidth = 3;
+  ctx.setLineDash([10, 10]);
+  ctx.beginPath();
+  ctx.arc(center.x, center.y, CAMP_BUILD_RADIUS, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+}
+
 function drawStructurePlacementGhost() {
   if (!structurePlacementState.active) return;
+
+  drawBuildRadiusGuide();
 
   const type = structurePlacementState.type;
   const size = structureSize(type);

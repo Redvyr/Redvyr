@@ -360,16 +360,25 @@ function updateInventoryItemDetails() {
 function createDroppedToolObject(drop) {
   const isSword = drop.toolData.type === "sword";
   const isPickaxe = drop.toolData.type === "pickaxe";
+  const dropId = drop.id || ("tooldrop-" + drop.toolData.id + "-" + Math.floor(Math.random() * 100000));
+  const droppedAt = Number(drop.droppedAt || Date.now());
+
+  drop.id = dropId;
+  drop.droppedAt = droppedAt;
+
   return {
     x: drop.x,
     y: drop.y,
-    w: 40,
-    h: 40,
+    w: isSword ? 46 : 44,
+    h: isSword ? 46 : 44,
     kind: isSword ? "droppedsword" : isPickaxe ? "droppedpickaxe" : "droppedaxe",
     interact: true,
     noCollision: true,
     label: "pick up " + drop.toolData.name,
     action: "pickupTool",
+    dropId,
+    droppedAt,
+    bobPhase: Math.random() * Math.PI * 2,
     toolData: { ...drop.toolData }
   };
 }
@@ -404,8 +413,10 @@ function dropToolItem(toolType, toolId) {
   );
 
   const drop = {
-    x: clamp(player.x + 30, 30, map.width - 44),
-    y: clamp(player.y + 18, 30, map.height - 44),
+    id: "tooldrop-" + Date.now() + "-" + Math.floor(Math.random() * 100000),
+    x: clamp(player.x + 24 + randomInt(-10, 10), 30, map.width - 44),
+    y: clamp(player.y + 18 + randomInt(-10, 10), 30, map.height - 44),
+    droppedAt: Date.now(),
     toolData: { ...tool }
   };
 
@@ -436,7 +447,7 @@ function pickupDroppedTool(obj) {
   }
 
   state.droppedTools = (state.droppedTools || []).filter(
-    (drop) => drop.toolData?.id !== obj.toolData.id
+    (drop) => drop.id !== obj.dropId && drop.toolData?.id !== obj.toolData.id
   );
 
   obj.hidden = true;
@@ -656,6 +667,148 @@ function createShopItem({ img, name, desc, price, buttonText, disabled, onClick 
   card.appendChild(button);
 
   return card;
+}
+
+
+/* PHASE 8D — INVENTORY TO HOTBAR DRAGGING */
+let inventoryHotbarDrag = null;
+
+function inventoryPanelIsOpen() {
+  return Boolean(inventoryPanel && !inventoryPanel.classList.contains("hidden"));
+}
+
+function hotbarValueFromInventoryItem(item) {
+  if (!item) return null;
+  if (item.type === "axe" || item.type === "pickaxe" || item.type === "sword") {
+    return { type: item.type, itemId: item.itemId };
+  }
+  if (item.type === "potion" || item.type === "speedpotion" || item.type === "craftingbench" || item.type === "furnace" || item.type === "storagechest") {
+    return item.type;
+  }
+  return null;
+}
+
+function hotbarItemDisplayName(item) {
+  const toolItem = hotbarToolItem(item);
+  const tool = toolItem ? toolByHotbarItem(toolItem) : null;
+  if (tool) return tool.name;
+  if (item === "potion") return "Health Potion";
+  if (item === "speedpotion") return "Speed Potion";
+  if (item === "craftingbench") return "Crafting Bench";
+  if (item === "furnace") return "Furnace";
+  if (item === "storagechest") return "Storage Chest";
+  return "Item";
+}
+
+function hotbarItemIsStillOwned(item) {
+  if (item === "potion") return state.potions > 0;
+  if (item === "speedpotion") return state.speedPotions > 0;
+  if (item === "craftingbench") return state.craftingBenches > 0;
+  if (item === "furnace") return state.furnaces > 0;
+  if (item === "storagechest") return state.storageChests > 0;
+  const toolItem = hotbarToolItem(item);
+  return Boolean(toolItem && toolByHotbarItem(toolItem));
+}
+
+function setHotbarSlot(slotIndex, itemValue) {
+  cleanHotbar();
+  if (slotIndex < 0 || slotIndex >= state.hotbar.length) return false;
+  if (itemValue && !hotbarItemIsStillOwned(itemValue)) return false;
+
+  if (itemValue) {
+    state.hotbar = state.hotbar.map((entry, index) => {
+      if (index === slotIndex) return entry;
+      const a = hotbarToolItem(entry);
+      const b = hotbarToolItem(itemValue);
+      if (a && b && a.itemId === b.itemId) return null;
+      if (!a && !b && entry === itemValue) return null;
+      return entry;
+    });
+  }
+
+  state.hotbar[slotIndex] = itemValue;
+  cleanHotbar();
+  save();
+  syncUI();
+  return true;
+}
+
+function makeInventorySlotDraggable(slot, item) {
+  const hotbarValue = hotbarValueFromInventoryItem(item);
+  if (!hotbarValue) return;
+
+  slot.classList.add("draggable-inventory-item");
+  slot.draggable = true;
+  slot.addEventListener("dragstart", (event) => {
+    inventoryHotbarDrag = { source: "inventory", item: hotbarValue };
+    slot.classList.add("dragging");
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", JSON.stringify(inventoryHotbarDrag));
+  });
+  slot.addEventListener("dragend", () => {
+    slot.classList.remove("dragging");
+    setTimeout(() => inventoryHotbarDrag = null, 0);
+  });
+}
+
+function attachHotbarDragEvents(slot, index) {
+  if (inventoryPanelIsOpen()) {
+    slot.classList.add("hotbar-drag-ready");
+  }
+
+  const item = state.hotbar[index];
+  if (item && inventoryPanelIsOpen()) {
+    slot.draggable = true;
+    slot.addEventListener("dragstart", (event) => {
+      inventoryHotbarDrag = { source: "hotbar", index, item };
+      slot.classList.add("dragging");
+      event.dataTransfer.effectAllowed = "move";
+      event.dataTransfer.setData("text/plain", JSON.stringify(inventoryHotbarDrag));
+    });
+    slot.addEventListener("dragend", () => {
+      slot.classList.remove("dragging");
+      setTimeout(() => inventoryHotbarDrag = null, 0);
+    });
+  }
+
+  slot.addEventListener("dragover", (event) => {
+    if (!inventoryPanelIsOpen()) return;
+    event.preventDefault();
+    slot.classList.add("drop-target");
+  });
+
+  slot.addEventListener("dragleave", () => slot.classList.remove("drop-target"));
+
+  slot.addEventListener("drop", (event) => {
+    if (!inventoryPanelIsOpen()) return;
+    event.preventDefault();
+    slot.classList.remove("drop-target");
+
+    let payload = inventoryHotbarDrag;
+    if (!payload) {
+      try { payload = JSON.parse(event.dataTransfer.getData("text/plain") || "null"); } catch (_) { payload = null; }
+    }
+    if (!payload) return;
+
+    if (payload.source === "inventory") {
+      if (setHotbarSlot(index, payload.item)) {
+        toast(hotbarItemDisplayName(payload.item) + " assigned to hotbar.");
+      }
+      return;
+    }
+
+    if (payload.source === "hotbar" && Number.isInteger(payload.index)) {
+      const from = payload.index;
+      if (from === index) return;
+      const temp = state.hotbar[index];
+      state.hotbar[index] = state.hotbar[from];
+      state.hotbar[from] = temp || null;
+      cleanHotbar();
+      save();
+      syncUI();
+      toast("Hotbar slots swapped.");
+    }
+  });
 }
 
 /* HOTBAR / EQUIPMENT */
@@ -972,6 +1125,10 @@ function updateHotbar() {
         ? toolDurabilityText(tool)
         : "x" + (item === "speedpotion" ? state.speedPotions : item === "craftingbench" ? state.craftingBenches : item === "furnace" ? state.furnaces : item === "storagechest" ? state.storageChests : state.potions);
       slot.appendChild(count);
+    }
+
+    if (typeof attachHotbarDragEvents === "function") {
+      attachHotbarDragEvents(slot, index);
     }
 
     slot.addEventListener("click", () => activateHotbarSlot(index));

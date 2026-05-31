@@ -116,6 +116,7 @@ const files = {
   path: "path.png",
   rockpath: "rockpath.png",
   tree: "tree.png",
+  largetree: "largetree.png",
   rock: "rock.png",
   bush1: "bush1.png",
   bush2: "bush2.png",
@@ -914,8 +915,10 @@ function loadSave() {
             const isPickaxe = drop.toolData.type === "pickaxe";
             const maxDurability = isSword ? 80 : 60;
             return {
+              id: String(drop.id || ("tooldrop-" + drop.toolData.id + "-" + Math.floor(Math.random() * 100000))),
               x: Number(drop.x || 0),
               y: Number(drop.y || 0),
+              droppedAt: Number(drop.droppedAt || Date.now()),
               toolData: {
                 id: String(drop.toolData.id),
                 type: isSword ? "sword" : isPickaxe ? "pickaxe" : "axe",
@@ -935,13 +938,14 @@ function loadSave() {
 
     state.droppedLoot = Array.isArray(data.droppedLoot)
       ? data.droppedLoot
-          .filter((drop) => drop && drop.type === "slimegel" && drop.count > 0)
+          .filter((drop) => drop && drop.count > 0 && (!STORAGE_ITEM_INFO || STORAGE_ITEM_INFO[drop.type]))
           .map((drop) => ({
-            id: String(drop.id),
-            type: "slimegel",
+            id: String(drop.id || ("loot-" + Math.floor(Math.random() * 1000000))),
+            type: String(drop.type || "slimegel"),
             x: Number(drop.x || 0),
             y: Number(drop.y || 0),
-            count: Math.max(1, Number(drop.count || 1))
+            count: Math.max(1, Number(drop.count || 1)),
+            droppedAt: Number(drop.droppedAt || Date.now())
           }))
       : [];
 
@@ -1371,6 +1375,10 @@ function updateInventoryPanel() {
       }
 
       slot.addEventListener("click", () => selectInventoryItem(item));
+
+      if (typeof makeInventorySlotDraggable === "function") {
+        makeInventorySlotDraggable(slot, item);
+      }
 
       if (item.type === "axe") {
         slot.classList.add("assignable");

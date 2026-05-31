@@ -249,31 +249,49 @@ function hitSlime(slime, damage, attackType) {
   }, 12000);
 }
 
-function spawnSlimeGelDrop(x, y, count = 1) {
+function spawnWorldLootDrop(type, x, y, count = 1) {
+  const info = typeof STORAGE_ITEM_INFO === "object" ? STORAGE_ITEM_INFO[type] : null;
+  if (!info) return null;
+
   const drop = {
-    id: "gel-" + Date.now() + "-" + Math.floor(Math.random() * 100000),
-    type: "slimegel",
-    x,
-    y,
-    count
+    id: "loot-" + Date.now() + "-" + Math.floor(Math.random() * 100000),
+    type,
+    x: clamp(x + randomInt(-10, 10), 24, map.width - 40),
+    y: clamp(y + randomInt(-10, 10), 24, map.height - 40),
+    count: Math.max(1, Number(count || 1)),
+    droppedAt: Date.now()
   };
 
   if (!Array.isArray(state.droppedLoot)) state.droppedLoot = [];
   state.droppedLoot.push(drop);
   objects.push(createLootObject(drop));
+  return drop;
+}
+
+function spawnSlimeGelDrop(x, y, count = 1) {
+  spawnWorldLootDrop("slimegel", x, y, count);
 }
 
 function createLootObject(drop) {
+  const info = typeof STORAGE_ITEM_INFO === "object" ? STORAGE_ITEM_INFO[drop.type] : null;
+  const name = info?.name || (drop.type === "slimegel" ? "Slime Gel" : "Item");
+  const droppedAt = Number(drop.droppedAt || Date.now());
+  drop.droppedAt = droppedAt;
+
   return {
     x: drop.x,
     y: drop.y,
     w: 32,
     h: 32,
-    kind: "slimegel",
+    kind: drop.type === "slimegel" ? "slimegel" : "droppedloot",
+    itemType: drop.type,
     noCollision: true,
     interact: true,
-    label: "pick up Slime Gel",
+    label: "pick up " + name,
     action: "pickupLoot",
+    dropId: drop.id,
+    droppedAt,
+    bobPhase: Math.random() * Math.PI * 2,
     lootData: { ...drop }
   };
 }
@@ -281,22 +299,26 @@ function createLootObject(drop) {
 function restoreDroppedLoot() {
   if (!Array.isArray(state.droppedLoot)) state.droppedLoot = [];
   state.droppedLoot.forEach((drop) => {
-    if (drop.type === "slimegel" && drop.count > 0) {
+    const info = typeof STORAGE_ITEM_INFO === "object" ? STORAGE_ITEM_INFO[drop.type] : null;
+    if (info && drop.count > 0) {
+      if (!drop.droppedAt) drop.droppedAt = Date.now();
       objects.push(createLootObject(drop));
     }
   });
 }
 
 function pickupDroppedLoot(obj) {
-  if (!obj.lootData || obj.lootData.type !== "slimegel") return;
+  if (!obj.lootData) return;
+  const info = typeof STORAGE_ITEM_INFO === "object" ? STORAGE_ITEM_INFO[obj.lootData.type] : null;
+  if (!info) return;
 
-  state.slimeGel += obj.lootData.count;
+  info.set(info.get() + Math.max(1, Number(obj.lootData.count || 1)));
   state.droppedLoot = state.droppedLoot.filter((drop) => drop.id !== obj.lootData.id);
   obj.hidden = true;
   obj.interact = false;
 
-  toast("Picked up Slime Gel x" + obj.lootData.count + ".");
-  addFloatingText(obj.x, obj.y - 6, "+Gel x" + obj.lootData.count);
+  toast("Picked up " + info.name + " x" + obj.lootData.count + ".");
+  addFloatingText(obj.x, obj.y - 6, "+" + info.name + " x" + obj.lootData.count);
 }
 
 function updateNightEnemySpawning() {
