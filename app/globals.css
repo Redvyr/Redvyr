@@ -135,3 +135,104 @@ section[id]{scroll-margin-top:104px}
 .demo-ribbon,.salon-ribbon{position:fixed;top:0;left:0;width:100%;z-index:101}
 .estimate-card{top:113px}.cart-shade{z-index:149}.cart-drawer{z-index:150}.checkout-modal{z-index:160}.booking-shade{z-index:169}.booking-panel{z-index:170}.consult-shade{z-index:179}.consult-panel{z-index:180}
 @media(max-width:850px){.home-page{padding-top:70px}.designs-index{padding-top:72px}.plans-page{padding-top:72px}.nav{z-index:100}.estimate-card{top:0}}
+
+/* Give large restaurant headlines enough room for their descenders. */
+.rest-story > div > h2 {
+  margin-bottom: 34px;
+}
+
+.rest-story > div > h2 + p,
+.visit-intro > h2 + p {
+  margin-top: 0;
+}
+
+.visit-intro > h2 {
+  margin-bottom: 32px;
+}
+
+@media (max-width: 800px) {
+  .rest-story > div > h2,
+  .visit-intro > h2 {
+    margin-bottom: 26px;
+  }
+}
+
+/* Cleaner capability collage: shorter copy panels, clearer artwork. */
+.cap-devices .cap-copy {
+  max-width: 315px;
+}
+
+.cap-devices > img {
+  width: 61%;
+  right: 1.5%;
+  bottom: -2%;
+}
+
+.cap-commerce .cap-copy {
+  max-width: 225px;
+  padding-right: 13px;
+}
+
+.cap-commerce .cap-copy h3,
+.cap-schedule .cap-copy h3,
+.cap-growth .cap-copy h3 {
+  font-size: 34px;
+}
+
+.cap-commerce .cap-copy p,
+.cap-schedule .cap-copy p {
+  max-width: 205px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.cap-commerce > img {
+  width: 126px;
+  height: 126px;
+  right: 16px;
+  bottom: -4px;
+}
+
+.cap-schedule .cap-copy {
+  max-width: 242px;
+}
+
+.cap-schedule > img {
+  width: 124px;
+  height: 124px;
+  right: 17px;
+  bottom: -5px;
+}
+
+.cap-growth .cap-copy {
+  max-width: 230px;
+  padding-right: 13px;
+}
+
+.cap-growth > img:not(.cap-briefcase) {
+  width: 210px;
+  height: 210px;
+  right: 4px;
+  bottom: -42px;
+}
+
+.cap-growth .cap-briefcase {
+  width: 74px;
+  height: 74px;
+  right: 27px;
+  top: 25px;
+}
+
+@media (max-width: 850px) {
+  .cap-devices > img {
+    width: 80%;
+    right: -8%;
+    bottom: -2%;
+  }
+
+  .cap-commerce .cap-copy,
+  .cap-schedule .cap-copy,
+  .cap-growth .cap-copy {
+    max-width: min(250px, calc(100% - 118px));
+  }
+}
